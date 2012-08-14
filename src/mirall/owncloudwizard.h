@@ -45,6 +45,7 @@ public:
 protected slots:
   void slotPwdStoreChanged( int );
   void slotSecureConChanged( int );
+  void slotEncryptionChanged( int );
   void setupCustomization();
 private:
   Ui_OwncloudSetupPage _ui;
