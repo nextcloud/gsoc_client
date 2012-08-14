@@ -49,10 +49,12 @@ protected slots:
   void slotPwdStoreChanged( int );
   void slotSecureConChanged( int );
   void slotEncryptionChanged( int );
+
   void slotEncryptionKeys(QMap<QString, QString>);
   void slotGenEncKeys();
   void slotGetEncKeys();
   void slotTextChanged();
+
   void setupCustomization();
 private:
   Ui_OwncloudSetupPage _ui;

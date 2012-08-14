@@ -28,6 +28,10 @@
 #include <QMap>
 #include <QScrollBar>
 #include <iostream>
+<<<<<<< HEAD
+=======
+
+>>>>>>> add checkbox for client side encryption to setup wizard
 #include <stdlib.h>
 
 namespace Mirall
@@ -161,6 +165,7 @@ void OwncloudSetupPage::slotSecureConChanged( int state )
     }
 }
 
+<<<<<<< HEAD
 void OwncloudSetupPage::slotEncryptionKeys(QMap<QString, QString> keys)
 {
     if (keys.isEmpty()) {
@@ -218,6 +223,14 @@ void OwncloudSetupPage::slotTextChanged( )
         _ui.cbEncryption->setEnabled(true);
     } else {
         _ui.cbEncryption->setEnabled(false);
+=======
+void OwncloudSetupPage::slotEncryptionChanged( int state )
+{
+    if ( state == Qt::Checked){
+        std::cout << "checked" << std::flush;
+    } else {
+        std::cout << "unchecked" << std::flush;
+>>>>>>> add checkbox for client side encryption to setup wizard
     }
 }
 
