@@ -24,6 +24,7 @@
 #include <QWizardPage>
 #include <QDir>
 #include <QScrollBar>
+#include <iostream>
 
 #include <stdlib.h>
 
@@ -67,6 +68,7 @@ OwncloudSetupPage::OwncloudSetupPage()
 
     connect( _ui.cbNoPasswordStore, SIGNAL(stateChanged(int)), this, SLOT(slotPwdStoreChanged(int)));
     connect( _ui.cbSecureConnect, SIGNAL(stateChanged(int)), this, SLOT(slotSecureConChanged(int)));
+    connect( _ui.cbEncryption, SIGNAL(stateChanged(int)), this, SLOT(slotEncryptionChanged(int)));
 
     _ui.cbConnectOC->hide();
     setupCustomization();
@@ -141,6 +143,15 @@ void OwncloudSetupPage::slotSecureConChanged( int state )
         _ui.protocolLabel->setText(QLatin1String("https://"));
     } else {
         _ui.protocolLabel->setText(QLatin1String("http://"));
+    }
+}
+
+void OwncloudSetupPage::slotEncryptionChanged( int state )
+{
+    if ( state == Qt::Checked){
+        std::cout << "checked" << std::flush;
+    } else {
+        std::cout << "unchecked" << std::flush;
     }
 }
 
