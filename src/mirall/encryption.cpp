@@ -21,6 +21,7 @@
 #include <QAuthenticator>
 #include <QDomDocument>
 
+
 Encryption::Encryption(QString baseurl, QString username, QString password, QObject *parent) :
     QObject(parent)
 {
@@ -66,6 +67,7 @@ void Encryption::getUserKeys()
     _nam->get(QNetworkRequest(QUrl(_baseurl + "/ocs/v1.php/cloud/userkeys")));
 }
 
+
 void Encryption::generateUserKeys()
 {
     QString privatekey("foo-PRIVATE"); // dummy key for the moment
@@ -94,6 +96,7 @@ void Encryption::slotHttpRequestResults(QNetworkReply *reply)
     if(reply->error() == QNetworkReply::NoError) {
         QString xml =  reply->readAll();
         result = parseXML(xml, _returnValues);
+
     } else {
         qDebug() << reply->errorString();
     }

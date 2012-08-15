@@ -15,7 +15,10 @@
 #include "mirall/owncloudwizard.h"
 #include "mirall/mirallconfigfile.h"
 #include "mirall/encryption.h"
+<<<<<<< HEAD
 #include "mirall/genenckeys.h"
+=======
+>>>>>>> - let user enable client side encryption in setup wizard
 
 #include <QDebug>
 #include <QDesktopServices>
@@ -29,9 +32,12 @@
 #include <QScrollBar>
 #include <iostream>
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> add checkbox for client side encryption to setup wizard
+=======
+>>>>>>> - let user enable client side encryption in setup wizard
 #include <stdlib.h>
 
 namespace Mirall
@@ -70,6 +76,8 @@ OwncloudSetupPage::OwncloudSetupPage()
     registerField( QLatin1String("secureConnect"), _ui.cbSecureConnect );
     registerField( QLatin1String("PwdNoLocalStore"), _ui.cbNoPasswordStore );
     registerField( QLatin1String("Encryption"), _ui.cbEncryption );
+
+    _enc = new Encryption();
 
     _enc = new Encryption();
 
@@ -166,6 +174,9 @@ void OwncloudSetupPage::slotSecureConChanged( int state )
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> - let user enable client side encryption in setup wizard
 void OwncloudSetupPage::slotEncryptionKeys(QMap<QString, QString> keys)
 {
     if (keys.isEmpty()) {
@@ -181,6 +192,7 @@ void OwncloudSetupPage::slotEncryptionKeys(QMap<QString, QString> keys)
             i.next();
             std::cout << i.key().toStdString() << ": " << i.value().toStdString() << std::endl << std::flush;
         }
+<<<<<<< HEAD
         _ui.keyStatusLabel->setTextFormat(Qt::RichText);
         _ui.keyStatusLabel->setText("<font color=\"green\">keys successfully downloaded</font>");
         _ui.keyStatusLabel->show();
@@ -224,13 +236,34 @@ void OwncloudSetupPage::slotTextChanged( )
     } else {
         _ui.cbEncryption->setEnabled(false);
 =======
+=======
+    }
+}
+
+>>>>>>> - let user enable client side encryption in setup wizard
 void OwncloudSetupPage::slotEncryptionChanged( int state )
 {
     if ( state == Qt::Checked){
-        std::cout << "checked" << std::flush;
+        _enc->setBaseUrl(_ui.protocolLabel->text() + _ui.leUrl->text());
+        _enc->setAuthCredentials(_ui.leUsername->text(), _ui.lePassword->text());
+        _enc->getUserKeys();
+        //TODO: Write encryption mode to settings
     } else {
+        std::cout << "\nencryption disabled\n" << std::flush;
+    }
+}
+
+void OwncloudSetupPage::slotTextChanged( )
+{
+    if ( !(_ui.leUsername->text().isEmpty() || _ui.lePassword->text().isEmpty() || _ui.leUrl->text().isEmpty()) ) {
+        _ui.cbEncryption->setEnabled(true);
+    } else {
+<<<<<<< HEAD
         std::cout << "unchecked" << std::flush;
 >>>>>>> add checkbox for client side encryption to setup wizard
+=======
+        _ui.cbEncryption->setEnabled(false);
+>>>>>>> - let user enable client side encryption in setup wizard
     }
 }
 

@@ -34,6 +34,7 @@ public:
     void generateUserKeys();
     void setExpectedReturnValues(QList<QString>);
 
+
 private:
     QString _baseurl;
     QString _username;
