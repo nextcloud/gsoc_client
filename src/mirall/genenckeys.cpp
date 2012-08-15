@@ -39,6 +39,7 @@ void GenEncKeys::slotAccept()
     QString password = _ui->lePassword->text();
     if (  QString::compare(password, _ui->lePasswordRepeated->text(), Qt::CaseSensitive) == 0 ) {
         _enc->generateUserKeys();
+        //TODO: need to wait untit request finished!
     }
 }
 

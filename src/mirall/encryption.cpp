@@ -79,8 +79,6 @@ void Encryption::generateUserKeys()
     req.setUrl(QUrl(_baseurl + "/ocs/v1.php/cloud/userkeys"));
 
     _nam->post(req, postData);
-    //TODO: need to wait untit request finished!
-
 }
 
 void Encryption::setExpectedReturnValues(QList<QString> returnValues)
