@@ -21,11 +21,14 @@
 #include <QAuthenticator>
 #include <QDomDocument>
 
-Encryption::Encryption(QObject *parent, QString baseurl) :
+Encryption::Encryption(QString baseurl, QString username, QString password, QObject *parent) :
     QObject(parent)
 {
     setBaseUrl(baseurl);
+    setAuthCredentials(username, password);
     _nam = new QNetworkAccessManager(this);
+
+    _returnValues << "statuscode";
 
     connect( _nam, SIGNAL(finished(QNetworkReply*)),this,SLOT(slotHttpRequestResults(QNetworkReply*)));
     connect( _nam, SIGNAL(authenticationRequired(QNetworkReply*,QAuthenticator*)), this, SLOT(slotHttpAuth(QNetworkReply*,QAuthenticator*)));
@@ -63,14 +66,34 @@ void Encryption::getUserKeys()
     _nam->get(QNetworkRequest(QUrl(_baseurl + "/ocs/v1.php/cloud/userkeys")));
 }
 
+void Encryption::generateUserKeys()
+{
+    QString privatekey("foo-PRIVATE"); // dummy key for the moment
+    QString publickey("foo-PUBLIC"); // dummy key for the moment
+
+    QByteArray postData;
+    postData.append("privatekey="+privatekey+"&");
+    postData.append("publickey="+publickey);
+
+    QNetworkRequest req;
+    req.setUrl(QUrl(_baseurl + "/ocs/v1.php/cloud/userkeys"));
+
+    _nam->post(req, postData);
+    //TODO: need to wait untit request finished!
+
+}
+
+void Encryption::setExpectedReturnValues(QList<QString> returnValues)
+{
+    _returnValues.append(returnValues);
+}
+
 void Encryption::slotHttpRequestResults(QNetworkReply *reply)
 {
     QMap<QString, QString> result;
     if(reply->error() == QNetworkReply::NoError) {
         QString xml =  reply->readAll();
-        QList<QString> tags;
-        tags << "privatekey" << "publickey" <<"statuscode";
-        result = parseXML(xml ,tags);
+        result = parseXML(xml, _returnValues);
     } else {
         qDebug() << reply->errorString();
     }

@@ -27,16 +27,19 @@ class Encryption : public QObject
 {
     Q_OBJECT
 public:
-    explicit Encryption(QObject *parent = 0, QString baseurl = "");
+    explicit Encryption(QString baseurl = "", QString username = "", QString password = "", QObject *parent = 0);
     void setBaseUrl(QString baseurl);
     void setAuthCredentials(QString username, QString password);
     void getUserKeys();
+    void generateUserKeys();
+    void setExpectedReturnValues(QList<QString>);
 
 private:
     QString _baseurl;
     QString _username;
     QString _password;
     QNetworkAccessManager *_nam;
+    QList<QString> _returnValues;
 
     QMap<QString, QString> parseXML(QString xml, QList<QString> tags);
 
