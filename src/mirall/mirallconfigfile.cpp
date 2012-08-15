@@ -134,7 +134,8 @@ void MirallConfigFile::writeOwncloudConfig( const QString& connection,
                                             const QString& url,
                                             const QString& user,
                                             const QString& passwd,
-                                            bool skipPwd )
+                                            bool skipPwd,
+                                            bool enc)
 {
     const QString file = configFile();
     qDebug() << "*** writing mirall config to " << file << " Skippwd: " << skipPwd;
@@ -150,6 +151,7 @@ void MirallConfigFile::writeOwncloudConfig( const QString& connection,
     settings.beginGroup( connection );
     settings.setValue("url", cloudsUrl );
     settings.setValue("user", user );
+    settings.setValue( "encryption", QVariant(enc) );
     if( skipPwd ) {
         pwd.clear();
     }

@@ -47,7 +47,9 @@ public:
     void writeOwncloudConfig( const QString& connection,
                               const QString& url,
                               const QString& user,
-                              const QString& passwd, bool skipPwd );
+                              const QString& passwd,
+                              bool skipPwd,
+                              bool enc);
 
     void removeConnection( const QString& connection = QString() );
 
