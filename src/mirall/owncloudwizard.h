@@ -50,6 +50,8 @@ protected slots:
   void slotSecureConChanged( int );
   void slotEncryptionChanged( int );
   void slotEncryptionKeys(QMap<QString, QString>);
+  void slotGenEncKeys();
+  void slotGetEncKeys();
   void slotTextChanged();
   void setupCustomization();
 private:
@@ -88,7 +90,6 @@ public slots:
     void appendToResultWidget( const QString& msg, LogType type = LogParagraph );
     void slotCurrentPageChanged( int );
     void showOCUrlLabel( bool );
-
 
 signals:
     void connectToOCUrl( const QString& );
