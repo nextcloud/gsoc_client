@@ -142,7 +142,8 @@ void OwncloudSetupWizard::testOwnCloudConnect()
                                  _ocWizard->field(QLatin1String("OCUrl")).toString(),
                                  _ocWizard->field(QLatin1String("OCUser")).toString(),
                                  _ocWizard->field(QLatin1String("OCPasswd")).toString(),
-                                 _ocWizard->field(QLatin1String("PwdNoLocalStore")).toBool() );
+                                 _ocWizard->field(QLatin1String("PwdNoLocalStore")).toBool(),
+                                 _ocWizard->field(QLatin1String("Encryption")).toBool());
 
     // now start ownCloudInfo to check the connection.
     ownCloudInfo::instance()->setCustomConfigHandle( _configHandle );

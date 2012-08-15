@@ -64,6 +64,7 @@ OwncloudSetupPage::OwncloudSetupPage()
     registerField( QLatin1String("connectMyOC"), _ui.cbConnectOC );
     registerField( QLatin1String("secureConnect"), _ui.cbSecureConnect );
     registerField( QLatin1String("PwdNoLocalStore"), _ui.cbNoPasswordStore );
+    registerField( QLatin1String("Encryption"), _ui.cbEncryption );
 
     _enc = new Encryption();
 
@@ -75,10 +76,15 @@ OwncloudSetupPage::OwncloudSetupPage()
     connect( _ui.leUrl, SIGNAL(textChanged(QString)), this, SLOT(slotTextChanged()));
     connect( _ui.leUsername, SIGNAL(textChanged(QString)), this, SLOT(slotTextChanged()));
     connect( _ui.lePassword, SIGNAL(textChanged(QString)), this, SLOT(slotTextChanged()));
+    connect( _ui.pbGenEncKeys, SIGNAL(clicked()), this, SLOT(slotGenEncKeys()));
+    connect( _ui.pbGetEncKeys, SIGNAL(clicked()), this, SLOT(slotGetEncKeys()));
     connect( _enc, SIGNAL(ocsResults(QMap<QString,QString>)), this, SLOT(slotEncryptionKeys(QMap<QString, QString>)));
 
 
+    _ui.keyStatusLabel->hide();
     _ui.cbConnectOC->hide();
+
+
     setupCustomization();
 
 #if QT_VERSION >= 0x040700
@@ -169,19 +175,36 @@ void OwncloudSetupPage::slotEncryptionKeys(QMap<QString, QString> keys)
             i.next();
             std::cout << i.key().toStdString() << ": " << i.value().toStdString() << std::endl << std::flush;
         }
+        _ui.keyStatusLabel->setTextFormat(Qt::RichText);
+        _ui.keyStatusLabel->setText("<font color=\"green\">keys successfully downloaded</font>");
+        _ui.keyStatusLabel->show();
     }
 }
 
 void OwncloudSetupPage::slotEncryptionChanged( int state )
 {
     if ( state == Qt::Checked){
-        _enc->setBaseUrl(_ui.protocolLabel->text() + _ui.leUrl->text());
-        _enc->setAuthCredentials(_ui.leUsername->text(), _ui.lePassword->text());
-        _enc->getUserKeys();
+        _ui.pbGetEncKeys->setEnabled(true);
+        _ui.pbGenEncKeys->setEnabled(true);
         //TODO: Write encryption mode to settings
     } else {
+        _ui.pbGetEncKeys->setEnabled(false);
+        _ui.pbGenEncKeys->setEnabled(false);
+        _ui.keyStatusLabel->hide();
         std::cout << "\nencryption disabled\n" << std::flush;
     }
+}
+
+void OwncloudSetupPage::slotGenEncKeys()
+{
+    std::cout << "generate encryption keys" << std::endl << std::flush;
+}
+
+void OwncloudSetupPage::slotGetEncKeys()
+{
+    _enc->setBaseUrl(_ui.protocolLabel->text() + _ui.leUrl->text());
+    _enc->setAuthCredentials(_ui.leUsername->text(), _ui.lePassword->text());
+    _enc->getUserKeys();
 }
 
 void OwncloudSetupPage::slotTextChanged( )
