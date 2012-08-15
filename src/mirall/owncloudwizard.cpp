@@ -15,10 +15,8 @@
 #include "mirall/owncloudwizard.h"
 #include "mirall/mirallconfigfile.h"
 #include "mirall/encryption.h"
-<<<<<<< HEAD
+
 #include "mirall/genenckeys.h"
-=======
->>>>>>> - let user enable client side encryption in setup wizard
 
 #include <QDebug>
 #include <QDesktopServices>
@@ -31,13 +29,6 @@
 #include <QMap>
 #include <QScrollBar>
 #include <iostream>
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> add checkbox for client side encryption to setup wizard
-=======
->>>>>>> - let user enable client side encryption in setup wizard
 #include <stdlib.h>
 
 namespace Mirall
@@ -171,10 +162,6 @@ void OwncloudSetupPage::slotSecureConChanged( int state )
     }
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> - let user enable client side encryption in setup wizard
 void OwncloudSetupPage::slotEncryptionKeys(QMap<QString, QString> keys)
 {
     if (keys.isEmpty()) {
@@ -190,8 +177,6 @@ void OwncloudSetupPage::slotEncryptionKeys(QMap<QString, QString> keys)
             i.next();
             std::cout << i.key().toStdString() << ": " << i.value().toStdString() << std::endl << std::flush;
         }
-<<<<<<< HEAD
-<<<<<<< HEAD
         _ui.keyStatusLabel->setTextFormat(Qt::RichText);
         _ui.keyStatusLabel->setText("<font color=\"green\">keys successfully downloaded</font>");
         _ui.keyStatusLabel->show();
@@ -234,40 +219,39 @@ void OwncloudSetupPage::slotTextChanged( )
         _ui.cbEncryption->setEnabled(true);
     } else {
         _ui.cbEncryption->setEnabled(false);
-=======
-=======
-=======
         _ui.keyStatusLabel->setTextFormat(Qt::RichText);
         _ui.keyStatusLabel->setText("<font color=\"green\">keys successfully downloaded</font>");
         _ui.keyStatusLabel->show();
->>>>>>> write encryption setting to the config file
     }
 }
 
->>>>>>> - let user enable client side encryption in setup wizard
 void OwncloudSetupPage::slotEncryptionChanged( int state )
 {
     if ( state == Qt::Checked){
         _ui.pbGetEncKeys->setEnabled(true);
         _ui.pbGenEncKeys->setEnabled(true);
-        //TODO: Write encryption mode to settings
     } else {
         _ui.pbGetEncKeys->setEnabled(false);
         _ui.pbGenEncKeys->setEnabled(false);
         _ui.keyStatusLabel->hide();
-        std::cout << "\nencryption disabled\n" << std::flush;
     }
 }
 
 void OwncloudSetupPage::slotGenEncKeys()
 {
+     GenEncKeys *dialog = new GenEncKeys(_ui.protocolLabel->text() + _ui.leUrl->text(), _ui.leUsername->text(), _ui.lePassword->text());
+    dialog->show();
     std::cout << "generate encryption keys" << std::endl << std::flush;
 }
 
 void OwncloudSetupPage::slotGetEncKeys()
 {
+    QList<QString> expectedReturnValues;
+    expectedReturnValues << "publickey" << "privatekey";
+
     _enc->setBaseUrl(_ui.protocolLabel->text() + _ui.leUrl->text());
     _enc->setAuthCredentials(_ui.leUsername->text(), _ui.lePassword->text());
+    _enc->setExpectedReturnValues(expectedReturnValues);
     _enc->getUserKeys();
 }
 
@@ -276,12 +260,7 @@ void OwncloudSetupPage::slotTextChanged( )
     if ( !(_ui.leUsername->text().isEmpty() || _ui.lePassword->text().isEmpty() || _ui.leUrl->text().isEmpty()) ) {
         _ui.cbEncryption->setEnabled(true);
     } else {
-<<<<<<< HEAD
-        std::cout << "unchecked" << std::flush;
->>>>>>> add checkbox for client side encryption to setup wizard
-=======
         _ui.cbEncryption->setEnabled(false);
->>>>>>> - let user enable client side encryption in setup wizard
     }
 }
 
