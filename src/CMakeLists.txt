@@ -116,6 +116,7 @@ set(mirall_SRCS
     mirall/sslerrordialog.cpp
     mirall/logbrowser.cpp
     mirall/proxydialog.cpp
+    mirall/encryption.cpp
 )
 
 set(mirall_HEADERS
@@ -129,6 +130,7 @@ set(mirall_HEADERS
     mirall/sslerrordialog.h
     mirall/logbrowser.h
     mirall/proxydialog.h
+    mirall/encryption.h
 )
 
 if( UNIX AND NOT APPLE)
