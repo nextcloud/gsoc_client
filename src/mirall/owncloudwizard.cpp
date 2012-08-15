@@ -15,6 +15,7 @@
 #include "mirall/owncloudwizard.h"
 #include "mirall/mirallconfigfile.h"
 #include "mirall/encryption.h"
+#include "mirall/genenckeys.h"
 
 #include <QDebug>
 #include <QDesktopServices>
@@ -186,24 +187,28 @@ void OwncloudSetupPage::slotEncryptionChanged( int state )
     if ( state == Qt::Checked){
         _ui.pbGetEncKeys->setEnabled(true);
         _ui.pbGenEncKeys->setEnabled(true);
-        //TODO: Write encryption mode to settings
     } else {
         _ui.pbGetEncKeys->setEnabled(false);
         _ui.pbGenEncKeys->setEnabled(false);
         _ui.keyStatusLabel->hide();
-        std::cout << "\nencryption disabled\n" << std::flush;
     }
 }
 
 void OwncloudSetupPage::slotGenEncKeys()
 {
+     GenEncKeys *dialog = new GenEncKeys(_ui.protocolLabel->text() + _ui.leUrl->text(), _ui.leUsername->text(), _ui.lePassword->text());
+    dialog->show();
     std::cout << "generate encryption keys" << std::endl << std::flush;
 }
 
 void OwncloudSetupPage::slotGetEncKeys()
 {
+    QList<QString> expectedReturnValues;
+    expectedReturnValues << "publickey" << "privatekey";
+
     _enc->setBaseUrl(_ui.protocolLabel->text() + _ui.leUrl->text());
     _enc->setAuthCredentials(_ui.leUsername->text(), _ui.lePassword->text());
+    _enc->setExpectedReturnValues(expectedReturnValues);
     _enc->getUserKeys();
 }
 
