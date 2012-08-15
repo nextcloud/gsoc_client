@@ -25,8 +25,11 @@
 #include "ui_owncloudcredentialspage.h"
 #include "ui_owncloudsetuppage.h"
 
+#include <QMap>
+
 class QLabel;
 class QVariant;
+class Encryption;
 
 namespace Mirall {
 
@@ -46,9 +49,12 @@ protected slots:
   void slotPwdStoreChanged( int );
   void slotSecureConChanged( int );
   void slotEncryptionChanged( int );
+  void slotEncryptionKeys(QMap<QString, QString>);
+  void slotTextChanged();
   void setupCustomization();
 private:
   Ui_OwncloudSetupPage _ui;
+  Encryption *_enc;
 
 };
 
