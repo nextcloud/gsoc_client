@@ -14,6 +14,7 @@
  */
 #include "mirall/owncloudwizard.h"
 #include "mirall/mirallconfigfile.h"
+#include "mirall/encryption.h"
 
 #include <QDebug>
 #include <QDesktopServices>
@@ -23,9 +24,9 @@
 #include <QValidator>
 #include <QWizardPage>
 #include <QDir>
+#include <QMap>
 #include <QScrollBar>
 #include <iostream>
-
 #include <stdlib.h>
 
 namespace Mirall
@@ -64,11 +65,18 @@ OwncloudSetupPage::OwncloudSetupPage()
     registerField( QLatin1String("secureConnect"), _ui.cbSecureConnect );
     registerField( QLatin1String("PwdNoLocalStore"), _ui.cbNoPasswordStore );
 
+    _enc = new Encryption();
+
     connect( _ui.lePassword, SIGNAL(textChanged(QString)), this, SIGNAL(completeChanged()));
 
     connect( _ui.cbNoPasswordStore, SIGNAL(stateChanged(int)), this, SLOT(slotPwdStoreChanged(int)));
     connect( _ui.cbSecureConnect, SIGNAL(stateChanged(int)), this, SLOT(slotSecureConChanged(int)));
     connect( _ui.cbEncryption, SIGNAL(stateChanged(int)), this, SLOT(slotEncryptionChanged(int)));
+    connect( _ui.leUrl, SIGNAL(textChanged(QString)), this, SLOT(slotTextChanged()));
+    connect( _ui.leUsername, SIGNAL(textChanged(QString)), this, SLOT(slotTextChanged()));
+    connect( _ui.lePassword, SIGNAL(textChanged(QString)), this, SLOT(slotTextChanged()));
+    connect( _enc, SIGNAL(ocsResults(QMap<QString,QString>)), this, SLOT(slotEncryptionKeys(QMap<QString, QString>)));
+
 
     _ui.cbConnectOC->hide();
     setupCustomization();
@@ -146,12 +154,42 @@ void OwncloudSetupPage::slotSecureConChanged( int state )
     }
 }
 
+void OwncloudSetupPage::slotEncryptionKeys(QMap<QString, QString> keys)
+{
+    if (keys.isEmpty()) {
+        //TODO PopUp that someting went wrong
+        //     Distinguish between:
+        //             - connection failure (wrong url, username, password?)
+        //             - encryption not enabled
+        //             - encryption enabled but no key available -> generate keys
+        _ui.cbEncryption->setChecked(false);
+    } else {
+        QMapIterator<QString, QString> i(keys);
+        while (i.hasNext()) {
+            i.next();
+            std::cout << i.key().toStdString() << ": " << i.value().toStdString() << std::endl << std::flush;
+        }
+    }
+}
+
 void OwncloudSetupPage::slotEncryptionChanged( int state )
 {
     if ( state == Qt::Checked){
-        std::cout << "checked" << std::flush;
+        _enc->setBaseUrl(_ui.protocolLabel->text() + _ui.leUrl->text());
+        _enc->setAuthCredentials(_ui.leUsername->text(), _ui.lePassword->text());
+        _enc->getUserKeys();
+        //TODO: Write encryption mode to settings
     } else {
-        std::cout << "unchecked" << std::flush;
+        std::cout << "\nencryption disabled\n" << std::flush;
+    }
+}
+
+void OwncloudSetupPage::slotTextChanged( )
+{
+    if ( !(_ui.leUsername->text().isEmpty() || _ui.lePassword->text().isEmpty() || _ui.leUrl->text().isEmpty()) ) {
+        _ui.cbEncryption->setEnabled(true);
+    } else {
+        _ui.cbEncryption->setEnabled(false);
     }
 }
 
