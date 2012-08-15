@@ -79,8 +79,6 @@ OwncloudSetupPage::OwncloudSetupPage()
 
     _enc = new Encryption();
 
-    _enc = new Encryption();
-
     connect( _ui.lePassword, SIGNAL(textChanged(QString)), this, SIGNAL(completeChanged()));
 
     connect( _ui.cbNoPasswordStore, SIGNAL(stateChanged(int)), this, SLOT(slotPwdStoreChanged(int)));
@@ -193,6 +191,7 @@ void OwncloudSetupPage::slotEncryptionKeys(QMap<QString, QString> keys)
             std::cout << i.key().toStdString() << ": " << i.value().toStdString() << std::endl << std::flush;
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
         _ui.keyStatusLabel->setTextFormat(Qt::RichText);
         _ui.keyStatusLabel->setText("<font color=\"green\">keys successfully downloaded</font>");
         _ui.keyStatusLabel->show();
@@ -237,6 +236,11 @@ void OwncloudSetupPage::slotTextChanged( )
         _ui.cbEncryption->setEnabled(false);
 =======
 =======
+=======
+        _ui.keyStatusLabel->setTextFormat(Qt::RichText);
+        _ui.keyStatusLabel->setText("<font color=\"green\">keys successfully downloaded</font>");
+        _ui.keyStatusLabel->show();
+>>>>>>> write encryption setting to the config file
     }
 }
 
@@ -244,13 +248,27 @@ void OwncloudSetupPage::slotTextChanged( )
 void OwncloudSetupPage::slotEncryptionChanged( int state )
 {
     if ( state == Qt::Checked){
-        _enc->setBaseUrl(_ui.protocolLabel->text() + _ui.leUrl->text());
-        _enc->setAuthCredentials(_ui.leUsername->text(), _ui.lePassword->text());
-        _enc->getUserKeys();
+        _ui.pbGetEncKeys->setEnabled(true);
+        _ui.pbGenEncKeys->setEnabled(true);
         //TODO: Write encryption mode to settings
     } else {
+        _ui.pbGetEncKeys->setEnabled(false);
+        _ui.pbGenEncKeys->setEnabled(false);
+        _ui.keyStatusLabel->hide();
         std::cout << "\nencryption disabled\n" << std::flush;
     }
+}
+
+void OwncloudSetupPage::slotGenEncKeys()
+{
+    std::cout << "generate encryption keys" << std::endl << std::flush;
+}
+
+void OwncloudSetupPage::slotGetEncKeys()
+{
+    _enc->setBaseUrl(_ui.protocolLabel->text() + _ui.leUrl->text());
+    _enc->setAuthCredentials(_ui.leUsername->text(), _ui.lePassword->text());
+    _enc->getUserKeys();
 }
 
 void OwncloudSetupPage::slotTextChanged( )
