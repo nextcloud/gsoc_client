@@ -79,8 +79,8 @@ OwncloudSetupPage::OwncloudSetupPage()
     connect( _ui.lePassword, SIGNAL(textChanged(QString)), this, SLOT(slotTextChanged()));
     connect( _ui.pbGenEncKeys, SIGNAL(clicked()), this, SLOT(slotGenEncKeys()));
     connect( _ui.pbGetEncKeys, SIGNAL(clicked()), this, SLOT(slotGetEncKeys()));
-    connect( _enc, SIGNAL(ocsResults(QMap<QString,QString>)), this, SLOT(slotEncryptionKeys(QMap<QString, QString>)));
-
+    connect( _enc, SIGNAL(ocsGetUserKeysResults(QMap<QString,QString>)), this, SLOT(slotEncryptionKeysGet(QMap<QString, QString>)));
+    connect( _enc, SIGNAL(ocsSetUserKeysResults(QMap<QString,QString>)), this, SLOT(slotEncryptionKeysSet(QMap<QString, QString>)));
 
     _ui.keyStatusLabel->hide();
     _ui.cbConnectOC->hide();
@@ -161,7 +161,7 @@ void OwncloudSetupPage::slotSecureConChanged( int state )
     }
 }
 
-void OwncloudSetupPage::slotEncryptionKeys(QMap<QString, QString> keys)
+void OwncloudSetupPage::slotEncryptionKeysGet(QMap<QString, QString> keys)
 {
     if (keys.isEmpty()) {
         //TODO PopUp that someting went wrong
@@ -182,6 +182,15 @@ void OwncloudSetupPage::slotEncryptionKeys(QMap<QString, QString> keys)
     }
 }
 
+void OwncloudSetupPage::slotEncryptionKeysSet(QMap<QString, QString> keys)
+{
+    QMapIterator<QString, QString> i(keys);
+    while (i.hasNext()) {
+        i.next();
+        std::cout << i.key().toStdString() << ": " << i.value().toStdString() << std::endl << std::flush;
+    }
+}
+
 void OwncloudSetupPage::slotEncryptionChanged( int state )
 {
     if ( state == Qt::Checked){
@@ -196,19 +205,23 @@ void OwncloudSetupPage::slotEncryptionChanged( int state )
 
 void OwncloudSetupPage::slotGenEncKeys()
 {
-     GenEncKeys *dialog = new GenEncKeys(_ui.protocolLabel->text() + _ui.leUrl->text(), _ui.leUsername->text(), _ui.lePassword->text());
-    dialog->show();
+    GenEncKeys *gen = new GenEncKeys();
+    connect( gen, SIGNAL(privateKeyPassword(QString)), this, SLOT(slotPrivateKeyPassword(QString)));
+    gen->show();
     std::cout << "generate encryption keys" << std::endl << std::flush;
+}
+
+void OwncloudSetupPage::slotPrivateKeyPassword(QString password) {
+    std::cout << "slot PrivateKeyPassword" << std::endl << std::flush;
+    _enc->setBaseUrl(_ui.protocolLabel->text() + _ui.leUrl->text());
+    _enc->setAuthCredentials(_ui.leUsername->text(), _ui.lePassword->text());
+    _enc->generateUserKeys(password);
 }
 
 void OwncloudSetupPage::slotGetEncKeys()
 {
-    QList<QString> expectedReturnValues;
-    expectedReturnValues << "publickey" << "privatekey";
-
     _enc->setBaseUrl(_ui.protocolLabel->text() + _ui.leUrl->text());
     _enc->setAuthCredentials(_ui.leUsername->text(), _ui.lePassword->text());
-    _enc->setExpectedReturnValues(expectedReturnValues);
     _enc->getUserKeys();
 }
 

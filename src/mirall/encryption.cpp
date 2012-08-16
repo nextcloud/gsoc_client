@@ -28,8 +28,6 @@ Encryption::Encryption(QString baseurl, QString username, QString password, QObj
     setAuthCredentials(username, password);
     _nam = new QNetworkAccessManager(this);
 
-    _returnValues << "statuscode";
-
     connect( _nam, SIGNAL(finished(QNetworkReply*)),this,SLOT(slotHttpRequestResults(QNetworkReply*)));
     connect( _nam, SIGNAL(authenticationRequired(QNetworkReply*,QAuthenticator*)), this, SLOT(slotHttpAuth(QNetworkReply*,QAuthenticator*)));
 }
@@ -63,39 +61,62 @@ QMap<QString, QString> Encryption::parseXML(QString xml, QList<QString> tags)
 
 void Encryption::getUserKeys()
 {
-    _nam->get(QNetworkRequest(QUrl(_baseurl + "/ocs/v1.php/cloud/userkeys")));
+    QNetworkReply *reply = _nam->get(QNetworkRequest(QUrl(_baseurl + "/ocs/v1.php/cloud/userkeys")));
+    _directories[reply] = Encryption::GetUserKeys;
 }
 
-void Encryption::generateUserKeys()
+void Encryption::generateUserKeys(QString password)
 {
     QString privatekey("foo-PRIVATE"); // dummy key for the moment
     QString publickey("foo-PUBLIC"); // dummy key for the moment
 
-    QByteArray postData;
-    postData.append("privatekey="+privatekey+"&");
-    postData.append("publickey="+publickey);
+    QUrl postData;
+    postData.addQueryItem("privatekey", privatekey);
+    postData.addQueryItem("publickey", publickey);
 
     QNetworkRequest req;
     req.setUrl(QUrl(_baseurl + "/ocs/v1.php/cloud/userkeys"));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
 
-    _nam->post(req, postData);
-}
+    QNetworkReply *reply = _nam->post(req, postData.encodedQuery());
+    _directories[reply] = Encryption::SetUserKeys;
 
-void Encryption::setExpectedReturnValues(QList<QString> returnValues)
-{
-    _returnValues.append(returnValues);
+    QEventLoop eventLoop;
+    // stay here until request is finished to avoid losing postData to early
+    connect(_nam, SIGNAL(finished()), &eventLoop, SLOT(quit()));
+    eventLoop.exec();
 }
 
 void Encryption::slotHttpRequestResults(QNetworkReply *reply)
 {
+    OCSCalls call = _directories.value(reply);
     QMap<QString, QString> result;
+    QList<QString> returnValues;
+
     if(reply->error() == QNetworkReply::NoError) {
+
         QString xml =  reply->readAll();
-        result = parseXML(xml, _returnValues);
+
+        switch (call)
+        {
+        case Encryption::GetUserKeys:
+            returnValues << "statuscode" << "publickey" << "privatekey";
+            result = parseXML(xml, returnValues);
+            emit ocsGetUserKeysResults(result);
+            break;
+        case Encryption::SetUserKeys:
+            returnValues << "statuscode";
+            result = parseXML(xml, returnValues);
+            emit ocsSetUserKeysResults(result);
+            break;
+        default :
+            qDebug() << "Something went wrong!";
+        }
+
     } else {
         qDebug() << reply->errorString();
     }
-    emit ocsResults(result);
+    _directories.remove(reply);
 }
 
 void Encryption::slotHttpAuth(QNetworkReply *reply, QAuthenticator *auth)

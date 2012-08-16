@@ -30,6 +30,7 @@
 class QLabel;
 class QVariant;
 class Encryption;
+class GenEncKeys;
 
 namespace Mirall {
 
@@ -49,7 +50,9 @@ protected slots:
   void slotPwdStoreChanged( int );
   void slotSecureConChanged( int );
   void slotEncryptionChanged( int );
-  void slotEncryptionKeys(QMap<QString, QString>);
+  void slotEncryptionKeysGet(QMap<QString, QString>);
+  void slotEncryptionKeysSet(QMap<QString, QString>);
+  void slotPrivateKeyPassword(QString);
   void slotGenEncKeys();
   void slotGetEncKeys();
   void slotTextChanged();

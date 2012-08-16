@@ -16,8 +16,9 @@
  */
 
 #include <QObject>
-#include <QMap>
 #include <QList>
+#include <QMap>
+#include <QHash>
 
 class QNetworkAccessManager;
 class QNetworkReply;
@@ -31,20 +32,22 @@ public:
     void setBaseUrl(QString baseurl);
     void setAuthCredentials(QString username, QString password);
     void getUserKeys();
-    void generateUserKeys();
-    void setExpectedReturnValues(QList<QString>);
+    void generateUserKeys(QString password);
 
-private:
+private:    
+    enum OCSCalls { SetUserKeys,
+                    GetUserKeys };
+
     QString _baseurl;
     QString _username;
     QString _password;
     QNetworkAccessManager *_nam;
-    QList<QString> _returnValues;
-
+    QHash<QNetworkReply*, OCSCalls> _directories;
     QMap<QString, QString> parseXML(QString xml, QList<QString> tags);
 
 signals:
-    void ocsResults(QMap<QString, QString>);
+    void ocsGetUserKeysResults(QMap<QString, QString>);
+    void ocsSetUserKeysResults(QMap<QString, QString>);
 
 protected slots:
     void slotHttpRequestResults(QNetworkReply*);
