@@ -28,16 +28,18 @@ class GenEncKeys : public QDialog
     Q_OBJECT
     
 public:
-    explicit GenEncKeys(QString url, QString username, QString password, QWidget *parent = 0);
+    explicit GenEncKeys(QWidget *parent = 0);
     ~GenEncKeys();
 
 private slots:
     void slotAccept();
     void slotReject();
+
+signals:
+    void privateKeyPassword(QString);
     
 private:
     Ui::GenEncKeys *_ui;
-    Encryption *_enc;
 };
 
 #endif // GENENCKEYS_H
