@@ -37,13 +37,14 @@ public:
 private:    
     enum OCSCalls { SetUserKeys,
                     GetUserKeys };
-
     QString _baseurl;
     QString _username;
     QString _password;
     QNetworkAccessManager *_nam;
     QHash<QNetworkReply*, OCSCalls> _directories;
     QMap<QString, QString> parseXML(QString xml, QList<QString> tags);
+    QMap<QString, QString> generateKeys(QString password);
+    QString encryptPrivateKey(QString privkey, QString password);
 
 signals:
     void ocsGetUserKeysResults(QMap<QString, QString>);

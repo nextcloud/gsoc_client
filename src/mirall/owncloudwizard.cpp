@@ -172,11 +172,6 @@ void OwncloudSetupPage::slotEncryptionKeysGet(QMap<QString, QString> keys)
         //             - encryption enabled but no key available -> generate keys
         _ui.cbEncryption->setChecked(false);
     } else {
-        QMapIterator<QString, QString> i(keys);
-        while (i.hasNext()) {
-            i.next();
-            std::cout << i.key().toStdString() << ": " << i.value().toStdString() << std::endl << std::flush;
-        }
         _ui.keyStatusLabel->setTextFormat(Qt::RichText);
         _ui.keyStatusLabel->setText("<font color=\"green\">keys successfully downloaded</font>");
         _ui.keyStatusLabel->show();
@@ -209,11 +204,9 @@ void OwncloudSetupPage::slotGenEncKeys()
     GenEncKeys *gen = new GenEncKeys();
     connect( gen, SIGNAL(privateKeyPassword(QString)), this, SLOT(slotPrivateKeyPassword(QString)));
     gen->show();
-    std::cout << "generate encryption keys" << std::endl << std::flush;
 }
 
 void OwncloudSetupPage::slotPrivateKeyPassword(QString password) {
-    std::cout << "slot PrivateKeyPassword" << std::endl << std::flush;
     _enc->setBaseUrl(_ui.protocolLabel->text() + _ui.leUrl->text());
     _enc->setAuthCredentials(_ui.leUsername->text(), _ui.lePassword->text());
     _enc->generateUserKeys(password);
