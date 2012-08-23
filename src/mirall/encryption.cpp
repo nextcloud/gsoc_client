@@ -22,10 +22,9 @@
 #include <QDomDocument>
 #include <QFile>
 #include <openssl/rsa.h>
-#include <openssl/aes.h>
 #include <openssl/pem.h>
 #include <openssl/evp.h>
-#include <stdlib.h>
+#include <openssl/bio.h>
 #include <stdio.h>
 
 Encryption::Encryption(QString baseurl, QString username, QString password, QObject *parent) :
@@ -49,36 +48,39 @@ void Encryption::setAuthCredentials(QString username, QString password) {
     _password = password;
 }
 
-QMap<QString, QString> Encryption::parseXML(QString xml, QList<QString> tags)
-{
-    QMap<QString, QString> result;
-
-    QDomDocument doc("results");
-    doc.setContent(xml);
-
-    for (int i = 0; i < tags.size(); ++i) {
-        QString tag = tags.at(i);
-        QDomNodeList elements = doc.elementsByTagName(tag);
-        if (elements.size() ==  1 ) {
-            result[tag] = elements.at(0).toElement().text();
-        }
-    }
-    return result;
-}
-
 void Encryption::getUserKeys()
 {
     QNetworkReply *reply = _nam->get(QNetworkRequest(QUrl(_baseurl + "/ocs/v1.php/cloud/userkeys")));
     _directories[reply] = Encryption::GetUserKeys;
 }
 
+
 void Encryption::generateUserKeys(QString password)
 {
-    QMap<QString, QString> keys = generateKeys(password);
+    RSA *rsa;
+    EVP_PKEY *pkey;
 
+    int bits = 1024;	//	512, 1024, 2048, 4096
+    unsigned long exp = RSA_F4;	//	RSA_3
+    QMap<QString, QString> keypair;
+
+    rsa = RSA_generate_key(bits, exp, NULL, NULL);
+
+    pkey = EVP_PKEY_new();
+    EVP_PKEY_assign_RSA(pkey, rsa);
+
+    keypair = key2pem(rsa, password);
+
+    RSA_free(rsa);
+
+    sendUserKeys(keypair);
+}
+
+void Encryption::sendUserKeys(QMap<QString, QString> keypair)
+{
     QUrl postData;
-    postData.addQueryItem("privatekey", keys["privatekey"]);
-    postData.addQueryItem("publickey", keys["publickey"]);
+    postData.addQueryItem("privatekey", keypair["privatekey"]);
+    postData.addQueryItem("publickey", keypair["publickey"]);
 
     QNetworkRequest req;
     req.setUrl(QUrl(_baseurl + "/ocs/v1.php/cloud/userkeys"));
@@ -93,80 +95,43 @@ void Encryption::generateUserKeys(QString password)
     eventLoop.exec();
 }
 
-QMap<QString, QString> Encryption::generateKeys(QString password)
+QMap<QString, QString> Encryption::key2pem(RSA *rsa, QString password)
 {
-    FILE *fp;
+    QMap<QString, QString> keypair;
+    BUF_MEM *bptr;
+    BIO *pubBio = BIO_new(BIO_s_mem());
+    BIO *privBio = BIO_new(BIO_s_mem());
 
-    RSA *rsa;
-    EVP_PKEY *pkey;
+    PEM_write_bio_RSA_PUBKEY(pubBio, rsa);
+    PEM_write_bio_RSAPrivateKey(privBio, rsa, EVP_aes_128_cfb(),NULL, 0, 0, password.toLocal8Bit().data());
 
-    int bits = 1024;	//	512, 1024, 2048, 4096
-    unsigned long exp = RSA_F4;	//	RSA_3
-    QMap<QString, QString> result;
+    BIO_get_mem_ptr(pubBio, &bptr);
+    char *pubKey = (char *)malloc(bptr->length+1);
+    memcpy(pubKey, bptr->data, bptr->length);
+    pubKey[bptr->length] = 0;
 
-    rsa = RSA_generate_key(bits, exp, NULL, NULL);
+    BIO_get_mem_ptr(privBio, &bptr);
+    char *privKey = (char *)malloc(bptr->length+1);
+    memcpy(privKey, bptr->data, bptr->length);
+    privKey[bptr->length] = 0;
 
-    pkey = EVP_PKEY_new();
-    EVP_PKEY_assign_RSA(pkey, rsa);
+    printf("private key from bio: %s\n", privKey);
+    printf("public key from bio: %s\n", pubKey);
+    fflush(stdout);
 
-    //TODO really ugly work arround (first write key to file to disk and than read it again), please fix me!!!
+    keypair["privatekey"] = QString(privKey);
+    keypair["publickey"] = QString(pubKey);
 
-    //	write private key to text file
-    fp = fopen("tmp_priv.pem", "w");
-    PEM_write_PrivateKey(fp, pkey, NULL,NULL,0,NULL,NULL);
-    fclose(fp);
+    BIO_free_all(pubBio);
+    BIO_free_all(privBio);
 
-    // write public key to text file
-    fp = fopen("tmp_pub.pem", "w");
-    PEM_write_PUBKEY(fp, pkey);
-    fclose(fp);
+    return keypair;
 
-    QString pubkey;
-    QString privkey;
-    QFile file("tmp_pub.pem");
-    file.open(QIODevice::ReadOnly | QIODevice::Text);
-    QTextStream in(&file);
-    while (!in.atEnd()) {
-        pubkey += in.readLine() + '\n';
-    }
-    file.close();
-    file.remove();
-
-    file.setFileName("tmp_priv.pem");
-    file.open(QIODevice::ReadOnly | QIODevice::Text);
-    in.setDevice(&file);
-    while (!in.atEnd()) {
-        privkey += in.readLine() + '\n';
-    }
-    file.close();
-    file.remove();
-
-    result["privatekey"] = encryptPrivateKey(privkey, password);
-    result["publickey"] = pubkey;
-
-    RSA_free(rsa);
-
-    return result;
 }
 
-QString Encryption::encryptPrivateKey(QString privkey, QString password)
-{
-    AES_KEY aesKey;
-    int usedBytes;
-    unsigned char *IV = NULL;
-    IV = (unsigned char*)qstrdup(privkey.toAscii().constData()); //dummy
-    int dataLength = 1024; //dummy
-
-    AES_set_encrypt_key((unsigned char*)qstrdup(password.toAscii().constData()), 128, &aesKey);
-
-    unsigned char *privateKey = NULL;
-    privateKey = (unsigned char*)qstrdup(privkey.toAscii().constData());
-
-    // TODO IV, dataLength has to be defined
-    AES_cfb128_encrypt(privateKey, privateKey, dataLength, &aesKey, IV, &usedBytes, AES_ENCRYPT);
-
-    return QString(privateKey);
-}
+/**
+ * Qt slots
+ */
 
 void Encryption::slotHttpRequestResults(QNetworkReply *reply)
 {
@@ -205,3 +170,25 @@ void Encryption::slotHttpAuth(QNetworkReply *reply, QAuthenticator *auth)
     auth->setUser(_username);
     auth->setPassword(_password);
 }
+
+/**
+ * some helper functions
+ */
+
+QMap<QString, QString> Encryption::parseXML(QString xml, QList<QString> tags)
+{
+    QMap<QString, QString> result;
+
+    QDomDocument doc("results");
+    doc.setContent(xml);
+
+    for (int i = 0; i < tags.size(); ++i) {
+        QString tag = tags.at(i);
+        QDomNodeList elements = doc.elementsByTagName(tag);
+        if (elements.size() ==  1 ) {
+            result[tag] = elements.at(0).toElement().text();
+        }
+    }
+    return result;
+}
+
