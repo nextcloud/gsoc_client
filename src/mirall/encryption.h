@@ -19,6 +19,7 @@
 #include <QList>
 #include <QMap>
 #include <QHash>
+#include <openssl/rsa.h>
 
 class QNetworkAccessManager;
 class QNetworkReply;
@@ -42,9 +43,10 @@ private:
     QString _password;
     QNetworkAccessManager *_nam;
     QHash<QNetworkReply*, OCSCalls> _directories;
+
     QMap<QString, QString> parseXML(QString xml, QList<QString> tags);
-    QMap<QString, QString> generateKeys(QString password);
-    QString encryptPrivateKey(QString privkey, QString password);
+    QMap<QString, QString> key2pem(RSA *rsa, QString password);
+    void sendUserKeys(QMap<QString, QString> keypair);
 
 signals:
     void ocsGetUserKeysResults(QMap<QString, QString>);
