@@ -225,48 +225,6 @@ void OwncloudSetupPage::slotTextChanged( )
         _ui.cbEncryption->setEnabled(true);
     } else {
         _ui.cbEncryption->setEnabled(false);
-        _ui.keyStatusLabel->setTextFormat(Qt::RichText);
-        _ui.keyStatusLabel->setText("<font color=\"green\">keys successfully downloaded</font>");
-        _ui.keyStatusLabel->show();
-    }
-}
-
-void OwncloudSetupPage::slotEncryptionChanged( int state )
-{
-    if ( state == Qt::Checked){
-        _ui.pbGetEncKeys->setEnabled(true);
-        _ui.pbGenEncKeys->setEnabled(true);
-    } else {
-        _ui.pbGetEncKeys->setEnabled(false);
-        _ui.pbGenEncKeys->setEnabled(false);
-        _ui.keyStatusLabel->hide();
-    }
-}
-
-void OwncloudSetupPage::slotGenEncKeys()
-{
-     GenEncKeys *dialog = new GenEncKeys(_ui.protocolLabel->text() + _ui.leUrl->text(), _ui.leUsername->text(), _ui.lePassword->text());
-    dialog->show();
-    std::cout << "generate encryption keys" << std::endl << std::flush;
-}
-
-void OwncloudSetupPage::slotGetEncKeys()
-{
-    QList<QString> expectedReturnValues;
-    expectedReturnValues << "publickey" << "privatekey";
-
-    _enc->setBaseUrl(_ui.protocolLabel->text() + _ui.leUrl->text());
-    _enc->setAuthCredentials(_ui.leUsername->text(), _ui.lePassword->text());
-    _enc->setExpectedReturnValues(expectedReturnValues);
-    _enc->getUserKeys();
-}
-
-void OwncloudSetupPage::slotTextChanged( )
-{
-    if ( !(_ui.leUsername->text().isEmpty() || _ui.lePassword->text().isEmpty() || _ui.leUrl->text().isEmpty()) ) {
-        _ui.cbEncryption->setEnabled(true);
-    } else {
-        _ui.cbEncryption->setEnabled(false);
     }
 }
 
