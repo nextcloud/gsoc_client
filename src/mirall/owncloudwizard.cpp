@@ -15,7 +15,6 @@
 #include "mirall/owncloudwizard.h"
 #include "mirall/mirallconfigfile.h"
 #include "mirall/encryption.h"
-
 #include "mirall/genenckeys.h"
 
 #include <QDebug>

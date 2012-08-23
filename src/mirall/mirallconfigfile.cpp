@@ -138,7 +138,6 @@ void MirallConfigFile::writeOwncloudConfig( const QString& connection,
         cloudsUrl.prepend(QLatin1String("http://"));
 
     settings.beginGroup( connection );
-
     settings.setValue( QLatin1String("url"), cloudsUrl );
     settings.setValue( QLatin1String("user"), user );
     settings.setValue( QLatin1String("encryption"), QVariant(enc) );
