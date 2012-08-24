@@ -38,6 +38,11 @@ Encryption::Encryption(QString baseurl, QString username, QString password, QObj
     connect( _nam, SIGNAL(authenticationRequired(QNetworkReply*,QAuthenticator*)), this, SLOT(slotHttpAuth(QNetworkReply*,QAuthenticator*)));
 }
 
+Encryption::~Encryption()
+{
+    RSA_free(this->rsa);
+}
+
 void Encryption::setBaseUrl(QString baseurl)
 {
     _baseurl = baseurl;
@@ -57,21 +62,16 @@ void Encryption::getUserKeys()
 
 void Encryption::generateUserKeys(QString password)
 {
-    RSA *rsa;
-    EVP_PKEY *pkey;
-
     int bits = 1024;	//	512, 1024, 2048, 4096
     unsigned long exp = RSA_F4;	//	RSA_3
     QMap<QString, QString> keypair;
 
-    rsa = RSA_generate_key(bits, exp, NULL, NULL);
+    if ( (this->rsa = RSA_generate_key(bits, exp, NULL, NULL)) == NULL) {
+         qDebug() << "Couldn't generate RSA Key";
+         return;
+    }
 
-    pkey = EVP_PKEY_new();
-    EVP_PKEY_assign_RSA(pkey, rsa);
-
-    keypair = key2pem(rsa, password);
-
-    RSA_free(rsa);
+    keypair = key2pem(password);
 
     sendUserKeys(keypair);
 }
@@ -95,39 +95,28 @@ void Encryption::sendUserKeys(QMap<QString, QString> keypair)
     eventLoop.exec();
 }
 
-QMap<QString, QString> Encryption::key2pem(RSA *rsa, QString password)
+QMap<QString, QString> Encryption::key2pem(QString password)
 {
     QMap<QString, QString> keypair;
     BUF_MEM *bptr;
     BIO *pubBio = BIO_new(BIO_s_mem());
     BIO *privBio = BIO_new(BIO_s_mem());
 
-    PEM_write_bio_RSA_PUBKEY(pubBio, rsa);
-    PEM_write_bio_RSAPrivateKey(privBio, rsa, EVP_aes_128_cfb(),NULL, 0, 0, password.toLocal8Bit().data());
+    PEM_write_bio_RSA_PUBKEY(pubBio, this->rsa);
+    PEM_write_bio_RSAPrivateKey(privBio, this->rsa, EVP_aes_128_cfb(),NULL, 0, 0, password.toLocal8Bit().data());
 
     BIO_get_mem_ptr(pubBio, &bptr);
-    char *pubKey = (char *)malloc(bptr->length+1);
-    memcpy(pubKey, bptr->data, bptr->length);
-    pubKey[bptr->length] = 0;
+    keypair["publickey"] = QString::fromAscii(bptr->data, bptr->length);
 
     BIO_get_mem_ptr(privBio, &bptr);
-    char *privKey = (char *)malloc(bptr->length+1);
-    memcpy(privKey, bptr->data, bptr->length);
-    privKey[bptr->length] = 0;
-
-    printf("private key from bio: %s\n", privKey);
-    printf("public key from bio: %s\n", pubKey);
-    fflush(stdout);
-
-    keypair["privatekey"] = QString(privKey);
-    keypair["publickey"] = QString(pubKey);
+    keypair["privatekey"] = QString::fromAscii(bptr->data, bptr->length);
 
     BIO_free_all(pubBio);
     BIO_free_all(privBio);
 
     return keypair;
-
 }
+
 
 /**
  * Qt slots
