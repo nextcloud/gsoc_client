@@ -117,6 +117,7 @@ set(mirall_SRCS
     mirall/logbrowser.cpp
     mirall/proxydialog.cpp
     mirall/encryption.cpp
+    mirall/keymanager.cpp
     mirall/genenckeys.cpp
 )
 
@@ -132,6 +133,7 @@ set(mirall_HEADERS
     mirall/logbrowser.h
     mirall/proxydialog.h
     mirall/encryption.h
+    mirall/keymanager.h
     mirall/genenckeys.h
 )
 

@@ -30,7 +30,6 @@ class Encryption : public QObject
     Q_OBJECT
 public:
     explicit Encryption(QString baseurl = "", QString username = "", QString password = "", QObject *parent = 0);
-    ~Encryption();
     void setBaseUrl(QString baseurl);
     void setAuthCredentials(QString username, QString password);
     void getUserKeys();
@@ -39,7 +38,6 @@ public:
 private:    
     enum OCSCalls { SetUserKeys,
                     GetUserKeys };
-    RSA *rsa;
     QString _baseurl;
     QString _username;
     QString _password;
@@ -48,6 +46,7 @@ private:
 
     QMap<QString, QString> parseXML(QString xml, QList<QString> tags);
     QMap<QString, QString> key2pem(QString password);
+    void pem2key(QString privatekey, QString publickey, QString password);
     void sendUserKeys(QMap<QString, QString> keypair);
 
 signals:

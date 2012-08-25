@@ -13,6 +13,7 @@
  */
 
 #include "encryption.h"
+#include "keymanager.h"
 #include <QMap>
 #include <iostream>
 #include <QtNetwork>
@@ -25,6 +26,7 @@
 #include <openssl/pem.h>
 #include <openssl/evp.h>
 #include <openssl/bio.h>
+ #include <openssl/err.h>
 #include <stdio.h>
 
 Encryption::Encryption(QString baseurl, QString username, QString password, QObject *parent) :
@@ -36,11 +38,6 @@ Encryption::Encryption(QString baseurl, QString username, QString password, QObj
 
     connect( _nam, SIGNAL(finished(QNetworkReply*)),this,SLOT(slotHttpRequestResults(QNetworkReply*)));
     connect( _nam, SIGNAL(authenticationRequired(QNetworkReply*,QAuthenticator*)), this, SLOT(slotHttpAuth(QNetworkReply*,QAuthenticator*)));
-}
-
-Encryption::~Encryption()
-{
-    RSA_free(this->rsa);
 }
 
 void Encryption::setBaseUrl(QString baseurl)
@@ -62,14 +59,17 @@ void Encryption::getUserKeys()
 
 void Encryption::generateUserKeys(QString password)
 {
+    RSA *rsa;
     int bits = 1024;	//	512, 1024, 2048, 4096
     unsigned long exp = RSA_F4;	//	RSA_3
     QMap<QString, QString> keypair;
 
-    if ( (this->rsa = RSA_generate_key(bits, exp, NULL, NULL)) == NULL) {
+    if ( (rsa = RSA_generate_key(bits, exp, NULL, NULL)) == NULL) {
          qDebug() << "Couldn't generate RSA Key";
          return;
     }
+
+    Keymanager::Instance()->setRSAkey(rsa);
 
     keypair = key2pem(password);
 
@@ -102,8 +102,8 @@ QMap<QString, QString> Encryption::key2pem(QString password)
     BIO *pubBio = BIO_new(BIO_s_mem());
     BIO *privBio = BIO_new(BIO_s_mem());
 
-    PEM_write_bio_RSA_PUBKEY(pubBio, this->rsa);
-    PEM_write_bio_RSAPrivateKey(privBio, this->rsa, EVP_aes_128_cfb(),NULL, 0, 0, password.toLocal8Bit().data());
+    PEM_write_bio_RSA_PUBKEY(pubBio, Keymanager::Instance()->getRSAkey());
+    PEM_write_bio_RSAPrivateKey(privBio, Keymanager::Instance()->getRSAkey(), EVP_aes_128_cfb(),NULL, 0, 0, password.toLocal8Bit().data());
 
     BIO_get_mem_ptr(pubBio, &bptr);
     keypair["publickey"] = QString::fromAscii(bptr->data, bptr->length);
@@ -115,6 +115,28 @@ QMap<QString, QString> Encryption::key2pem(QString password)
     BIO_free_all(privBio);
 
     return keypair;
+}
+
+void Encryption::pem2key(QString publickey, QString privatekey, QString password)
+{
+    //BIO *pubBio = BIO_new_mem_buf(publickey.toLocal8Bit().data(),-1);
+    BIO *privBio =  BIO_new_mem_buf(privatekey.toLocal8Bit().data(), -1);
+    RSA *rsa = RSA_new();
+
+    //PEM_read_bio_RSAPublicKey(pubBio, &rsa, 0, NULL);
+    if (PEM_read_bio_RSAPrivateKey(privBio, &rsa, 0, password.toLocal8Bit().data()) == NULL) {
+        printf("error!\n");
+        fflush(stdout);
+    }
+
+    Keymanager::Instance()->setRSAkey(rsa);
+
+    ERR_print_errors(privBio);
+    fflush(stdout);
+    fflush(stderr);
+
+    //BIO_free_all(pubBio);
+    BIO_free_all(privBio);
 }
 
 
@@ -137,6 +159,13 @@ void Encryption::slotHttpRequestResults(QNetworkReply *reply)
         case Encryption::GetUserKeys:
             returnValues << "statuscode" << "publickey" << "privatekey";
             result = parseXML(xml, returnValues);
+            // TODO: update keymanager
+            if (result["statuscode"] == "100") {
+                pem2key( result["publickey"], result["privatekey"], QString("foo"));
+                QMap<QString, QString> res = key2pem(QString("foo"));
+                std::cout << "private: " << res["privatekey"].toStdString() << std::endl << std::flush;
+                std::cout << "private: " << res["publickey"].toStdString() << std::endl << std::flush;
+            }
             emit ocsGetUserKeysResults(result);
             break;
         case Encryption::SetUserKeys:

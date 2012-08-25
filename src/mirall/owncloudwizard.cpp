@@ -161,9 +161,9 @@ void OwncloudSetupPage::slotSecureConChanged( int state )
     }
 }
 
-void OwncloudSetupPage::slotEncryptionKeysGet(QMap<QString, QString> keys)
+void OwncloudSetupPage::slotEncryptionKeysGet(QMap<QString, QString> result)
 {
-    if (keys.isEmpty()) {
+    if (result.isEmpty() || result["statuscode"] != "100") {
         //TODO PopUp that someting went wrong
         //     Distinguish between:
         //             - connection failure (wrong url, username, password?)
@@ -177,12 +177,19 @@ void OwncloudSetupPage::slotEncryptionKeysGet(QMap<QString, QString> keys)
     }
 }
 
-void OwncloudSetupPage::slotEncryptionKeysSet(QMap<QString, QString> keys)
+void OwncloudSetupPage::slotEncryptionKeysSet(QMap<QString, QString> result)
 {
-    QMapIterator<QString, QString> i(keys);
-    while (i.hasNext()) {
-        i.next();
-        std::cout << i.key().toStdString() << ": " << i.value().toStdString() << std::endl << std::flush;
+    if (result.isEmpty() || result["statuscode"] != "100") {
+        //TODO PopUp that someting went wrong
+        //     Distinguish between:
+        //             - connection failure (wrong url, username, password?)
+        //             - encryption not enabled
+        //             - something went wrong during key generation
+        _ui.cbEncryption->setChecked(false);
+    } else {
+        _ui.keyStatusLabel->setTextFormat(Qt::RichText);
+        _ui.keyStatusLabel->setText("<font color=\"green\">keys successfully generated</font>");
+        _ui.keyStatusLabel->show();
     }
 }
 
