@@ -79,8 +79,9 @@ void Encryption::generateUserKeys(QString password)
 void Encryption::sendUserKeys(QMap<QString, QString> keypair)
 {
     QUrl postData;
-    postData.addQueryItem("privatekey", keypair["privatekey"]);
-    postData.addQueryItem("publickey", keypair["publickey"]);
+
+    postData.addQueryItem("privatekey", QUrl::toPercentEncoding(keypair["privatekey"]));
+    postData.addQueryItem("publickey", QUrl::toPercentEncoding(keypair["publickey"]));
 
     QNetworkRequest req;
     req.setUrl(QUrl(_baseurl + "/ocs/v1.php/cloud/userkeys"));
@@ -117,13 +118,14 @@ QMap<QString, QString> Encryption::key2pem(QString password)
     return keypair;
 }
 
-void Encryption::pem2key(QString publickey, QString privatekey, QString password)
+void Encryption::pem2key(QString privatekey, QString password)
 {
-    //BIO *pubBio = BIO_new_mem_buf(publickey.toLocal8Bit().data(),-1);
-    BIO *privBio =  BIO_new_mem_buf(privatekey.toLocal8Bit().data(), -1);
+    QByteArray ba = privatekey.toLocal8Bit();
+    char *c_privatekey = ba.data();
+
+    BIO *privBio =  BIO_new_mem_buf(c_privatekey, -1);
     RSA *rsa = RSA_new();
 
-    //PEM_read_bio_RSAPublicKey(pubBio, &rsa, 0, NULL);
     if (PEM_read_bio_RSAPrivateKey(privBio, &rsa, 0, password.toLocal8Bit().data()) == NULL) {
         printf("error!\n");
         fflush(stdout);
@@ -131,11 +133,6 @@ void Encryption::pem2key(QString publickey, QString privatekey, QString password
 
     Keymanager::Instance()->setRSAkey(rsa);
 
-    ERR_print_errors(privBio);
-    fflush(stdout);
-    fflush(stderr);
-
-    //BIO_free_all(pubBio);
     BIO_free_all(privBio);
 }
 
@@ -161,8 +158,8 @@ void Encryption::slotHttpRequestResults(QNetworkReply *reply)
             result = parseXML(xml, returnValues);
             // TODO: update keymanager
             if (result["statuscode"] == "100") {
-                pem2key( result["publickey"], result["privatekey"], QString("foo"));
-                QMap<QString, QString> res = key2pem(QString("foo"));
+                pem2key( result["privatekey"], QString("foobar"));
+                QMap<QString, QString> res = key2pem(QString("foobar"));
                 std::cout << "private: " << res["privatekey"].toStdString() << std::endl << std::flush;
                 std::cout << "private: " << res["publickey"].toStdString() << std::endl << std::flush;
             }
@@ -174,6 +171,7 @@ void Encryption::slotHttpRequestResults(QNetworkReply *reply)
             emit ocsSetUserKeysResults(result);
             break;
         default :
+            std::cout << "something went wrong!" << std::endl << std::flush;
             qDebug() << "Something went wrong!";
         }
 

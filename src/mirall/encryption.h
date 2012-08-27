@@ -46,7 +46,7 @@ private:
 
     QMap<QString, QString> parseXML(QString xml, QList<QString> tags);
     QMap<QString, QString> key2pem(QString password);
-    void pem2key(QString privatekey, QString publickey, QString password);
+    void pem2key(QString privatekey, QString password);
     void sendUserKeys(QMap<QString, QString> keypair);
 
 signals:
