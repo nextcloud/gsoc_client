@@ -26,7 +26,7 @@
 #include <openssl/pem.h>
 #include <openssl/evp.h>
 #include <openssl/bio.h>
- #include <openssl/err.h>
+#include <openssl/err.h>
 #include <stdio.h>
 
 Encryption::Encryption(QString baseurl, QString username, QString password, QObject *parent) :
@@ -62,7 +62,6 @@ void Encryption::generateUserKeys(QString password)
     RSA *rsa;
     int bits = 1024;	//	512, 1024, 2048, 4096
     unsigned long exp = RSA_F4;	//	RSA_3
-    QMap<QString, QString> keypair;
 
     if ( (rsa = RSA_generate_key(bits, exp, NULL, NULL)) == NULL) {
          qDebug() << "Couldn't generate RSA Key";
@@ -71,9 +70,7 @@ void Encryption::generateUserKeys(QString password)
 
     Keymanager::Instance()->setRSAkey(rsa);
 
-    keypair = key2pem(password);
-
-    sendUserKeys(keypair);
+    sendUserKeys(key2pem(password));
 }
 
 void Encryption::sendUserKeys(QMap<QString, QString> keypair)
@@ -102,9 +99,13 @@ QMap<QString, QString> Encryption::key2pem(QString password)
     BUF_MEM *bptr;
     BIO *pubBio = BIO_new(BIO_s_mem());
     BIO *privBio = BIO_new(BIO_s_mem());
+    EVP_PKEY *pkey;
+
+    pkey = EVP_PKEY_new();
+    EVP_PKEY_assign_RSA(pkey, Keymanager::Instance()->getRSAkey());
 
     PEM_write_bio_RSA_PUBKEY(pubBio, Keymanager::Instance()->getRSAkey());
-    PEM_write_bio_RSAPrivateKey(privBio, Keymanager::Instance()->getRSAkey(), EVP_aes_128_cfb(),NULL, 0, 0, password.toLocal8Bit().data());
+    PEM_write_bio_PKCS8PrivateKey(privBio, pkey, EVP_aes_128_cfb(), NULL, 0, 0,  password.toLocal8Bit().data());
 
     BIO_get_mem_ptr(pubBio, &bptr);
     keypair["publickey"] = QString::fromAscii(bptr->data, bptr->length);
@@ -114,6 +115,7 @@ QMap<QString, QString> Encryption::key2pem(QString password)
 
     BIO_free_all(pubBio);
     BIO_free_all(privBio);
+    EVP_PKEY_free(pkey);
 
     return keypair;
 }
