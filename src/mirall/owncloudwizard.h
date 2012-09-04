@@ -50,11 +50,12 @@ protected slots:
   void slotPwdStoreChanged( int );
   void slotSecureConChanged( int );
   void slotEncryptionChanged( int );
-  void slotEncryptionKeysGet(QMap<QString, QString>);
-  void slotEncryptionKeysSet(QMap<QString, QString>);
-  void slotPrivateKeyPassword(QString);
-  void slotGenEncKeys();
-  void slotGetEncKeys();
+  void slotGetEncryptionKeys(QMap<QString, QString>);
+  void slotSetEncryptionKeys(QMap<QString, QString>);
+  void slotSetPrivateKeyPassword(QString);
+  void slotGetPrivateKeyPassword(QString);
+  void slotGenEncKeysButtonClicked();
+  void slotGetEncKeysButtonClicked();
   void slotTextChanged();
   void setupCustomization();
 private:

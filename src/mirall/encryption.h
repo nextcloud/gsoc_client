@@ -32,26 +32,30 @@ public:
     explicit Encryption(QString baseurl = "", QString username = "", QString password = "", QObject *parent = 0);
     void setBaseUrl(QString baseurl);
     void setAuthCredentials(QString username, QString password);
-    void getUserKeys();
+    void getUserKeys(QString password);
     void generateUserKeys(QString password);
+    void changeUserKeyPassword(QString oldpasswd, QString newpasswd);
 
 private:    
     enum OCSCalls { SetUserKeys,
-                    GetUserKeys };
+                    GetUserKeys,
+                    ChangeKeyPassword };
     QString _baseurl;
     QString _username;
     QString _password;
     QNetworkAccessManager *_nam;
     QHash<QNetworkReply*, OCSCalls> _directories;
+    QHash<QNetworkReply*, QHash<QString, QString> > _data;
 
     QMap<QString, QString> parseXML(QString xml, QList<QString> tags);
     QMap<QString, QString> key2pem(QString password);
-    void pem2key(QString privatekey, QString password);
-    void sendUserKeys(QMap<QString, QString> keypair);
+    bool pem2key(QString privatekey, QString password);
+    void sendUserKeys(QMap<QString, QString> keypair, OCSCalls operation);
 
 signals:
     void ocsGetUserKeysResults(QMap<QString, QString>);
     void ocsSetUserKeysResults(QMap<QString, QString>);
+    void ocsChangePasswordResult(QMap<QString, QString>);
 
 protected slots:
     void slotHttpRequestResults(QNetworkReply*);

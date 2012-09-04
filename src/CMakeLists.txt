@@ -18,7 +18,7 @@ mirall/owncloudwizardresultpage.ui
 mirall/owncloudcredentialspage.ui
 mirall/sslerrorsdialog.ui
 mirall/proxydialog.ui
-mirall/genenckeys.ui
+mirall/passworddialog.ui
 )
 
 set(3rdparty_SRC
@@ -118,7 +118,7 @@ set(mirall_SRCS
     mirall/proxydialog.cpp
     mirall/encryption.cpp
     mirall/keymanager.cpp
-    mirall/genenckeys.cpp
+    mirall/passworddialog.cpp
 )
 
 set(mirall_HEADERS
@@ -134,7 +134,7 @@ set(mirall_HEADERS
     mirall/proxydialog.h
     mirall/encryption.h
     mirall/keymanager.h
-    mirall/genenckeys.h
+    mirall/passworddialog.h
 )
 
 if( UNIX AND NOT APPLE)

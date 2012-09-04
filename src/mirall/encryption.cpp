@@ -50,12 +50,12 @@ void Encryption::setAuthCredentials(QString username, QString password) {
     _password = password;
 }
 
-void Encryption::getUserKeys()
+void Encryption::getUserKeys(QString password)
 {
     QNetworkReply *reply = _nam->get(QNetworkRequest(QUrl(_baseurl + "/ocs/v1.php/cloud/userkeys")));
     _directories[reply] = Encryption::GetUserKeys;
+    _data[reply].insert("password", password);
 }
-
 
 void Encryption::generateUserKeys(QString password)
 {
@@ -70,10 +70,19 @@ void Encryption::generateUserKeys(QString password)
 
     Keymanager::Instance()->setRSAkey(rsa);
 
-    sendUserKeys(key2pem(password));
+    sendUserKeys(key2pem(password), Encryption::SetUserKeys);
 }
 
-void Encryption::sendUserKeys(QMap<QString, QString> keypair)
+void Encryption::changeUserKeyPassword(QString oldpasswd, QString newpasswd)
+{
+    QNetworkReply *reply = _nam->get(QNetworkRequest(QUrl(_baseurl + "/ocs/v1.php/cloud/userkeys")));
+    _directories[reply] = Encryption::ChangeKeyPassword;
+    _data[reply].insert("oldpassword", oldpasswd);
+    _data[reply].insert("newpassword", newpasswd);
+    _data[reply].insert("step", "import");
+}
+
+void Encryption::sendUserKeys(QMap<QString, QString> keypair, OCSCalls operation)
 {
     QUrl postData;
 
@@ -85,7 +94,7 @@ void Encryption::sendUserKeys(QMap<QString, QString> keypair)
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
 
     QNetworkReply *reply = _nam->post(req, postData.encodedQuery());
-    _directories[reply] = Encryption::SetUserKeys;
+    _directories[reply] = operation;
 
     QEventLoop eventLoop;
     // stay here until request is finished to avoid losing postData to early
@@ -120,7 +129,7 @@ QMap<QString, QString> Encryption::key2pem(QString password)
     return keypair;
 }
 
-void Encryption::pem2key(QString privatekey, QString password)
+bool Encryption::pem2key(QString privatekey, QString password)
 {
     QByteArray ba = privatekey.toLocal8Bit();
     char *c_privatekey = ba.data();
@@ -129,13 +138,14 @@ void Encryption::pem2key(QString privatekey, QString password)
     RSA *rsa = RSA_new();
 
     if (PEM_read_bio_RSAPrivateKey(privBio, &rsa, 0, password.toLocal8Bit().data()) == NULL) {
-        printf("error!\n");
-        fflush(stdout);
+        return false;
     }
 
     Keymanager::Instance()->setRSAkey(rsa);
 
     BIO_free_all(privBio);
+
+    return true;
 }
 
 
@@ -158,12 +168,10 @@ void Encryption::slotHttpRequestResults(QNetworkReply *reply)
         case Encryption::GetUserKeys:
             returnValues << "statuscode" << "publickey" << "privatekey";
             result = parseXML(xml, returnValues);
-            // TODO: update keymanager
             if (result["statuscode"] == "100") {
-                pem2key( result["privatekey"], QString("foobar"));
-                QMap<QString, QString> res = key2pem(QString("foobar"));
-                std::cout << "private: " << res["privatekey"].toStdString() << std::endl << std::flush;
-                std::cout << "private: " << res["publickey"].toStdString() << std::endl << std::flush;
+                if (!pem2key( result["privatekey"], _data.value(reply).value("password"))) {
+                    result["statuscode"] = "-1";
+                }
             }
             emit ocsGetUserKeysResults(result);
             break;
@@ -172,8 +180,25 @@ void Encryption::slotHttpRequestResults(QNetworkReply *reply)
             result = parseXML(xml, returnValues);
             emit ocsSetUserKeysResults(result);
             break;
+        case Encryption::ChangeKeyPassword:
+            if (_data.value(reply).constFind("step") !=  _data.value(reply).constEnd()) { // get key and check old password before setting the new one
+                returnValues << "statuscode" << "privatekey";
+                result = parseXML(xml, returnValues);
+                if (result["statuscode"] == "100") {
+                    if (!pem2key(result["privatekey"], _data.value(reply).value("oldpassword"))) {
+                        result["statuscode"] = "-1";
+                        emit ocsChangePasswordResult(result);
+                        break;
+                    }
+                    sendUserKeys(key2pem(_data.value(reply).value("newpassword")), Encryption::ChangeKeyPassword);
+                }
+            } else { //check if key was uploaded successfully
+                returnValues << "statuscode";
+                result = parseXML(xml, returnValues);
+                emit ocsChangePasswordResult(result);
+            }
+            break;
         default :
-            std::cout << "something went wrong!" << std::endl << std::flush;
             qDebug() << "Something went wrong!";
         }
 
@@ -181,6 +206,7 @@ void Encryption::slotHttpRequestResults(QNetworkReply *reply)
         qDebug() << reply->errorString();
     }
     _directories.remove(reply);
+    _data.remove(reply);
 }
 
 void Encryption::slotHttpAuth(QNetworkReply *reply, QAuthenticator *auth)

@@ -12,24 +12,33 @@
  * for more details.
  */
 
-#ifndef GENENCKEYS_H
-#define GENENCKEYS_H
+#ifndef ENCRYPTIONPASSWDDIALOG_H
+#define ENCRYPTIONPASSWDDIALOG_H
 
 #include <QDialog>
 
 class Encryption;
 
 namespace Ui {
-    class GenEncKeys;
+    class PasswordDialogUi;
 }
 
-class GenEncKeys : public QDialog
+class PasswordDialog : public QDialog
 {
     Q_OBJECT
     
 public:
-    explicit GenEncKeys(QWidget *parent = 0);
-    ~GenEncKeys();
+    enum Operations { GenRSAKey,
+                      ChangeKeyPasswd,
+                      GetKeyPasswd};
+
+    PasswordDialog(QWidget *parent = 0);
+    void setOperation(Operations op);
+    ~PasswordDialog();
+
+private:
+    Operations _operation;
+    void updateDialog();
 
 private slots:
     void slotAccept();
@@ -37,9 +46,10 @@ private slots:
 
 signals:
     void privateKeyPassword(QString);
+    void changePrivateKeyPassword(QString oldpasswd, QString newpasswd);
     
 private:
-    Ui::GenEncKeys *_ui;
+    Ui::PasswordDialogUi *_ui;
 };
 
-#endif // GENENCKEYS_H
+#endif // ENCRYPTIONPASSWDDIALOG_H
