@@ -204,6 +204,12 @@ void OwncloudSetupPage::slotGetEncryptionKeys(QMap<QString, QString> result)
                                   tr("Can't import key probably due a wrong key format. Key expected in PEM format."),
                                   QMessageBox::Ok);
             break;
+        case -10:
+            _ui.cbEncryption->setChecked(false);
+            QMessageBox::critical(this, tr("ownCloud Client"),
+                                  tr("Can't connect to your ownCloud. Please check the URL, the username and the password."),
+                                  QMessageBox::Ok);
+            break;
         default:
             _ui.cbEncryption->setChecked(false);
             QMessageBox::critical(this, tr("ownCloud Client"),
@@ -250,6 +256,12 @@ void OwncloudSetupPage::slotSetEncryptionKeys(QMap<QString, QString> result)
             _ui.cbEncryption->setChecked(false);
             QMessageBox::critical(this, tr("ownCloud Client"),
                                   tr("Server could not write your key to the keyring."),
+                                  QMessageBox::Ok);
+            break;
+        case -10:
+            _ui.cbEncryption->setChecked(false);
+            QMessageBox::critical(this, tr("ownCloud Client"),
+                                  tr("Can't connect to your ownCloud. Please check the URL, the username and the password."),
                                   QMessageBox::Ok);
             break;
         default:

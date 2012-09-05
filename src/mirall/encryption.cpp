@@ -203,10 +203,34 @@ void Encryption::slotHttpRequestResults(QNetworkReply *reply)
         }
 
     } else {
+        onError(reply);
         qDebug() << reply->errorString();
     }
     _directories.remove(reply);
     _data.remove(reply);
+}
+
+void Encryption::onError(QNetworkReply *reply)
+{
+    OCSCalls call = _directories.value(reply);
+    QMap<QString, QString> result;
+    result.insert("statuscode", "-10");
+
+    switch (call)
+    {
+    case Encryption::GetUserKeys:
+        emit ocsGetUserKeysResults(result);
+        break;
+    case Encryption::SetUserKeys:
+        emit ocsSetUserKeysResults(result);
+        break;
+    case Encryption::ChangeKeyPassword:
+        emit ocsChangePasswordResult(result);
+        break;
+    default :
+        qDebug() << "Something went wrong!";
+    }
+
 }
 
 void Encryption::slotHttpAuth(QNetworkReply *reply, QAuthenticator *auth)

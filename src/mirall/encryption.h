@@ -51,6 +51,7 @@ private:
     QMap<QString, QString> key2pem(QString password);
     bool pem2key(QString privatekey, QString password);
     void sendUserKeys(QMap<QString, QString> keypair, OCSCalls operation);
+    void onError(QNetworkReply *reply);
 
 signals:
     void ocsGetUserKeysResults(QMap<QString, QString>);
