@@ -44,9 +44,9 @@ void PasswordDialog::updateDialog()
     switch (_operation)
     {
     case PasswordDialog::GenRSAKey:
-        _ui->gbInstructions->setTitle("Provide Encryption Key Password");
-        _ui->instructionsLabel->setText("Please enter the password you want to use to secure your encryption key.\n\n"
-                                        "Please choose a strong passwort which is different to your ownCloud password.");
+        _ui->gbInstructions->setTitle(tr("Provide Encryption Key Password"));
+        _ui->instructionsLabel->setText(tr("Please enter the password you want to use to secure your encryption key.\n\n"
+                                           "The password has to different to your ownCloud password."));
         _ui->lePassword->show();
         _ui->PasswordLabel->show();
         _ui->lePasswordRepeated->show();
@@ -55,8 +55,8 @@ void PasswordDialog::updateDialog()
         _ui->leOldPassword->hide();
         break;
     case PasswordDialog::GetKeyPasswd:
-        _ui->gbInstructions->setTitle("Provide Encryption Key Password");
-        _ui->instructionsLabel->setText("Please enter the password for your encryption key.");
+        _ui->gbInstructions->setTitle(tr("Provide Encryption Key Password"));
+        _ui->instructionsLabel->setText(tr("Please enter the password for your encryption key."));
         _ui->lePassword->show();
         _ui->PasswordLabel->show();
         _ui->lePasswordRepeated->hide();
@@ -65,10 +65,10 @@ void PasswordDialog::updateDialog()
         _ui->leOldPassword->hide();
         break;
     case PasswordDialog::ChangeKeyPasswd:
-        _ui->gbInstructions->setTitle("Change Encryption Key Password");
-        _ui->instructionsLabel->setText("Please enter the old and the new password for your encryption key.");
-        _ui->PasswordLabel->setText("New password");
-        _ui->RepeatPasswordLabel->setText("Repeat new password");
+        _ui->gbInstructions->setTitle(tr("Change Encryption Key Password"));
+        _ui->instructionsLabel->setText(tr("Please enter the old and the new password for your encryption key."));
+        _ui->PasswordLabel->setText(tr("New password"));
+        _ui->RepeatPasswordLabel->setText(tr("Repeat new password"));
         _ui->lePassword->show();
         _ui->PasswordLabel->show();
         _ui->lePasswordRepeated->show();
