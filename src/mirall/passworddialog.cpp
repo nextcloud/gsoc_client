@@ -81,8 +81,6 @@ void PasswordDialog::updateDialog()
 
 void PasswordDialog::slotAccept()
 {
-    QString password;
-
     switch (_operation)
     {
     case PasswordDialog::GenRSAKey:
@@ -92,7 +90,6 @@ void PasswordDialog::slotAccept()
         break;
     case PasswordDialog::GetKeyPasswd:
         emit privateKeyPassword(_ui->lePassword->text());
-
         break;
     case PasswordDialog::ChangeKeyPasswd:
         if (  QString::compare(_ui->lePassword->text(), _ui->lePasswordRepeated->text(), Qt::CaseSensitive) == 0 ) {
@@ -100,11 +97,10 @@ void PasswordDialog::slotAccept()
         }
         break;
     }
-
-    emit privateKeyPassword(password);
 }
 
 void PasswordDialog::slotReject()
 {
      std::cout << "rejected" << std::endl << std::flush;
 }
+
