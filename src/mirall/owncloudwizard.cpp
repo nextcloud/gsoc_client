@@ -27,6 +27,7 @@
 #include <QDir>
 #include <QMap>
 #include <QScrollBar>
+#include <QMessageBox>
 #include <iostream>
 #include <stdlib.h>
 
@@ -178,21 +179,40 @@ void OwncloudSetupPage::slotGetPrivateKeyPassword(QString password)
 
 void OwncloudSetupPage::slotGetEncryptionKeys(QMap<QString, QString> result)
 {
-    if (result.isEmpty() || result["statuscode"] != "100") {
-        //TODO PopUp that someting went wrong
-        //     Distinguish between:
-        //             - connection failure (wrong url, username, password?)
-        //             - encryption not enabled
-        //             - encryption enabled but no key available -> generate keys
-        _ui.cbEncryption->setChecked(false);
-        std::cout << "uncheck!" << std::endl << std::flush;
-    } else {
-        _ui.keyStatusLabel->setTextFormat(Qt::RichText);
-        _ui.keyStatusLabel->setText("<font color=\"green\">keys successfully downloaded</font>");
-        _ui.keyStatusLabel->show();
-        std::cout << "private: " << result["privatekey"].toStdString() << std::endl << std::flush;
-        std::cout << "public: " << result["publickey"].toStdString() << std::endl << std::flush;
+    if (!result.isEmpty()) {
+        switch (result["statuscode"].toInt()) {
+        case 100:
+            _ui.keyStatusLabel->setTextFormat(Qt::RichText);
+            _ui.keyStatusLabel->setText("<font color=\"green\">keys successfully downloaded</font>");
+            _ui.keyStatusLabel->show();
+            break;
+        case 300:
+            _ui.cbEncryption->setChecked(false);
+            QMessageBox::critical(this, tr("ownCloud Client"),
+                                  tr("Client side encryption not enabled, please check your server configuration."),
+                                  QMessageBox::Ok);
+            break;
+        case 404:
+            _ui.cbEncryption->setChecked(false);
+            QMessageBox::critical(this, tr("ownCloud Client"),
+                                  tr("No keys found. If you use the encryption system for tge first time you havr to generate the keys first."),
+                                  QMessageBox::Ok);
+            break;
+        case -1:
+            _ui.cbEncryption->setChecked(false);
+            QMessageBox::critical(this, tr("ownCloud Client"),
+                                  tr("Can't import key probably due a wrong key format. Key expected in PEM format."),
+                                  QMessageBox::Ok);
+            break;
+        default:
+            _ui.cbEncryption->setChecked(false);
+            QMessageBox::critical(this, tr("ownCloud Client"),
+                                  tr("Unknown error (") + result["statuscode"].toInt() + ")",
+                                  QMessageBox::Ok);
+
+        }
     }
+
 }
 
 void OwncloudSetupPage::slotGenEncKeysButtonClicked()
@@ -213,17 +233,32 @@ void OwncloudSetupPage::slotSetPrivateKeyPassword(QString password)
 
 void OwncloudSetupPage::slotSetEncryptionKeys(QMap<QString, QString> result)
 {
-    if (result.isEmpty() || result["statuscode"] != "100") {
-        //TODO PopUp that someting went wrong
-        //     Distinguish between:
-        //             - connection failure (wrong url, username, password?)
-        //             - encryption not enabled
-        //             - something went wrong during key generation
-        _ui.cbEncryption->setChecked(false);
-    } else {
-        _ui.keyStatusLabel->setTextFormat(Qt::RichText);
-        _ui.keyStatusLabel->setText("<font color=\"green\">keys successfully generated</font>");
-        _ui.keyStatusLabel->show();
+    if (!result.isEmpty()) {
+        switch (result["statuscode"].toInt()) {
+        case 100:
+            _ui.keyStatusLabel->setTextFormat(Qt::RichText);
+            _ui.keyStatusLabel->setText("<font color=\"green\">keys successfully generated</font>");
+            _ui.keyStatusLabel->show();
+            break;
+        case 300:
+            _ui.cbEncryption->setChecked(false);
+            QMessageBox::critical(this, tr("ownCloud Client"),
+                                  tr("Client side encryption not enabled, please check your server configuration."),
+                                  QMessageBox::Ok);
+            break;
+        case 404:
+            _ui.cbEncryption->setChecked(false);
+            QMessageBox::critical(this, tr("ownCloud Client"),
+                                  tr("Server could not write your key to the keyring."),
+                                  QMessageBox::Ok);
+            break;
+        default:
+            _ui.cbEncryption->setChecked(false);
+            QMessageBox::critical(this, tr("ownCloud Client"),
+                                  tr("Unknown error during key generation (") + result["statuscode"].toInt() + ")",
+                                  QMessageBox::Ok);
+
+        }
     }
 }
 
