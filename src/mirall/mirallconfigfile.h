@@ -68,6 +68,8 @@ public:
     QString ownCloudVersion() const;
     void setOwnCloudVersion( const QString& );
 
+    bool ownCloudEncryption(const QString &connection = QString()) const;
+
     QVariant customMedia( customMediaType );
 
     // max count of lines in the log window

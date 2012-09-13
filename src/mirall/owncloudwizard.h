@@ -45,17 +45,21 @@ public:
   virtual void initializePage();
   virtual int nextId() const;
   void setOCUrl( const QString& );
+  void setOCEncryption( const bool enc );
 
 protected slots:
   void slotPwdStoreChanged( int );
   void slotSecureConChanged( int );
   void slotEncryptionChanged( int );
-  void slotGetEncryptionKeys(QMap<QString, QString>);
-  void slotSetEncryptionKeys(QMap<QString, QString>);
+  void slotGetEncryptionKeysResult(QMap<QString, QString>);
+  void slotSetEncryptionKeysResult(QMap<QString, QString>);
   void slotSetPrivateKeyPassword(QString);
   void slotGetPrivateKeyPassword(QString);
   void slotGenEncKeysButtonClicked();
   void slotGetEncKeysButtonClicked();
+  void slotChangeKeyPasswordClicked();
+  void slotChangeKeyPassword(QString oldpasswd, QString newpasswd);
+  void slotChangeKeyPasswordResult(QMap<QString, QString>);
   void slotTextChanged();
   void setupCustomization();
 private:
@@ -87,6 +91,8 @@ public:
 
     void setOCUrl( const QString& );
 
+    void setOCEncryption( const bool enc );
+
     void setupCustomMedia( QVariant, QLabel* );
     QString ocUrl() const;
 
@@ -103,6 +109,7 @@ signals:
 private:
     QString _configFile;
     QString _oCUrl;
+    bool _oCEncEnabled;
 };
 
 /**

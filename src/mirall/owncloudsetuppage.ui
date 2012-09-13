@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>536</width>
+    <width>689</width>
     <height>354</height>
    </rect>
   </property>
@@ -190,6 +190,16 @@
            </property>
            <property name="text">
             <string>Generate Keys</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pbChangeKeyPassword">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Change Key Password</string>
            </property>
           </widget>
          </item>

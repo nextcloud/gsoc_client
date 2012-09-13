@@ -21,6 +21,7 @@
 #include <QProcess>
 #include <QMessageBox>
 #include <QDesktopServices>
+#include <iostream>
 
 namespace Mirall {
 
@@ -331,6 +332,12 @@ void OwncloudSetupWizard::startWizard()
     if( !url.isEmpty() ) {
         _ocWizard->setOCUrl( url );
     }
+
+    bool encryption = cfgFile.ownCloudEncryption();
+    if (encryption) {
+        _ocWizard->setOCEncryption( encryption );
+    }
+
     _ocWizard->restart();
     _ocWizard->show();
 }

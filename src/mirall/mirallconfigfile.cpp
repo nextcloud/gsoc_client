@@ -18,6 +18,7 @@
 
 #include <QtCore>
 #include <QtGui>
+#include <iostream>
 
 #define DEFAULT_REMOTE_POLL_INTERVAL 30000 // default remote poll time in milliseconds
 #define DEFAULT_LOCAL_POLL_INTERVAL  10000 // default local poll time in milliseconds
@@ -237,6 +238,17 @@ QString MirallConfigFile::ownCloudUrl( const QString& connection, bool webdav ) 
     // qDebug() << "Returning configured owncloud url: " << url;
 
   return url;
+}
+
+bool MirallConfigFile::ownCloudEncryption(const QString& connection) const
+{
+    QString con(connection);
+    if( connection.isEmpty() ) con = defaultConnection();
+
+    QSettings settings( configFile(), QSettings::IniFormat );
+    settings.setIniCodec( "UTF-8" );
+    settings.beginGroup( con );
+    return ( settings.value( QLatin1String("encryption")).toBool() );
 }
 
 QString MirallConfigFile::ownCloudUser( const QString& connection ) const
