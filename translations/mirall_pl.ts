@@ -197,7 +197,7 @@
     <message>
         <location filename="../src/mirall/application.cpp" line="814"/>
         <source>Confirm Folder Reset</source>
-        <translation type="unfinished"/>
+        <translation>Potwierdź reset folderu </translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="815"/>
@@ -438,7 +438,7 @@
     <message>
         <location filename="../src/mirall/connectionvalidator.cpp" line="113"/>
         <source>Too many attempts to get a valid password.</source>
-        <translation type="unfinished"/>
+        <translation>Zbyt wiele prób uzyskania prawidłowego hasła</translation>
     </message>
     <message>
         <location filename="../src/mirall/connectionvalidator.cpp" line="129"/>
@@ -615,7 +615,7 @@
     <message>
         <location filename="../src/mirall/folderman.cpp" line="135"/>
         <source>Could not reset folder state</source>
-        <translation type="unfinished"/>
+        <translation>Nie udało się zresetować stanu folderu</translation>
     </message>
     <message>
         <location filename="../src/mirall/folderman.cpp" line="136"/>
@@ -769,12 +769,12 @@
     <message>
         <location filename="../src/mirall/owncloudwizard.cpp" line="56"/>
         <source>&lt;font color=&quot;%1&quot; size=&quot;5&quot;&gt;Connect to %2&lt;/font&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;font color=&quot;%1&quot; size=&quot;5&quot;&gt;Połącz do %2&lt;/font&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudwizard.cpp" line="58"/>
         <source>&lt;font color=&quot;%1&quot;&gt;Enter user credentials&lt;/font&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;font color=&quot;%1&quot;&gt;Wpisz dane logowania użytkownika&lt;/font&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudwizard.cpp" line="170"/>
@@ -794,7 +794,7 @@
     <message>
         <location filename="../src/mirall/owncloudwizard.cpp" line="265"/>
         <source>Your entire account will be synced to the local folder &apos;%1&apos;.</source>
-        <translation type="unfinished"/>
+        <translation>Twoje całe konto zostanie zsynchronizowane z twoim lokalnym folderem &apos;%1&apos;.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudwizard.cpp" line="268"/>
@@ -1275,7 +1275,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="503"/>
         <source>Proxy Not Found</source>
-        <translation type="unfinished"/>
+        <translation>Nie znaleziono Proxy</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="504"/>
@@ -1663,7 +1663,7 @@ Kliknij</translation>
     <message>
         <location filename="../src/mirall/statusdialog.ui" line="75"/>
         <source>Reset</source>
-        <translation type="unfinished"/>
+        <translation>Resetuj</translation>
     </message>
     <message>
         <location filename="../src/mirall/statusdialog.ui" line="95"/>

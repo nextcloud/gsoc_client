@@ -192,12 +192,12 @@
     <message>
         <location filename="../src/mirall/application.cpp" line="799"/>
         <source>&lt;p&gt;Do you really want to stop syncing the folder &lt;i&gt;%1&lt;/i&gt;?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This will not remove the files from your client.&lt;/p&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;p&gt;Vuoi davvero fermare la sincronizzazione della cartella &lt;i&gt;%1&lt;/i&gt;?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt; ciò non rimuoverà i file dal tuo client.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="814"/>
         <source>Confirm Folder Reset</source>
-        <translation type="unfinished"/>
+        <translation>Conferma il ripristino della cartella</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="815"/>
@@ -1225,14 +1225,17 @@
         <location filename="../src/mirall/owncloudfolder.cpp" line="509"/>
         <source>This sync would remove all the files in the local sync folder '%1'.
 If you or your administrator have reset your account on the server, choose &quot;Keep files&quot;. If you want your data to be removed, choose &quot;Remove all files&quot;.</source>
-        <translation type="unfinished"/>
+        <translation>Questa sincronizzazione rimuoverà tutti i file nella cartella di sincronizzazione locale &apos;%1&apos;.
+Se tu o il tuo amministratore avete ripristinato il tuo account sul server, scegli &quot;Mantieni i file&quot;. Se desideri rimuovere i tuoi dati, scegli &quot;Rimuovi tutti i file&quot;.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="512"/>
         <source>This sync would remove all the files in the sync folder '%1'.
 This might be because the folder was silently reconfigured, or that all the file were manually removed.
 Are you sure you want to perform this operation?</source>
-        <translation type="unfinished"/>
+        <translation>Questa sincronizzazione rimuoverà tutti i file nella cartella di sincronizzazione &apos;%1&apos;.
+Ciò potrebbe accadere in caso di riconfigurazione della cartella o di rimozione manuale di tutti i file.
+Sei sicuro di voler eseguire questa operazione?</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="516"/>
@@ -1662,7 +1665,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/statusdialog.ui" line="75"/>
         <source>Reset</source>
-        <translation type="unfinished"/>
+        <translation>Ripristina</translation>
     </message>
     <message>
         <location filename="../src/mirall/statusdialog.ui" line="95"/>

@@ -192,22 +192,22 @@
     <message>
         <location filename="../src/mirall/application.cpp" line="799"/>
         <source>&lt;p&gt;Do you really want to stop syncing the folder &lt;i&gt;%1&lt;/i&gt;?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This will not remove the files from your client.&lt;/p&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;p&gt;Вы действительно хотите прекратить синхронизацию папки  &lt;i&gt;%1&lt;/i&gt;?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание:&lt;/b&gt; Это действие не удалит файлы с клиента.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="814"/>
         <source>Confirm Folder Reset</source>
-        <translation type="unfinished"/>
+        <translation>Подтвердить сброс папки</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="815"/>
         <source>&lt;p&gt;Do you really want to reset folder &lt;i&gt;%1&lt;/i&gt; and rebuild your client database?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; While no files will be removed, this can cause significant data traffic and take several minutes to hours, depending on the size of the folder.&lt;/p&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;p&gt;Вы действительно хотите сбросить папку &lt;i&gt;%1&lt;/i&gt;? и пересоздать локальную базу данных?/p&gt;&lt;p&gt;&lt;b&gt;Примечание:&lt;/b&gt; Никакие файлы не будут стёрты, но операция может занять длительный период - несколько минут или часов - а также будет передан большой объём данных, в зависимости от размера папки.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="1045"/>
         <source>Folder %1: %2</source>
-        <translation type="unfinished"/>
+        <translation>Папка %1: %2</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="1012"/>
@@ -554,12 +554,12 @@
     <message numerus="yes">
         <location filename="../src/mirall/fileitemdialog.cpp" line="127"/>
         <source>%1 (last finished %n sec. ago)</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>%1 (завершено %n сек. назад)</numerusform><numerusform>%1 (завершено %n сек. назад)</numerusform><numerusform>%1 (завершено %n сек. назад)</numerusform></translation>
     </message>
     <message numerus="yes">
         <location filename="../src/mirall/fileitemdialog.cpp" line="129"/>
         <source>%1 (last finished %n min. ago)</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>%1 (завершено %n мин. назад)</numerusform><numerusform>%1 (завершено %n мин. назад)</numerusform><numerusform>%1 (завершено %n мин. назад)</numerusform></translation>
     </message>
     <message>
         <location filename="../src/mirall/fileitemdialog.cpp" line="181"/>
@@ -615,12 +615,12 @@
     <message>
         <location filename="../src/mirall/folderman.cpp" line="135"/>
         <source>Could not reset folder state</source>
-        <translation type="unfinished"/>
+        <translation>Невозможно сбросить состояние папки</translation>
     </message>
     <message>
         <location filename="../src/mirall/folderman.cpp" line="136"/>
         <source>An old sync journal &apos;%1&apos; was found, but could not be removed. Please make sure that no application is currently using it.</source>
-        <translation type="unfinished"/>
+        <translation>Найден старый журнал синхронизации &apos;%1&apos;, и он не может быть удалён. Пожалуйста убедитесь что он не открыт в каком-либо приложении.</translation>
     </message>
 </context>
 <context>
@@ -809,7 +809,7 @@
     <message>
         <location filename="../src/mirall/owncloudwizard.cpp" line="282"/>
         <source>&lt;p&gt;&lt;small&gt;&lt;strong&gt;Warning:&lt;/strong&gt; The local directory is not empty. Pick a resolution in the advanced settings!&lt;/small&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;p&gt;&lt;small&gt;&lt;strong&gt;Внимание:&lt;/strong&gt; Локальная директория не пуста. Выберите действие в дополнительных настройках!&lt;/small&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudwizard.cpp" line="384"/>
@@ -842,12 +842,12 @@
     <message>
         <location filename="../src/mirall/owncloudsetupwizard.cpp" line="142"/>
         <source>Folder rename failed</source>
-        <translation type="unfinished"/>
+        <translation>Ошибка переименования папки</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetupwizard.cpp" line="143"/>
         <source>Can&apos;t remove and back up the folder because the folder or a file in it is open in another program.Please close the folder or file and hit retry or cancel the setup.</source>
-        <translation type="unfinished"/>
+        <translation>Невозможно стереть папку и создать её резервную копию так как папка или файл в ней открыты в другой программе. Пожалуйста закройте папку или файл и повторите попытку, либо прервите мастер настройки.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetupwizard.cpp" line="283"/>
@@ -1225,29 +1225,32 @@
         <location filename="../src/mirall/owncloudfolder.cpp" line="509"/>
         <source>This sync would remove all the files in the local sync folder '%1'.
 If you or your administrator have reset your account on the server, choose &quot;Keep files&quot;. If you want your data to be removed, choose &quot;Remove all files&quot;.</source>
-        <translation type="unfinished"/>
+        <translation>При синхронизации все файлы из директории &apos;%1&apos; будут удалены.
+Если вы или администратор сбросили учётную запись на сервере, выберите &quot;Сохранить файлы&quot;. Если желаете стереть все данные, выберите &quot;Стереть все файлы&quot;.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="512"/>
         <source>This sync would remove all the files in the sync folder '%1'.
 This might be because the folder was silently reconfigured, or that all the file were manually removed.
 Are you sure you want to perform this operation?</source>
-        <translation type="unfinished"/>
+        <translation>При синхронизации все файлы из директории &apos;%1&apos; будут удалены.
+Возможно, папка была перенастроена или все файлы были стёрты вручную.
+Вы уверены, что хотите произвести эту операцию?</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="516"/>
         <source>Remove All Files?</source>
-        <translation type="unfinished"/>
+        <translation>Стереть все файлы?</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="518"/>
         <source>Remove all files</source>
-        <translation type="unfinished"/>
+        <translation>Стереть все файлы</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="519"/>
         <source>Keep files</source>
-        <translation type="unfinished"/>
+        <translation>Оставить файлы</translation>
     </message>
 </context>
 <context>
@@ -1260,7 +1263,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="494"/>
         <source>The configured proxy has refused the connection. Please check the proxy settings.</source>
-        <translation type="unfinished"/>
+        <translation>Прокси сервер отверг соединение. Пожалуйста проверьте настройки прокси.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="498"/>
@@ -1270,7 +1273,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="499"/>
         <source>The configured proxy has closed the connection. Please check the proxy settings.</source>
-        <translation type="unfinished"/>
+        <translation>Прокси сервер закрыл соединение. Пожалуйста проверьте настройки прокси.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="503"/>
@@ -1280,7 +1283,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="504"/>
         <source>The configured proxy could not be found. Please check the proxy settings.</source>
-        <translation type="unfinished"/>
+        <translation>Прокси сервер не найден. Пожалуйста проверьте настройки прокси.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="508"/>
@@ -1290,17 +1293,17 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="509"/>
         <source>The configured proxy requires login but the proxy credentials are invalid. Please check the proxy settings.</source>
-        <translation type="unfinished"/>
+        <translation>Прокси сервер требует аутентификации, но данные учётной записи не верны. Пожалуйста проверьте настройки прокси.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="513"/>
         <source>Proxy Connection Timed Out</source>
-        <translation type="unfinished"/>
+        <translation>Нет ответа от прокси</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="514"/>
         <source>The connection to the configured proxy has timed out.</source>
-        <translation type="unfinished"/>
+        <translation>Время ожидания при соединении с настроенным прокси истекло</translation>
     </message>
 </context>
 <context>
@@ -1404,12 +1407,12 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="139"/>
         <source>&amp;Keep local data</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Сохранить локальные данные</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="171"/>
         <source>&lt;small&gt;Syncs your existing data to new location.&lt;/small&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;small&gt;Синхронизировать существующие данные в новое местоположение.&lt;/small&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="190"/>
@@ -1419,12 +1422,12 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="193"/>
         <source>&amp;Start a clean sync</source>
-        <translation type="unfinished"/>
+        <translation>&amp;Синхронизировать заново</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="225"/>
         <source>&lt;small&gt;Erases the contents of the local folder before syncing using the new settings.&lt;/small&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;small&gt;Стереть содержимое локальной папки перед синхронизацией с новыми настройками.&lt;/small&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="254"/>
@@ -1449,7 +1452,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="347"/>
         <source>Error Label</source>
-        <translation type="unfinished"/>
+        <translation>Название ошибки</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="393"/>
@@ -1459,7 +1462,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="415"/>
         <source>Status message</source>
-        <translation type="unfinished"/>
+        <translation>Сообщение о статусе</translation>
     </message>
 </context>
 <context>
@@ -1545,7 +1548,7 @@ Are you sure you want to perform this operation?</source>
         <location filename="../src/mirall/owncloudtheme.cpp" line="103"/>
         <source>If you don&apos;t have an ownCloud server yet, see &lt;a href=&quot;https://owncloud.com&quot;&gt;owncloud.com&lt;/a&gt; for more info.</source>
         <comment>Top text in setup wizard. Keep short!</comment>
-        <translation type="unfinished"/>
+        <translation>Если у Вас ещё нет сервера ownCloud, обратитесь за дополнительной информацией на &lt;a href=&quot;https://owncloud.com&quot;&gt;owncloud.com&lt;/a&gt;</translation>
     </message>
 </context>
 <context>
@@ -1586,7 +1589,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/proxydialog.ui" line="116"/>
         <source>Use as SOCKSv5 proxy</source>
-        <translation type="unfinished"/>
+        <translation>Использовать прокси SOCKSv5</translation>
     </message>
     <message>
         <location filename="../src/mirall/proxydialog.ui" line="138"/>
@@ -1662,7 +1665,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/statusdialog.ui" line="75"/>
         <source>Reset</source>
-        <translation type="unfinished"/>
+        <translation>Сброс</translation>
     </message>
     <message>
         <location filename="../src/mirall/statusdialog.ui" line="95"/>
