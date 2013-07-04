@@ -202,7 +202,7 @@
     <message>
         <location filename="../src/mirall/application.cpp" line="815"/>
         <source>&lt;p&gt;Do you really want to reset folder &lt;i&gt;%1&lt;/i&gt; and rebuild your client database?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; While no files will be removed, this can cause significant data traffic and take several minutes to hours, depending on the size of the folder.&lt;/p&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;p&gt;Vill du verkligen återställa mappen &lt;i&gt;%1&lt;/i&gt; och och bygga om databasen?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Notera:&lt;/b&gt; Även om inga filer raderas kan detta orsaka en hel del datatrafik och ta från ett antal minuter upp till flera timmar, beroende av mappens storlek.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="1045"/>
@@ -1225,14 +1225,17 @@
         <location filename="../src/mirall/owncloudfolder.cpp" line="509"/>
         <source>This sync would remove all the files in the local sync folder '%1'.
 If you or your administrator have reset your account on the server, choose &quot;Keep files&quot;. If you want your data to be removed, choose &quot;Remove all files&quot;.</source>
-        <translation type="unfinished"/>
+        <translation>Denna synk skulle radera alla filer i den lokala mappen &apos;%1&apos;.
+Om systemadministratören har återställt ditt konto på servern, välj &quot;Behåll filer&quot;. Om du vill att dina filer ska raderas, välj &quot;Radera alla filer&quot;.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="512"/>
         <source>This sync would remove all the files in the sync folder '%1'.
 This might be because the folder was silently reconfigured, or that all the file were manually removed.
 Are you sure you want to perform this operation?</source>
-        <translation type="unfinished"/>
+        <translation>Denna synk skulle radera alla filer i mappen &apos;%1&apos;.
+Detta kan bero på att konfigurationen för mappen ändrats, eller att alla filer raderats manuellt.
+Är du säker på att du vill fortsätta?</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="516"/>

@@ -193,22 +193,22 @@
     <message>
         <location filename="../src/mirall/application.cpp" line="799"/>
         <source>&lt;p&gt;Do you really want to stop syncing the folder &lt;i&gt;%1&lt;/i&gt;?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This will not remove the files from your client.&lt;/p&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;p&gt;您真的想停止同步文件夹 &lt;i&gt;%1&lt;/i&gt;？&lt;/p&gt;&lt;p&gt;&lt;b&gt;注意：&lt;/b&gt;这不会从您的客户端移除文件。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="814"/>
         <source>Confirm Folder Reset</source>
-        <translation type="unfinished"/>
+        <translation>确定文件夹重置</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="815"/>
         <source>&lt;p&gt;Do you really want to reset folder &lt;i&gt;%1&lt;/i&gt; and rebuild your client database?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; While no files will be removed, this can cause significant data traffic and take several minutes to hours, depending on the size of the folder.&lt;/p&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;p&gt;您真的想重置文件夹 &lt;i&gt;%1&lt;/i&gt; 以及重新构建您的客户端数据库？&lt;/p&gt;&lt;p&gt;&lt;b&gt;注意：&lt;/b&gt;当没有文件将被移除，可能导致有效的数据传输，基于文件夹的大小，这将进行几分钟到几个小时。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="1045"/>
         <source>Folder %1: %2</source>
-        <translation type="unfinished"/>
+        <translation>文件夹 %1: %2</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="1012"/>
@@ -555,12 +555,12 @@
     <message numerus="yes">
         <location filename="../src/mirall/fileitemdialog.cpp" line="127"/>
         <source>%1 (last finished %n sec. ago)</source>
-        <translation type="unfinished"><numerusform></numerusform></translation>
+        <translation><numerusform>%1 (最后完成于 %n 秒之前)</numerusform></translation>
     </message>
     <message numerus="yes">
         <location filename="../src/mirall/fileitemdialog.cpp" line="129"/>
         <source>%1 (last finished %n min. ago)</source>
-        <translation type="unfinished"><numerusform></numerusform></translation>
+        <translation><numerusform>%1 (最后完成于 %n 分钟之前)</numerusform></translation>
     </message>
     <message>
         <location filename="../src/mirall/fileitemdialog.cpp" line="181"/>
@@ -616,12 +616,12 @@
     <message>
         <location filename="../src/mirall/folderman.cpp" line="135"/>
         <source>Could not reset folder state</source>
-        <translation type="unfinished"/>
+        <translation>不能重置文件夹状态</translation>
     </message>
     <message>
         <location filename="../src/mirall/folderman.cpp" line="136"/>
         <source>An old sync journal &apos;%1&apos; was found, but could not be removed. Please make sure that no application is currently using it.</source>
-        <translation type="unfinished"/>
+        <translation>一个旧的同步日志 &apos;%1&apos; 被找到，但是不能被移除。请确定没有应用程序正在使用它。</translation>
     </message>
 </context>
 <context>
@@ -1226,29 +1226,32 @@
         <location filename="../src/mirall/owncloudfolder.cpp" line="509"/>
         <source>This sync would remove all the files in the local sync folder '%1'.
 If you or your administrator have reset your account on the server, choose &quot;Keep files&quot;. If you want your data to be removed, choose &quot;Remove all files&quot;.</source>
-        <translation type="unfinished"/>
+        <translation>这个同步将会移除在本地同步文件夹 &apos;%1&apos; 下的所有文件。
+如果您或者您的管理员在服务器上重置了您的帐号，请选择“保持文件”。如果您想移除您的数据，请选择“移除全部文件”。</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="512"/>
         <source>This sync would remove all the files in the sync folder '%1'.
 This might be because the folder was silently reconfigured, or that all the file were manually removed.
 Are you sure you want to perform this operation?</source>
-        <translation type="unfinished"/>
+        <translation>这个同步将会移除在同步文件夹 &apos;%1&apos; 下的所有文件。
+这可能因为该文件夹被默默地重新配置过，或者所有的文件被手动地移除了。
+您确定您想要执行该操作？</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="516"/>
         <source>Remove All Files?</source>
-        <translation type="unfinished"/>
+        <translation>移除全部文件？</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="518"/>
         <source>Remove all files</source>
-        <translation type="unfinished"/>
+        <translation>移除全部文件</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="519"/>
         <source>Keep files</source>
-        <translation type="unfinished"/>
+        <translation>保持文件</translation>
     </message>
 </context>
 <context>
@@ -1546,7 +1549,7 @@ Are you sure you want to perform this operation?</source>
         <location filename="../src/mirall/owncloudtheme.cpp" line="103"/>
         <source>If you don&apos;t have an ownCloud server yet, see &lt;a href=&quot;https://owncloud.com&quot;&gt;owncloud.com&lt;/a&gt; for more info.</source>
         <comment>Top text in setup wizard. Keep short!</comment>
-        <translation type="unfinished"/>
+        <translation>如果您还没有一个 ownCloud 服务器，请到 &lt;a href=&quot;https://owncloud.com&quot;&gt; 获取更多信息。</translation>
     </message>
 </context>
 <context>
@@ -1663,7 +1666,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/statusdialog.ui" line="75"/>
         <source>Reset</source>
-        <translation type="unfinished"/>
+        <translation>重置</translation>
     </message>
     <message>
         <location filename="../src/mirall/statusdialog.ui" line="95"/>
