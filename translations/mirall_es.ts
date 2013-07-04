@@ -1047,7 +1047,7 @@
     <message numerus="yes">
         <location filename="../src/mirall/owncloudfolder.cpp" line="493"/>
         <source>&apos;%1&apos; and %n other file(s) have been removed.</source>
-        <translation><numerusform>&apos;%1&apos; y %n otro archivo han sido removidos.</numerusform><numerusform>&apos;%1&apos; y %n otros archivos han sido removidos.</numerusform></translation>
+        <translation><numerusform>&apos;%1&apos; y %n otro archivo han sido eliminados.</numerusform><numerusform>&apos;%1&apos; y otros %n archivos han sido eliminados.</numerusform></translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="493"/>
