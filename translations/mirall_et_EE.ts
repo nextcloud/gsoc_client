@@ -192,22 +192,22 @@
     <message>
         <location filename="../src/mirall/application.cpp" line="799"/>
         <source>&lt;p&gt;Do you really want to stop syncing the folder &lt;i&gt;%1&lt;/i&gt;?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This will not remove the files from your client.&lt;/p&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;p&gt;Kas tõesti soovid peatada kataloogi &lt;i&gt;%1&lt;/i&gt; sünkroniseeringu?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Märkus:&lt;/b&gt; See ei eemalda faile sinu kliendist.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="814"/>
         <source>Confirm Folder Reset</source>
-        <translation type="unfinished"/>
+        <translation>Kinnita kataloogi algseadistus</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="815"/>
         <source>&lt;p&gt;Do you really want to reset folder &lt;i&gt;%1&lt;/i&gt; and rebuild your client database?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; While no files will be removed, this can cause significant data traffic and take several minutes to hours, depending on the size of the folder.&lt;/p&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;p&gt;Kas tõesti soovid kataloogi &lt;i&gt;%1&lt;/i&gt; algseadistada ning uuesti luua oma kliendi andmebaasi?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Märkus:&lt;/b&gt;Kuna ühtegi faili ei eemaldata, siis see võib põhjustada märkimisväärset andmeliiklust ja võtta mitu minutit või tundi, sõltuvalt kataloogi suurusest.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="1045"/>
         <source>Folder %1: %2</source>
-        <translation type="unfinished"/>
+        <translation>Kataloog %1: %2</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="1012"/>
@@ -554,12 +554,12 @@
     <message numerus="yes">
         <location filename="../src/mirall/fileitemdialog.cpp" line="127"/>
         <source>%1 (last finished %n sec. ago)</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>%1 (lõpetatud %n s. tagasi)</numerusform><numerusform>%1 (lõpetatud %n s. tagasi)</numerusform></translation>
     </message>
     <message numerus="yes">
         <location filename="../src/mirall/fileitemdialog.cpp" line="129"/>
         <source>%1 (last finished %n min. ago)</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>%1 (lõpetatud %n min. tagasi)</numerusform><numerusform>%1 (lõpetatud %n min. tagasi)</numerusform></translation>
     </message>
     <message>
         <location filename="../src/mirall/fileitemdialog.cpp" line="181"/>
@@ -1225,14 +1225,17 @@
         <location filename="../src/mirall/owncloudfolder.cpp" line="509"/>
         <source>This sync would remove all the files in the local sync folder '%1'.
 If you or your administrator have reset your account on the server, choose &quot;Keep files&quot;. If you want your data to be removed, choose &quot;Remove all files&quot;.</source>
-        <translation type="unfinished"/>
+        <translation>See sünkroniseering kustutab kõik failid kohalikust kataloogist &apos;%1&apos;.⏎
+Kui sina või adminstraator on sinu konto serveris algseadistanud, siis vali &quot;Säilita failid&quot;. Kui soovid oma andmed kustutada, vali &quot;Kustuta kõik failid&quot;.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="512"/>
         <source>This sync would remove all the files in the sync folder '%1'.
 This might be because the folder was silently reconfigured, or that all the file were manually removed.
 Are you sure you want to perform this operation?</source>
-        <translation type="unfinished"/>
+        <translation>See sünkroniseering kustutab kõik failid sünkroniseeritavast &apos;%1&apos; kataloogist.⏎
+See võib olla põhjustatud kataloogi ümberseadistusest või on toimunud kõikide failid käsitsi eemaldamine⏎
+Oled kindel, et soovid seda operatsiooni teostada?</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="516"/>
@@ -1545,7 +1548,7 @@ Are you sure you want to perform this operation?</source>
         <location filename="../src/mirall/owncloudtheme.cpp" line="103"/>
         <source>If you don&apos;t have an ownCloud server yet, see &lt;a href=&quot;https://owncloud.com&quot;&gt;owncloud.com&lt;/a&gt; for more info.</source>
         <comment>Top text in setup wizard. Keep short!</comment>
-        <translation type="unfinished"/>
+        <translation>Kui sul poole veel oma ownCloud serverit, vaata &lt;a href=&quot;https://owncloud.com&quot;&gt;owncloud.com&lt;/a&gt; rohkema info saamiseks.</translation>
     </message>
 </context>
 <context>
@@ -1662,7 +1665,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/statusdialog.ui" line="75"/>
         <source>Reset</source>
-        <translation type="unfinished"/>
+        <translation>Algseadista</translation>
     </message>
     <message>
         <location filename="../src/mirall/statusdialog.ui" line="95"/>
