@@ -842,7 +842,7 @@
     <message>
         <location filename="../src/mirall/owncloudsetupwizard.cpp" line="142"/>
         <source>Folder rename failed</source>
-        <translation type="unfinished"/>
+        <translation>重新命名資料夾失敗</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetupwizard.cpp" line="143"/>
@@ -1255,52 +1255,52 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="493"/>
         <source>Proxy Refused Connection </source>
-        <translation type="unfinished"/>
+        <translation>代理伺服器拒絕連線</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="494"/>
         <source>The configured proxy has refused the connection. Please check the proxy settings.</source>
-        <translation type="unfinished"/>
+        <translation>所設定的代理伺服器拒絕連線，請檢查代理伺服器設定。</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="498"/>
         <source>Proxy Closed Connection</source>
-        <translation type="unfinished"/>
+        <translation>代理伺服器關閉了連線</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="499"/>
         <source>The configured proxy has closed the connection. Please check the proxy settings.</source>
-        <translation type="unfinished"/>
+        <translation>所設定的代理伺服器關閉了連線，請檢查代理伺服器設定。</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="503"/>
         <source>Proxy Not Found</source>
-        <translation type="unfinished"/>
+        <translation>找不到代理伺服器</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="504"/>
         <source>The configured proxy could not be found. Please check the proxy settings.</source>
-        <translation type="unfinished"/>
+        <translation>找不到所設定的代理伺服器，請檢查代理伺服器設定。</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="508"/>
         <source>Proxy Authentication Error</source>
-        <translation type="unfinished"/>
+        <translation>代理伺服器認證錯誤</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="509"/>
         <source>The configured proxy requires login but the proxy credentials are invalid. Please check the proxy settings.</source>
-        <translation type="unfinished"/>
+        <translation>所設定的代理伺服器帳密無法登入，請檢查代理伺服器設定。</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="513"/>
         <source>Proxy Connection Timed Out</source>
-        <translation type="unfinished"/>
+        <translation>代理伺服器連線逾時</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="514"/>
         <source>The connection to the configured proxy has timed out.</source>
-        <translation type="unfinished"/>
+        <translation>代理伺服器的連線已經逾時。</translation>
     </message>
 </context>
 <context>
@@ -1409,7 +1409,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="171"/>
         <source>&lt;small&gt;Syncs your existing data to new location.&lt;/small&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;small&gt;將現有的資料同步至新地點。&lt;/small&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="190"/>
@@ -1419,12 +1419,12 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="193"/>
         <source>&amp;Start a clean sync</source>
-        <translation type="unfinished"/>
+        <translation>開始一個全新的同步</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="225"/>
         <source>&lt;small&gt;Erases the contents of the local folder before syncing using the new settings.&lt;/small&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;small&gt;在使用新設定來同步之前，請清空本地資料夾。&lt;/small&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="254"/>
@@ -1449,7 +1449,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="347"/>
         <source>Error Label</source>
-        <translation type="unfinished"/>
+        <translation>錯誤標籤</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="393"/>
@@ -1459,7 +1459,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="415"/>
         <source>Status message</source>
-        <translation type="unfinished"/>
+        <translation>狀態訊息</translation>
     </message>
 </context>
 <context>
@@ -1586,7 +1586,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/proxydialog.ui" line="116"/>
         <source>Use as SOCKSv5 proxy</source>
-        <translation type="unfinished"/>
+        <translation>當成 SOCKS5 代理伺服器使用</translation>
     </message>
     <message>
         <location filename="../src/mirall/proxydialog.ui" line="138"/>
