@@ -1402,7 +1402,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="123"/>
         <source>pbSelectLocalFolder</source>
-        <translation type="unfinished"/>
+        <translation>Выбрать локальную папку</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="139"/>
