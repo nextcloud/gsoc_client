@@ -634,7 +634,7 @@
 <context>
     <name>Mirall::FolderWizard</name>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="345"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="351"/>
         <source>%1 Folder Wizard</source>
         <translation>%1 čarovnik mape</translation>
     </message>
@@ -643,36 +643,41 @@
     <name>Mirall::FolderWizardSourcePage</name>
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="75"/>
-        <source>No local directory selected!</source>
-        <translation>Ni izbrane krajevne mape!</translation>
+        <source>No local folder selected!</source>
+        <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="98"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="80"/>
+        <source>You have no permission to write to the selected folder!</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="../src/mirall/folderwizard.cpp" line="104"/>
         <source>The local path %1 is already an upload folder.&lt;br/&gt;Please pick another one!</source>
         <translation>Krajevna pot %1 je že usklajena v oblaku.&lt;br/&gt;Te ni treba znova dodajati!</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="103"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="109"/>
         <source>An already configured folder is contained in the current entry.</source>
         <translation>Trenutni vnos določa mapo, ki je že nastavljena.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="108"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="114"/>
         <source>An already configured folder contains the currently entered directory.</source>
         <translation>Trenutna mapa je že vsebovana v eni izmed nastavljenih map.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="118"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="124"/>
         <source>The alias can not be empty. Please provide a descriptive alias word.</source>
         <translation>Vzdevek ne sme biti izpuščen, zato ga je treba vpisati.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="129"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="135"/>
         <source>&lt;br/&gt;The alias &lt;i&gt;%1&lt;/i&gt; is already in use. Please pick another alias.</source>
         <translation>&lt;br/&gt;Vzdevek &lt;i&gt;%1&lt;/i&gt; je že v uporabi. Izbrati je treba novega.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="150"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="156"/>
         <source>Select the source folder</source>
         <translation>Izbor izvorne mape</translation>
     </message>
@@ -680,27 +685,27 @@
 <context>
     <name>Mirall::FolderWizardTargetPage</name>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="209"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="215"/>
         <source>The folder is not available on your %1.&lt;br/&gt;Click to create it.</source>
         <translation>Mapa na %1 ni na voljo.&lt;br/&gt;S klikom jo je mogoče hitro ustvariti.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="234"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="240"/>
         <source>Folder was successfully created on %1.</source>
         <translation>Mapa je uspešno ustvarjena na %1.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="237"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="243"/>
         <source>Failed to create the folder on %1.&lt;br/&gt;Please check manually.</source>
         <translation>Mape na %1 ni mogoče ustvariti.&lt;br/&gt;Nastavitve je treba preveriti ročno.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="249"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="255"/>
         <source>If you sync the root folder, you can &lt;b&gt;not&lt;/b&gt; configure another sync directory.</source>
         <translation>Če boste sinhronizirali korenski (root) direktorij, ostalih direktorijev &lt;b&gt;ne&lt;/b&gt; bo mogoče nastaviti za sihnronizacijo. </translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="309"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="315"/>
         <source>%1 could not be reached:&lt;br/&gt;&lt;tt&gt;%2&lt;/tt&gt;</source>
         <translation>%1 ni dosegljiv:&lt;br/&gt;&lt;tt&gt;%2&lt;/tt&gt;</translation>
     </message>
@@ -1540,6 +1545,19 @@ Ste prepričani, da želite izvedbo te operacije?</translation>
         <location filename="../src/mirall/fileitemdialog.ui" line="70"/>
         <source>TextLabel</source>
         <translation>Besedilna oznaka</translation>
+    </message>
+</context>
+<context>
+    <name>main.cpp</name>
+    <message>
+        <location filename="../src/main.cpp" line="38"/>
+        <source>System Tray not available</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="39"/>
+        <source>%1 requires on a working system tray. If you are running XFCE, please follow &lt;a href=&quot;http://docs.xfce.org/xfce/xfce4-panel/systray&quot;&gt;these instructions&lt;/a&gt;. Otherwise, please install a system tray application such as &apos;trayer&apos; and try again.</source>
+        <translation type="unfinished"/>
     </message>
 </context>
 <context>

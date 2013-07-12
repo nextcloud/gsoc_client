@@ -634,7 +634,7 @@
 <context>
     <name>Mirall::FolderWizard</name>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="345"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="351"/>
         <source>%1 Folder Wizard</source>
         <translation>%1 フォルダウィザード</translation>
     </message>
@@ -643,36 +643,41 @@
     <name>Mirall::FolderWizardSourcePage</name>
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="75"/>
-        <source>No local directory selected!</source>
-        <translation>ローカルディレクトリが選択されていません！</translation>
+        <source>No local folder selected!</source>
+        <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="98"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="80"/>
+        <source>You have no permission to write to the selected folder!</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="../src/mirall/folderwizard.cpp" line="104"/>
         <source>The local path %1 is already an upload folder.&lt;br/&gt;Please pick another one!</source>
         <translation>ローカルパス %1 はすでにアップロードフォルダになっています。&lt;br/&gt;他を選択してください！</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="103"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="109"/>
         <source>An already configured folder is contained in the current entry.</source>
         <translation>すでに設定済みのフォルダは現在のエントリー内に含まれています。</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="108"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="114"/>
         <source>An already configured folder contains the currently entered directory.</source>
         <translation>すでに設定済みのフォルダは、現在入力されたディレクトリを含んでいます。</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="118"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="124"/>
         <source>The alias can not be empty. Please provide a descriptive alias word.</source>
         <translation>エイリアスは空白にすることはできません。適切な単語をエイリアスとして提供してください。</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="129"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="135"/>
         <source>&lt;br/&gt;The alias &lt;i&gt;%1&lt;/i&gt; is already in use. Please pick another alias.</source>
         <translation>&lt;br/&gt;エイリアス &lt;i&gt;%1&lt;/i&gt; はすでに使用中です。他のエイリアスを選択してください。</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="150"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="156"/>
         <source>Select the source folder</source>
         <translation>ソースフォルダを選択</translation>
     </message>
@@ -680,27 +685,27 @@
 <context>
     <name>Mirall::FolderWizardTargetPage</name>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="209"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="215"/>
         <source>The folder is not available on your %1.&lt;br/&gt;Click to create it.</source>
         <translation>あなたの %1 ではフォルダを利用できません。&lt;br/&gt;クリックして作成して下さい。</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="234"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="240"/>
         <source>Folder was successfully created on %1.</source>
         <translation>%1 にフォルダーが作成されました。</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="237"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="243"/>
         <source>Failed to create the folder on %1.&lt;br/&gt;Please check manually.</source>
         <translation>%1 へのフォルダ作成に失敗しました。&lt;br/&gt;手動で確認して下さい。</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="249"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="255"/>
         <source>If you sync the root folder, you can &lt;b&gt;not&lt;/b&gt; configure another sync directory.</source>
         <translation>rootフォルダを同期したい場合は、その他のディレクトリを同期ディレクトリとして設定することは&lt;b&gt;できません&lt;/b&gt;。</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="309"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="315"/>
         <source>%1 could not be reached:&lt;br/&gt;&lt;tt&gt;%2&lt;/tt&gt;</source>
         <translation>%1 へ到達できませんでした:&lt;br/&gt;&lt;tt&gt;%2&lt;/tt&gt;</translation>
     </message>
@@ -1540,6 +1545,19 @@ Are you sure you want to perform this operation?</source>
         <location filename="../src/mirall/fileitemdialog.ui" line="70"/>
         <source>TextLabel</source>
         <translation>テキストラベル</translation>
+    </message>
+</context>
+<context>
+    <name>main.cpp</name>
+    <message>
+        <location filename="../src/main.cpp" line="38"/>
+        <source>System Tray not available</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="39"/>
+        <source>%1 requires on a working system tray. If you are running XFCE, please follow &lt;a href=&quot;http://docs.xfce.org/xfce/xfce4-panel/systray&quot;&gt;these instructions&lt;/a&gt;. Otherwise, please install a system tray application such as &apos;trayer&apos; and try again.</source>
+        <translation type="unfinished"/>
     </message>
 </context>
 <context>

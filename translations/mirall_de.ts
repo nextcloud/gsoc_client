@@ -634,7 +634,7 @@
 <context>
     <name>Mirall::FolderWizard</name>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="345"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="351"/>
         <source>%1 Folder Wizard</source>
         <translation>%1 Ordner-Assistent</translation>
     </message>
@@ -643,36 +643,41 @@
     <name>Mirall::FolderWizardSourcePage</name>
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="75"/>
-        <source>No local directory selected!</source>
-        <translation>Kein lokales Verzeichnis ausgewählt!</translation>
+        <source>No local folder selected!</source>
+        <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="98"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="80"/>
+        <source>You have no permission to write to the selected folder!</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="../src/mirall/folderwizard.cpp" line="104"/>
         <source>The local path %1 is already an upload folder.&lt;br/&gt;Please pick another one!</source>
         <translation>Der lokale Pfad %1 ist bereits ein Upload-Ordner.&lt;br/&gt;Bitte wählen Sie einen anderen aus!</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="103"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="109"/>
         <source>An already configured folder is contained in the current entry.</source>
         <translation>Ein bereits konfigurierter Ordner ist im aktuellen Verzeichnis vorhanden.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="108"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="114"/>
         <source>An already configured folder contains the currently entered directory.</source>
         <translation>Ein bereits konfigurierter Ordner beinhaltet das angegebene Verzeichnis.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="118"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="124"/>
         <source>The alias can not be empty. Please provide a descriptive alias word.</source>
         <translation>Der Alias darf nicht leer sein. Bitte ein anschauliches Alias-Wort eingeben.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="129"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="135"/>
         <source>&lt;br/&gt;The alias &lt;i&gt;%1&lt;/i&gt; is already in use. Please pick another alias.</source>
         <translation>&lt;br/&gt;Der Alias &lt;i&gt;%1&lt;/i&gt; wird bereits verwendet. Bitte einen anderen Alias wählen.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="150"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="156"/>
         <source>Select the source folder</source>
         <translation>Den Quellordner wählen</translation>
     </message>
@@ -680,27 +685,27 @@
 <context>
     <name>Mirall::FolderWizardTargetPage</name>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="209"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="215"/>
         <source>The folder is not available on your %1.&lt;br/&gt;Click to create it.</source>
         <translation>Der Ordner ist nicht verfügbar auf Ihrer %1.&lt;br/&gt;Klicken Sie um ihn zu erstellen.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="234"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="240"/>
         <source>Folder was successfully created on %1.</source>
         <translation>Order erfolgreich auf %1 erstellt.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="237"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="243"/>
         <source>Failed to create the folder on %1.&lt;br/&gt;Please check manually.</source>
         <translation>Erstellen des Ordners fehlgeschlagen unter %1.&lt;br/&gt;Bitte überprüfen Sie dies manuell.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="249"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="255"/>
         <source>If you sync the root folder, you can &lt;b&gt;not&lt;/b&gt; configure another sync directory.</source>
         <translation>Wenn Sie das Wurzelverzeichnis synchronisieren, können Sie &lt;b&gt;kein anderes&lt;/b&gt; Verzeichnis zur Synchronisierung auswählen.</translation>
     </message>
     <message>
-        <location filename="../src/mirall/folderwizard.cpp" line="309"/>
+        <location filename="../src/mirall/folderwizard.cpp" line="315"/>
         <source>%1 could not be reached:&lt;br/&gt;&lt;tt&gt;%2&lt;/tt&gt;</source>
         <translation>%1 konnte nicht erreicht werden: &lt;br/&gt;&lt;tt&gt;%2&lt;/tt&gt;</translation>
     </message>
@@ -1540,6 +1545,19 @@ Sind Sie sicher, dass sie diese Operation durchführen wollen?</translation>
         <location filename="../src/mirall/fileitemdialog.ui" line="70"/>
         <source>TextLabel</source>
         <translation>Textfeld</translation>
+    </message>
+</context>
+<context>
+    <name>main.cpp</name>
+    <message>
+        <location filename="../src/main.cpp" line="38"/>
+        <source>System Tray not available</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="39"/>
+        <source>%1 requires on a working system tray. If you are running XFCE, please follow &lt;a href=&quot;http://docs.xfce.org/xfce/xfce4-panel/systray&quot;&gt;these instructions&lt;/a&gt;. Otherwise, please install a system tray application such as &apos;trayer&apos; and try again.</source>
+        <translation type="unfinished"/>
     </message>
 </context>
 <context>
