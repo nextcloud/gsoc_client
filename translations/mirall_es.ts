@@ -644,12 +644,12 @@
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="75"/>
         <source>No local folder selected!</source>
-        <translation type="unfinished"/>
+        <translation>carpeta local no seleccionada </translation>
     </message>
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="80"/>
         <source>You have no permission to write to the selected folder!</source>
-        <translation type="unfinished"/>
+        <translation>Usted no tiene permiso para escribir en la carpeta seleccionada!</translation>
     </message>
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="104"/>
@@ -1552,12 +1552,12 @@ Esto puede ser debido a que la carpeta fue reconfigurada, o que todos los archiv
     <message>
         <location filename="../src/main.cpp" line="38"/>
         <source>System Tray not available</source>
-        <translation type="unfinished"/>
+        <translation>Bandeja del sistema no está disponible</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="39"/>
         <source>%1 requires on a working system tray. If you are running XFCE, please follow &lt;a href=&quot;http://docs.xfce.org/xfce/xfce4-panel/systray&quot;&gt;these instructions&lt;/a&gt;. Otherwise, please install a system tray application such as &apos;trayer&apos; and try again.</source>
-        <translation type="unfinished"/>
+        <translation>% 1 requiere en una bandeja del sistema de trabajo. Si está ejecutando XFCE, por favor siga &lt;a href=&quot;http://docs.xfce.org/xfce/xfce4-panel/systray&quot;&gt; estas instrucciones &lt;/ a&gt;. De lo contrario, instale una aplicación de la bandeja del sistema, tales como &quot;trayer &apos;y vuelva a intentarlo.</translation>
     </message>
 </context>
 <context>

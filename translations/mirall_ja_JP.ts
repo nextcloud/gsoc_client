@@ -644,12 +644,12 @@
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="75"/>
         <source>No local folder selected!</source>
-        <translation type="unfinished"/>
+        <translation>ローカルフォルダ未選択</translation>
     </message>
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="80"/>
         <source>You have no permission to write to the selected folder!</source>
-        <translation type="unfinished"/>
+        <translation>選択されたフォルダに書き込み権限がありません</translation>
     </message>
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="104"/>
@@ -1552,12 +1552,12 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/main.cpp" line="38"/>
         <source>System Tray not available</source>
-        <translation type="unfinished"/>
+        <translation>システムトレイ利用不可</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="39"/>
         <source>%1 requires on a working system tray. If you are running XFCE, please follow &lt;a href=&quot;http://docs.xfce.org/xfce/xfce4-panel/systray&quot;&gt;these instructions&lt;/a&gt;. Otherwise, please install a system tray application such as &apos;trayer&apos; and try again.</source>
-        <translation type="unfinished"/>
+        <translation>%1は動作しているシステムトレイで必要とします。XFCEを動作させている場合、&lt;a href=&quot;http://docs.xfce.org/xfce/xfce4-panel/systray&quot;&gt;これらのインストラクション&lt;/a&gt;を追ってください。でなければ、「トレイヤー」のようなシステムトレイアプリケーションをインストールして、再度お試しください。</translation>
     </message>
 </context>
 <context>
