@@ -644,12 +644,12 @@
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="75"/>
         <source>No local folder selected!</source>
-        <translation type="unfinished"/>
+        <translation>Nessuna cartella locale selezionata!</translation>
     </message>
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="80"/>
         <source>You have no permission to write to the selected folder!</source>
-        <translation type="unfinished"/>
+        <translation>Non hai i permessi di scrittura per la cartella selezionata!</translation>
     </message>
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="104"/>
@@ -1552,12 +1552,12 @@ Sei sicuro di voler eseguire questa operazione?</translation>
     <message>
         <location filename="../src/main.cpp" line="38"/>
         <source>System Tray not available</source>
-        <translation type="unfinished"/>
+        <translation>Il Vassoio di Sistema non è disponibile</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="39"/>
         <source>%1 requires on a working system tray. If you are running XFCE, please follow &lt;a href=&quot;http://docs.xfce.org/xfce/xfce4-panel/systray&quot;&gt;these instructions&lt;/a&gt;. Otherwise, please install a system tray application such as &apos;trayer&apos; and try again.</source>
-        <translation type="unfinished"/>
+        <translation>%1 richiede un vassoio di sistema. Se stai usando XFCE, segui &lt;a href=&quot;http://docs.xfce.org/xfce/xfce4-panel/systray&quot;&gt;queste istruzioni&lt;/a&gt;.  Altrimenti, installa un&apos;applicazione vassoio di sistema come per esempio &apos;trayer&apos; e riprova.</translation>
     </message>
 </context>
 <context>
