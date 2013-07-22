@@ -202,7 +202,7 @@
     <message>
         <location filename="../src/mirall/application.cpp" line="815"/>
         <source>&lt;p&gt;Do you really want to reset folder &lt;i&gt;%1&lt;/i&gt; and rebuild your client database?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; While no files will be removed, this can cause significant data traffic and take several minutes to hours, depending on the size of the folder.&lt;/p&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;p&gt;آیا شما درحال حاضر میخواهید پوشه را دوباره راه اندازی کنید &lt;i&gt;%1&lt;/i&gt; و پایگاه داده نرم افزارتان دوباره ساخته شود؟&lt;/p&gt;&lt;p&gt;&lt;b&gt;یادداشت:&lt;/b&gt;در حالیکه هیچ فایلی حذف نشده است، این می تواند باعث ترافیک داده های قابل توجهی شود، وابسته  به اندازه پوشه چند دقیقه تا چند ساعت.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="1045"/>
@@ -290,7 +290,7 @@
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="72"/>
         <source>CSync Logging setup failed.</source>
-        <translation type="unfinished"/>
+        <translation>انجام تنظیمات CSync Logging ناموفق بود.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="78"/>
@@ -325,7 +325,7 @@
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="95"/>
         <source>CSync failed to reserve memory.</source>
-        <translation type="unfinished"/>
+        <translation>CSync موفق به رزرو حافظه نشد است.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="98"/>
@@ -335,17 +335,17 @@
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="101"/>
         <source>CSync processing step update failed.</source>
-        <translation type="unfinished"/>
+        <translation>مرحله به روز روسانی پردازش CSync ناموفق بود.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="104"/>
         <source>CSync processing step reconcile failed.</source>
-        <translation type="unfinished"/>
+        <translation>مرحله تطبیق پردازش CSync ناموفق بود.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="107"/>
         <source>CSync processing step propagate failed.</source>
-        <translation type="unfinished"/>
+        <translation>مرحله گسترش پردازش CSync ناموفق بود.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="110"/>
@@ -355,37 +355,37 @@
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="121"/>
         <source>CSync failed to connect through a proxy.</source>
-        <translation type="unfinished"/>
+        <translation>عدم موفقیت CSync  برای اتصال از طریق یک پروکسی.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="124"/>
         <source>CSync failed to lookup proxy or server.</source>
-        <translation type="unfinished"/>
+        <translation>عدم موفقیت CSync  برای مراجعه به پروکسی یا سرور.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="127"/>
         <source>CSync failed to authenticate at the %1 server.</source>
-        <translation type="unfinished"/>
+        <translation>عدم موفقیت CSync  برای اعتبار دادن در %1 سرور.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="130"/>
         <source>CSync failed to authenticate at the proxy.</source>
-        <translation type="unfinished"/>
+        <translation>عدم موفقیت CSyncبه تائید اعتبار در پروکسی.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="133"/>
         <source>CSync failed to connect to the network.</source>
-        <translation type="unfinished"/>
+        <translation>عدم موفقیت CSync برای اتصال به شبکه.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="136"/>
         <source>A network connection timeout happend.</source>
-        <translation type="unfinished"/>
+        <translation>اتصال به یک شبکه متوقف شده است.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="139"/>
         <source>A HTTP transmission error happened.</source>
-        <translation type="unfinished"/>
+        <translation>خطا در انتقال HTTP اتفاق افتاده است.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="142"/>
@@ -395,22 +395,22 @@
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="145"/>
         <source>CSync failed to find a specific file.</source>
-        <translation type="unfinished"/>
+        <translation>عدم موفقیت CSync در پیدا کردن یک فایل خاص.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="148"/>
         <source>CSync tried to create a directory that already exists.</source>
-        <translation type="unfinished"/>
+        <translation>CSync برای ایجاد یک پوشه که در حال حاضر موجود است تلاش کرده است.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="151"/>
         <source>CSync: No space on %1 server available.</source>
-        <translation type="unfinished"/>
+        <translation>CSync: فضا در %1 سرور در دسترس نیست.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="154"/>
         <source>CSync unspecified error.</source>
-        <translation type="unfinished"/>
+        <translation>خطای نامشخص CSync </translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="157"/>
@@ -852,7 +852,7 @@
     <message>
         <location filename="../src/mirall/owncloudsetupwizard.cpp" line="143"/>
         <source>Can&apos;t remove and back up the folder because the folder or a file in it is open in another program.Please close the folder or file and hit retry or cancel the setup.</source>
-        <translation type="unfinished"/>
+        <translation>نمی توان پوشه را حذف کرد و از آن پشتیبان گرفت زیرا پوشه یا یک فایل در آن در برنامه دیگر باز است .لطفا پوشه یا فایل را ببندید و دوباره امتحان کنید یا راه اندازی را لغو کنید.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetupwizard.cpp" line="283"/>
@@ -1230,14 +1230,17 @@
         <location filename="../src/mirall/owncloudfolder.cpp" line="509"/>
         <source>This sync would remove all the files in the local sync folder '%1'.
 If you or your administrator have reset your account on the server, choose &quot;Keep files&quot;. If you want your data to be removed, choose &quot;Remove all files&quot;.</source>
-        <translation type="unfinished"/>
+        <translation>این همگام سازی تمام فایل ها در پوشه همگام سازی محلی را حذف کرده است &apos;%1&apos;.
+اگر شما یا مدیر شما حساب شما را بر روی سرور دوباره راه اندازی کند، &quot;نگه داری فایل ها&quot; را انتخاب کنید. اگر شما می خواهید داده هایتان را حذف کنید، &quot;حذف تمام فایل ها&quot; را انتخاب کنید.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="512"/>
         <source>This sync would remove all the files in the sync folder '%1'.
 This might be because the folder was silently reconfigured, or that all the file were manually removed.
 Are you sure you want to perform this operation?</source>
-        <translation type="unfinished"/>
+        <translation>این همگام سازی تمام فایل ها در پوشه همگام سازی محلی را حذف کرده است &apos;%1&apos;.
+شاید به این علت که پوشه به آرارمی دوباره پیکربندی شده است، یا اینکه تمام فایل ها به صورت دستی حذف شده اند.
+آیا شما مطمئن هستید که می خواهید این عملیات را اجرا کنید؟</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="516"/>
@@ -1295,7 +1298,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="509"/>
         <source>The configured proxy requires login but the proxy credentials are invalid. Please check the proxy settings.</source>
-        <translation type="unfinished"/>
+        <translation>پروکسی پیکربندی شده نیازمند ورود است اما اعتبارهای پروکسی نامعتبر هستند. لطفا تنظیمات پروکسی را بررسی کنید.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudinfo.cpp" line="513"/>
@@ -1419,7 +1422,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="190"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If this box is checked, existing content in the local directory will be erased to start a clean sync from the server.&lt;/p&gt;&lt;p&gt;Do not check this if the local content should be uploaded to the servers directory.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"/>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt; اگر این مورد تیک خورده است، محتوی موجود برای شروع یک همگام سازی پاک از سرور در پوشه محلی پاک خواهند شد.&lt;/p&gt;&lt;p&gt; مورد را تیک نزنید اگر محتوی محلی باید در پوشه سرورها آپلود شوند.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="193"/>
