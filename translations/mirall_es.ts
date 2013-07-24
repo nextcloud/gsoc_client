@@ -75,7 +75,7 @@
     <message>
         <location filename="../src/mirall/application.cpp" line="365"/>
         <source>Sync started for %1 configured sync folder(s).</source>
-        <translation>Sincronización para %1 configurada carpeta de sincronización.</translation>
+        <translation>Sincronización iniciada para %1 carpeta(s) de sincronización configurada(s).</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="430"/>
@@ -252,12 +252,12 @@
     <message>
         <location filename="../src/mirall/application.cpp" line="1001"/>
         <source>Undefined State.</source>
-        <translation>Estado sin determinar.</translation>
+        <translation>Estado no definido.</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="1004"/>
         <source>Waits to start syncing.</source>
-        <translation>Esperando para comenar la sincronización.</translation>
+        <translation>Esperando para comenzar la sincronización.</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="1008"/>
