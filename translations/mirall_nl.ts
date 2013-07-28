@@ -644,12 +644,12 @@
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="75"/>
         <source>No local folder selected!</source>
-        <translation type="unfinished"/>
+        <translation>Geen lokale map geselecteerd!</translation>
     </message>
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="80"/>
         <source>You have no permission to write to the selected folder!</source>
-        <translation type="unfinished"/>
+        <translation>U heeft geen permissie om te schrijven naar de geselecteerde map!</translation>
     </message>
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="104"/>
@@ -1552,12 +1552,12 @@ Weet u zeker dat u hiermee wilt doorgaan?</translation>
     <message>
         <location filename="../src/main.cpp" line="38"/>
         <source>System Tray not available</source>
-        <translation type="unfinished"/>
+        <translation>Systeem icoon niet beschikbaar</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="39"/>
         <source>%1 requires on a working system tray. If you are running XFCE, please follow &lt;a href=&quot;http://docs.xfce.org/xfce/xfce4-panel/systray&quot;&gt;these instructions&lt;/a&gt;. Otherwise, please install a system tray application such as &apos;trayer&apos; and try again.</source>
-        <translation type="unfinished"/>
+        <translation>%1 heeft een werkend systeem icoon nodig. Als je XFCE draait volg &lt;a href=&quot;http://docs.xfce.org/xfce/xfce4-panel/systray&quot;&gt;deze instructies&lt;/a&gt;. Anders, installeer een systeem icoon applicatie zoals &apos;trayer&apos; and probeer het opnieuw.</translation>
     </message>
 </context>
 <context>
