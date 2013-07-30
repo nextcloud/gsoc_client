@@ -110,7 +110,7 @@
     <message>
         <location filename="../src/mirall/application.cpp" line="230"/>
         <source>&lt;p&gt;The configured server for this client is too old.&lt;/p&gt;&lt;p&gt;Please update to the latest %1 server and restart the client.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nastavený server je příliš starý pro tohoto klienta.&lt;/p&gt;&lt;p&gt;Aktualizujte, prosím, na nejnovější verzi %1 a znovu spusťte klienta.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nastavený server je příliš starý pro tohoto klienta.&lt;/p&gt;&lt;p&gt;Aktualizujte, prosím, na nejnovější verzi serveru %1 a znovu spusťte klienta.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="273"/>
@@ -237,7 +237,7 @@
     <message>
         <location filename="../src/mirall/application.cpp" line="1036"/>
         <source>Undefined Error State.</source>
-        <translation>Nedefinovatelná chyba.</translation>
+        <translation>Nedefinovaná chyba.</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="854"/>
@@ -252,12 +252,12 @@
     <message>
         <location filename="../src/mirall/application.cpp" line="1001"/>
         <source>Undefined State.</source>
-        <translation>Nedefinovatelný stav.</translation>
+        <translation>Nedefinovaný stav.</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="1004"/>
         <source>Waits to start syncing.</source>
-        <translation>Vyčkává na spuštění synchronizace.</translation>
+        <translation>Čeká na spuštění synchronizace.</translation>
     </message>
     <message>
         <location filename="../src/mirall/application.cpp" line="1008"/>
@@ -280,7 +280,7 @@
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="75"/>
         <source>CSync failed to create a lock file.</source>
-        <translation>CSync nelze vytvořit soubor zámku.</translation>
+        <translation>CSync nemůže vytvořit zámek.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="69"/>
@@ -295,27 +295,27 @@
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="78"/>
         <source>CSync failed to load the state db.</source>
-        <translation>CSync nelze načíst databázi stavu.</translation>
+        <translation>CSync nemůže načíst databázi stavu.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="84"/>
         <source>The system time on this client is different than the system time on the server. Please use a time synchronization service (NTP) on the server and client machines so that the times remain the same.</source>
-        <translation>Systémový čas na klientu je rozdílný od systémového času serveru. Použijte, prosím, službu synchronizace času (NTP) na na serveru i klientu, aby byl čas na obou strojích stejný.</translation>
+        <translation>Systémový čas na klientovi je rozdílný od systémového času serveru. Použijte, prosím, službu synchronizace času (NTP) na serveru i klientu, aby byl čas na obou strojích stejný.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="89"/>
         <source>CSync could not detect the filesystem type.</source>
-        <translation>CSync nelze detekovat typ souborového systému.</translation>
+        <translation>CSync nemohl detekovat typ souborového systému.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="92"/>
         <source>CSync got an error while processing internal trees.</source>
-        <translation>CSync obdrželo chybu při zpracování vnitřních stromů.</translation>
+        <translation>CSync obdrželo chybu při zpracování vnitřních struktur.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="118"/>
         <source>The local filesystem can not be written. Please check permissions.</source>
-        <translation>Do místního souborového systému nelze zapisovat. Ověřte, prosím, práva.</translation>
+        <translation>Do místního souborového systému nelze zapisovat. Ověřte, prosím, přístupová práva.</translation>
     </message>
     <message>
         <location filename="../src/mirall/csyncthread.cpp" line="114"/>
@@ -636,7 +636,7 @@
     <message>
         <location filename="../src/mirall/folderwizard.cpp" line="351"/>
         <source>%1 Folder Wizard</source>
-        <translation>%1 průvodce složkou</translation>
+        <translation>Průvodce složkou %1</translation>
     </message>
 </context>
 <context>
@@ -735,7 +735,7 @@
     <message>
         <location filename="../src/mirall/logbrowser.cpp" line="101"/>
         <source>Clear the log display.</source>
-        <translation>Vyčistit záznam.</translation>
+        <translation>Vyčistit výpis logu.</translation>
     </message>
     <message>
         <location filename="../src/mirall/logbrowser.cpp" line="107"/>
@@ -832,7 +832,7 @@
     <message>
         <location filename="../src/mirall/owncloudsetupwizard.cpp" line="47"/>
         <source>%1 Connection Wizard</source>
-        <translation>%1 Průvodce spojením</translation>
+        <translation>Průvodce spojením %1</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetupwizard.cpp" line="186"/>
@@ -913,7 +913,7 @@
     <message>
         <location filename="../src/mirall/owncloudsetupwizard.cpp" line="435"/>
         <source>A sync connection from %1 to remote directory %2 was set up.</source>
-        <translation>Bylo nastaveno synchronizované spojení z %1 ke vzdálenému adresáři %2.</translation>
+        <translation>Bylo nastaveno synchronizované spojení z %1 do vzdáleného adresáře %2.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetupwizard.cpp" line="440"/>
@@ -928,7 +928,7 @@
     <message>
         <location filename="../src/mirall/owncloudsetupwizard.cpp" line="305"/>
         <source>Local sync folder %1 already exists, setting it up for sync.&lt;br/&gt;&lt;br/&gt;</source>
-        <translation>Místní synchronizovaná složka %1 existuje, nastavuji ji pro synchronizaci.&lt;br/&gt;&lt;br/&gt;</translation>
+        <translation>Místní synchronizovaná složka %1 již existuje, nastavuji ji pro synchronizaci.&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetupwizard.cpp" line="307"/>
@@ -1224,7 +1224,7 @@
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="386"/>
         <source>The CSync thread terminated.</source>
-        <translation>Vlákno CSync přerušeno.</translation>
+        <translation>Vlákno CSync ukončeno.</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudfolder.cpp" line="509"/>
@@ -1348,17 +1348,17 @@ Are you sure you want to perform this operation?</source>
         <location filename="../src/mirall/owncloudsetuppage.ui" line="147"/>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="270"/>
         <source>Enter the url of the ownCloud you want to connect to (without http or https).</source>
-        <translation>Zadejte url ownCloud, ke které si přejete se připojit (bez http, či https).</translation>
+        <translation>Zadejte URL ownCloud, ke které si přejete se připojit (bez http, či https).</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage.ui" line="47"/>
         <source>Use &amp;secure connection</source>
-        <translation>Použít &amp;bezpečné spojení</translation>
+        <translation>Použít za&amp;bezpečené spojení</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage.ui" line="60"/>
         <source>CheckBox</source>
-        <translation>Zaškrtávací tlačítko</translation>
+        <translation>Zaškrtávací pole</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage.ui" line="75"/>
@@ -1394,7 +1394,7 @@ Are you sure you want to perform this operation?</source>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="35"/>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="444"/>
         <source>TextLabel</source>
-        <translation>Textový štítek</translation>
+        <translation>Textový popisek</translation>
     </message>
     <message>
         <location filename="../src/mirall/owncloudsetuppage_ng.ui" line="107"/>
@@ -1502,7 +1502,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/theme.cpp" line="53"/>
         <source>Waiting to start sync</source>
-        <translation>Čekám, až začne synchronizace</translation>
+        <translation>Čekám na start synchronizace</translation>
     </message>
     <message>
         <location filename="../src/mirall/theme.cpp" line="56"/>
@@ -1599,7 +1599,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/proxydialog.ui" line="44"/>
         <source>Manual proxy configuration</source>
-        <translation>Manuální nastavení proxy</translation>
+        <translation>Ruční nastavení proxy</translation>
     </message>
     <message>
         <location filename="../src/mirall/proxydialog.ui" line="116"/>
@@ -1629,7 +1629,7 @@ Are you sure you want to perform this operation?</source>
     <message>
         <location filename="../src/mirall/proxydialog.ui" line="128"/>
         <source>Proxy server requires password</source>
-        <translation>Proxy vyžaduje heslo</translation>
+        <translation>Proxy server vyžaduje heslo</translation>
     </message>
 </context>
 <context>
