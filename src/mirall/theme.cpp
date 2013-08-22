@@ -239,6 +239,8 @@ QIcon Theme::syncStateIcon( SyncResult::Status status, bool sysTray ) const
         statusIcon = QLatin1String("state-sync");
         break;
     case SyncResult::SyncPrepare:
+        statusIcon = QLatin1String("state-sync");
+        break;
     case SyncResult::Success:
         statusIcon = QLatin1String("state-ok");
         break;
