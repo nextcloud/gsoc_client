@@ -18,21 +18,21 @@
 #include <QObject>
 
 #include "mirall/occinfo.h"
+#include "mirall/updater.h"
 
 class QNetworkAccessManager;
 class QNetworkReply;
 
 namespace Mirall {
 
-class Theme;
-
-class UpdateDetector : public QObject
+class UpdateDetector : public QObject, public Updater
 {
     Q_OBJECT
 public:
     explicit UpdateDetector(QObject *parent = 0);
     
-    void versionCheck( Theme * );
+    void checkForUpdates();
+    void backgroundCheckForUpdates();
 signals:
     
 public slots:

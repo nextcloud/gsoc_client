@@ -190,8 +190,9 @@ Application::~Application()
 
 void Application::slotStartUpdateDetector()
 {
-    UpdateDetector *updateDetector = new UpdateDetector(this);
-    updateDetector->versionCheck(_theme);
+    // TODO: don't leak
+    Updater *updater = Updater::create();
+    updater->backgroundCheckForUpdates();
 }
 
 void Application::slotCheckConnection()
