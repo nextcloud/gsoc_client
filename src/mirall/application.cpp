@@ -104,6 +104,7 @@ Application::Application(int &argc, char **argv) :
     _recentActionsMenu(0),
     _theme(Theme::instance()),
     _logBrowser(0),
+    _startupNetworkError(false),
     _logExpire(0),
     _showLogWindow(false),
     _logFlush(false),
@@ -155,15 +156,17 @@ Application::Application(int &argc, char **argv) :
     }
 #endif
 
+//    connect(_networkMgr, SIGNAL(onlineStateChanged(bool)), SLOT(slotCheckConnection()));
+
     MirallConfigFile cfg;
     _theme->setSystrayUseMonoIcons(cfg.monoIcons());
     connect (_theme, SIGNAL(systrayUseMonoIconsChanged(bool)), SLOT(slotUseMonoIconsChanged(bool)));
 
     setupActions();
     setupSystemTray();
-    slotSetupProxy();
 
     folderMan->setupFolders();
+    slotSetupProxy(); // folders have to be defined first.
 
     // startup procedure.
     QTimer::singleShot( 0, this, SLOT( slotCheckConnection() ));
@@ -256,8 +259,6 @@ void Application::slotConnectionValidatorResult(ConnectionValidator::Status stat
         FolderMan *folderMan = FolderMan::instance();
         qDebug() << "######## Connection and Credentials are ok!";
         folderMan->setSyncEnabled(true);
-        _tray->setIcon( _theme->syncStateIcon( SyncResult::NotYetStarted, true ) );
-        _tray->show();
 
         int cnt = folderMan->map().size();
         slotShowOptionalTrayMessage(tr("%1 Sync Started").arg(_theme->appNameGUI()),
@@ -271,6 +272,8 @@ void Application::slotConnectionValidatorResult(ConnectionValidator::Status stat
         FolderMan::instance()->setSyncEnabled(false);
 
         _startupFail = _conValidator->errors();
+        _startupNetworkError = _conValidator->networkError();
+        QTimer::singleShot(30*1000, this, SLOT(slotCheckConnection()));
     }
     computeOverallSyncStatus();
     setupContextMenu();
@@ -515,6 +518,7 @@ void Application::slotSetupProxy()
 
     switch(proxyType) {
     case QNetworkProxy::NoProxy:
+        QNetworkProxyFactory::setUseSystemConfiguration(false);
         QNetworkProxy::setApplicationProxy(QNetworkProxy::NoProxy);
         break;
     case QNetworkProxy::DefaultProxy:
@@ -522,10 +526,12 @@ void Application::slotSetupProxy()
         break;
     case QNetworkProxy::Socks5Proxy:
         proxy.setType(QNetworkProxy::Socks5Proxy);
+        QNetworkProxyFactory::setUseSystemConfiguration(false);
         QNetworkProxy::setApplicationProxy(proxy);
         break;
     case QNetworkProxy::HttpProxy:
         proxy.setType(QNetworkProxy::HttpProxy);
+        QNetworkProxyFactory::setUseSystemConfiguration(false);
         QNetworkProxy::setApplicationProxy(proxy);
         break;
     default:
@@ -833,7 +839,12 @@ void Application::computeOverallSyncStatus()
     // if there have been startup problems, show an error message.
     if( !_startupFail.isEmpty() ) {
         trayMessage = _startupFail.join(QLatin1String("\n"));
-        QIcon statusIcon = _theme->syncStateIcon( SyncResult::Error, true );
+        QIcon statusIcon;
+        if (_startupNetworkError) {
+            statusIcon = _theme->syncStateIcon( SyncResult::NotYetStarted, true );
+        } else {
+            statusIcon = _theme->syncStateIcon( SyncResult::Error, true );
+        }
         _tray->setIcon( statusIcon );
         _tray->setToolTip(trayMessage);
     } else {

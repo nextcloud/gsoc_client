@@ -37,8 +37,7 @@ FolderMan* FolderMan::_instance = 0;
 
 FolderMan::FolderMan(QObject *parent) :
     QObject(parent),
-    _syncEnabled( true ),
-    _dirtyProxy( true )
+    _syncEnabled( true )
 {
     // if QDir::mkpath would not be so stupid, I would not need to have this
     // duplication of folderConfigPath() here
@@ -270,7 +269,7 @@ Folder* FolderMan::setupFolderFromConfigFile(const QString &file) {
     return folder;
 }
 
-void FolderMan::slotEnableFolder( const QString& alias, bool enable )
+void FolderMan::slotGuiPauseFolder( const QString& alias, bool enable )
 {
     if( ! _folderMap.contains( alias ) ) {
       qDebug() << "!! Can not enable alias " << alias << ", can not be found in folderMap.";
@@ -279,7 +278,7 @@ void FolderMan::slotEnableFolder( const QString& alias, bool enable )
 
     Folder *f = _folderMap[alias];
     if( f ) {
-        f->setSyncEnabled(enable);
+        f->slotSetSyncUserEnabled(enable);
         f->evaluateSync(QStringList());
     }
 }
@@ -391,8 +390,8 @@ void FolderMan::slotScheduleFolderSync()
         if( _folderMap.contains( alias ) ) {
             ownCloudInfo::instance()->getQuotaRequest("/");
             Folder *f = _folderMap[alias];
-            _currentSyncFolder = alias;
-            if (f->syncEnabled()) {
+            if( f->syncEnabled() ) {
+                _currentSyncFolder = alias;
                 f->startSync( QStringList() );
             }
         }
@@ -521,6 +520,14 @@ bool FolderMan::startFromScratch( const QString& localFolder )
     return false;
 }
 
+void FolderMan::setDirtyProxy(bool value)
+{
+    foreach( Folder *f, _folderMap.values() ) {
+        f->setProxyDirty(value);
+    }
+}
+
+
 SyncResult FolderMan::accountStatus(const QList<Folder*> &folders)
 {
     SyncResult overallResult(SyncResult::Undefined);
@@ -546,6 +553,7 @@ SyncResult FolderMan::accountStatus(const QList<Folder*> &folders)
         case SyncResult::Unavailable:
             overallResult.setStatus( SyncResult::Unavailable );
             break;
+        case SyncResult::Problem:
         case SyncResult::Success:
             if( overallResult.status() == SyncResult::Undefined )
                 overallResult.setStatus( SyncResult::Success );
@@ -557,10 +565,7 @@ SyncResult FolderMan::accountStatus(const QList<Folder*> &folders)
             if ( overallResult.status() != SyncResult::Error )
                 overallResult.setStatus( SyncResult::SetupError );
             break;
-        case SyncResult::Problem:
-            if ( overallResult.status() != SyncResult::Problem )
-                overallResult.setStatus( SyncResult::Problem );
-            break;
+
         // no default case on purpose, check compiler warnings
         }
     }

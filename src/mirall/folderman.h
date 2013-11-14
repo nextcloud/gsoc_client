@@ -91,7 +91,7 @@ signals:
 
 public slots:
     void slotRemoveFolder( const QString& );
-    void slotEnableFolder( const QString&, bool );
+    void slotGuiPauseFolder( const QString&, bool );
 
     void slotFolderSyncStarted();
     void slotFolderSyncFinished( const SyncResult& );
@@ -109,8 +109,7 @@ public slots:
 
     void slotScheduleAllFolders();
 
-    bool isDirtyProxy() { return _dirtyProxy; }
-    void setDirtyProxy(bool value = true) { _dirtyProxy = value; }
+    void setDirtyProxy(bool value = true);
 
 private slots:
     // slot to add a folder to the syncing queue
