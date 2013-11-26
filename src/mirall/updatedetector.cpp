@@ -33,15 +33,8 @@ UpdateDetector::UpdateDetector(QObject *parent) :
 {
 }
 
-void UpdateDetector::backgroundCheckForUpdates()
+void UpdateDetector::versionCheck( Theme *theme )
 {
-    // FIXME
-    checkForUpdates();
-}
-
-void UpdateDetector::checkForUpdates()
-{
-    Theme *theme = Theme::instance();
     connect(_accessManager, SIGNAL(finished(QNetworkReply*)), this,
             SLOT(slotVersionInfoArrived(QNetworkReply*)) );
     QUrl url(QLatin1String("https://download.owncloud.com/clientupdater.php"));
