@@ -35,6 +35,10 @@ print "Hello, this is t5, a tester for syncing of files in Shares\n";
 initTesting();
 
 my $share_dir = "share_source";
+my $sharee = { user   => configValue('share_user'),
+               passwd => configValue('share_passwd'),
+	       url    => server() };
+
 # first remove a possibly left over share dir.
 printInfo( "Remove possibly left over share dir" );
 removeRemoteDir( $share_dir, $sharee );
@@ -45,9 +49,6 @@ print "Created share with id <$shareId>\n";
 
 assert( $shareId > 0 );
 
-my $sharee = { user => configValue('share_user'),
-               passwd => configValue('share_passwd'),
-	       url => server() };
 # put a couple of files into the shared directory in the sharer account
 glob_put( 'sharing/*', $share_dir, $sharee);
 
