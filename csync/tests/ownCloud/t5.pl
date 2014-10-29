@@ -48,19 +48,20 @@ my $sharee = { user => configValue('share_user'),
 # put a couple of files into the shared directory in the sharer account
 glob_put( 'sharing/*', $share_dir, $sharee);
 
-# now user kf has a new directory in shared.
+if( $ENV{SERVER_VERSION} eq "owncloud6" ) {
+    # now user kf has a new directory in shared.
 
-# call csync, sync local t1 to remote t1
-printInfo("Initial sync, sync stuff down.");
-csync( server()."Shared" );
-assertLocalAndRemoteDir( 'Shared', 0, server() );
+    # call csync, sync local t1 to remote t1
+    printInfo("Initial sync, sync stuff down.");
+    csync( server()."Shared" );
+    assertLocalAndRemoteDir( 'Shared', 0, server() );
 
-# Local file to a read/write share should be synced up
-printInfo("Put a file into the share.");
-createLocalFile( localDir(). $share_dir . "/foobar.txt", 8094 );
-csync( server()."Shared" );
-assertLocalAndRemoteDir( 'Shared', 0, server() );
-
+    # Local file to a read/write share should be synced up
+    printInfo("Put a file into the share.");
+    createLocalFile( localDir(). $share_dir . "/foobar.txt", 8094 );
+    csync( server()."Shared" );
+    assertLocalAndRemoteDir( 'Shared', 0, server() );
+}
 
 printInfo("Remove a Share.");
 removeShare($shareId, $share_dir);
