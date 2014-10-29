@@ -49,6 +49,11 @@ print "Created share with id <$shareId>\n";
 
 assert( $shareId > 0 );
 
+if( $ENV{SERVER_VERSION} eq "owncloud7" ) {
+  print "This test does not make sense for ownCloud7, leaving for good!\n\n";
+  exit;
+}
+
 # put a couple of files into the shared directory in the sharer account
 glob_put( 'sharing/*', $share_dir, $sharee);
 
