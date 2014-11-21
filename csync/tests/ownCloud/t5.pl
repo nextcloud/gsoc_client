@@ -35,6 +35,9 @@ print "Hello, this is t5, a tester for syncing of files in Shares\n";
 initTesting();
 
 my $share_dir = "share_source";
+# first remove a possibly left over share dir.
+printInfo( "Remove possibly left over share dir" );
+removeRemoteDir( $share_dir, $sharee );
 
 printInfo( "Create a share." );
 my $shareId = createShare( $share_dir, 31 );
