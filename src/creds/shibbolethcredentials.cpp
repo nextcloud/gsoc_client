@@ -243,8 +243,8 @@ void ShibbolethCredentials::invalidateToken(Account *account)
     CookieJar *jar = static_cast<CookieJar*>(account->networkAccessManager()->cookieJar());
 
     // Remove the _shibCookie
-    auto cookies = jar->allCookies();
-    for (auto it = cookies.begin(); it != cookies.end(); ) {
+    QList<QNetworkCookie> cookies = jar->allCookies();
+    for (QList<QNetworkCookie>::iterator it = cookies.begin(); it != cookies.end(); ) {
         if (it->name() == _shibCookie.name()) {
             it = cookies.erase(it);
         } else {
