@@ -29,8 +29,10 @@ public:
     bool setCookiesFromUrl(const QList<QNetworkCookie> &cookieList, const QUrl &url);
     QList<QNetworkCookie> cookiesForUrl(const QUrl &url) const;
 
-    virtual bool deleteCookie(const QNetworkCookie & cookie);
     void clearSessionCookies();
+
+    using QNetworkCookieJar::setAllCookies;
+    using QNetworkCookieJar::allCookies;
 
 signals:
     void newCookiesForUrl(const QList<QNetworkCookie>& cookieList, const QUrl& url);
