@@ -117,6 +117,7 @@ void BandwidthManager::unregisterUploadDevice(UploadDevice* p)
     _relativeUploadDeviceList.removeAll(p);
     if (p == _relativeLimitCurrentMeasuredDevice) {
         _relativeLimitCurrentMeasuredDevice = 0;
+        _relativeUploadLimitProgressAtMeasuringRestart = 0;
     }
 }
 
@@ -141,6 +142,10 @@ void BandwidthManager::registerDownloadJob(GETFileJob* j)
 void BandwidthManager::unregisterDownloadJob(GETFileJob* j)
 {
     _downloadJobList.removeAll(j);
+    if (_relativeLimitCurrentMeasuredJob == j) {
+        _relativeLimitCurrentMeasuredJob = 0;
+        _relativeDownloadLimitProgressAtMeasuringRestart = 0;
+    }
 }
 
 void BandwidthManager::unregisterDownloadJob(QObject* o)
