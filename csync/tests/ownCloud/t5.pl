@@ -35,6 +35,13 @@ print "Hello, this is t5, a tester for syncing of files in Shares\n";
 initTesting();
 
 my $share_dir = "share_source";
+my $sharee = { user   => configValue('share_user'),
+               passwd => configValue('share_passwd'),
+	       url    => server() };
+
+# first remove a possibly left over share dir.
+printInfo( "Remove possibly left over share dir" );
+removeRemoteDir( $share_dir, $sharee );
 
 printInfo( "Create a share." );
 my $shareId = createShare( $share_dir, 31 );
@@ -42,25 +49,28 @@ print "Created share with id <$shareId>\n";
 
 assert( $shareId > 0 );
 
-my $sharee = { user => configValue('share_user'),
-               passwd => configValue('share_passwd'),
-	       url => server() };
+if( $ENV{SERVER_VERSION} eq "owncloud7" ) {
+  print "This test does not make sense for ownCloud7, leaving for good!\n\n";
+  exit;
+}
+
 # put a couple of files into the shared directory in the sharer account
 glob_put( 'sharing/*', $share_dir, $sharee);
 
-# now user kf has a new directory in shared.
+if( $ENV{SERVER_VERSION} eq "owncloud6" ) {
+    # now user kf has a new directory in shared.
 
-# call csync, sync local t1 to remote t1
-printInfo("Initial sync, sync stuff down.");
-csync( server()."Shared" );
-assertLocalAndRemoteDir( 'Shared', 0, server() );
+    # call csync, sync local t1 to remote t1
+    printInfo("Initial sync, sync stuff down.");
+    csync( server()."Shared" );
+    assertLocalAndRemoteDir( 'Shared', 0, server() );
 
-# Local file to a read/write share should be synced up
-printInfo("Put a file into the share.");
-createLocalFile( localDir(). $share_dir . "/foobar.txt", 8094 );
-csync( server()."Shared" );
-assertLocalAndRemoteDir( 'Shared', 0, server() );
-
+    # Local file to a read/write share should be synced up
+    printInfo("Put a file into the share.");
+    createLocalFile( localDir(). $share_dir . "/foobar.txt", 8094 );
+    csync( server()."Shared" );
+    assertLocalAndRemoteDir( 'Shared', 0, server() );
+}
 
 printInfo("Remove a Share.");
 removeShare($shareId, $share_dir);
