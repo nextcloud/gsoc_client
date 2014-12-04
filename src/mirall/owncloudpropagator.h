@@ -46,10 +46,8 @@ class PropagatorJob : public QObject {
 protected:
     OwncloudPropagator *_propagator;
     void emitReady() {
-        bool wasReady = _readySent;
         _readySent = true;
-        if (!wasReady)
-            emit ready();
+        emit ready();
     };
 public:
     bool _readySent;
