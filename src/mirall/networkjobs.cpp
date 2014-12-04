@@ -48,7 +48,7 @@ AbstractNetworkJob::AbstractNetworkJob(Account *account, const QString &path, QO
     , _path(path)
 {
     _timer.setSingleShot(true);
-    _timer.setInterval(10*1000); // default to 10 seconds.
+    _timer.setInterval(OwncloudPropagator::httpTimeout() * 1000); // default to 5 minutes.
     connect(&_timer, SIGNAL(timeout()), this, SLOT(slotTimeout()));
 }
 
