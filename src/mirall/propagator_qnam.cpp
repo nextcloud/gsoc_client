@@ -630,7 +630,7 @@ void PropagateUploadFileQNAM::abort()
 
 // DOES NOT take owncership of the device.
 GETFileJob::GETFileJob(Account* account, const QString& path, QFile *device,
-                    const QMap<QByteArray, QByteArray> &headers, QByteArray expectedEtagForResume,
+                    const QMap<QByteArray, QByteArray> &headers, const QByteArray &expectedEtagForResume,
                     quint64 _resumeStart,  QObject* parent)
 : AbstractNetworkJob(account, path, parent),
   _device(device), _headers(headers), _expectedEtagForResume(expectedEtagForResume),
@@ -641,10 +641,10 @@ GETFileJob::GETFileJob(Account* account, const QString& path, QFile *device,
 }
 
 GETFileJob::GETFileJob(Account* account, const QUrl& url, QFile *device,
-                    const QMap<QByteArray, QByteArray> &headers,
-                    QObject* parent)
+                       const QMap<QByteArray, QByteArray> &headers, const QByteArray &expectedEtagForResume,
+                       quint64 resumeStart, QObject* parent)
 : AbstractNetworkJob(account, url.toEncoded(), parent),
-  _device(device), _headers(headers), _resumeStart(0),
+  _device(device), _headers(headers), _expectedEtagForResume(expectedEtagForResume), _resumeStart(resumeStart),
   _errorStatus(SyncFileItem::NoStatus), _directDownloadUrl(url)
 , _bandwidthLimited(false), _bandwidthChoked(false), _bandwidthQuota(0), _bandwidthManager(0)
 , _hasEmittedFinishedSignal(false)
@@ -927,7 +927,7 @@ void PropagateDownloadFileQNAM::start()
         QUrl url = QUrl::fromUserInput(_item._directDownloadUrl);
         _job = new GETFileJob(AccountManager::instance()->account(),
                               url,
-                              &_tmpFile, headers);
+                              &_tmpFile, headers, expectedEtagForResume, _startSize);
         qDebug() << Q_FUNC_INFO << "directDownloadUrl given for " << _item._file << _item._directDownloadUrl << headers["Cookie"];
     }
     _job->setBandwidthManager(&_propagator->_bandwidthManager);

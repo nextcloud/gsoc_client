@@ -152,13 +152,13 @@ class GETFileJob : public AbstractNetworkJob {
 public:
 
     // DOES NOT take owncership of the device.
-    explicit GETFileJob(Account* account, const QString& path, QFile *device,
-                        const QMap<QByteArray, QByteArray> &headers, QByteArray expectedEtagForResume,
-                        quint64 resumeStart, QObject* parent = 0);
+    explicit GETFileJob(Mirall::Account* account, const QString& path, QFile* device,
+                        const QMap<QByteArray, QByteArray> &headers, const QByteArray& expectedEtagForResume,
+                        quint64 _resumeStart, QObject* parent = 0);
     // For directDownloadUrl:
-    explicit GETFileJob(Account* account, const QUrl& url, QFile *device,
-                        const QMap<QByteArray, QByteArray> &headers,
-                        QObject* parent = 0);
+    explicit GETFileJob(Mirall::Account* account, const QUrl& url, QFile* device,
+                        const QMap<QByteArray, QByteArray> &headers, const QByteArray& expectedEtagForResume,
+                        quint64 resumeStart, QObject* parent = 0);
     virtual ~GETFileJob() {
         if (_bandwidthManager) {
             _bandwidthManager->unregisterDownloadJob(this);
