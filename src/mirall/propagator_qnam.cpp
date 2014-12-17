@@ -203,7 +203,9 @@ UploadDevice::UploadDevice(QIODevice *file,  qint64 start, qint64 size, Bandwidt
 
 
 UploadDevice::~UploadDevice() {
-    _bandwidthManager->unregisterUploadDevice(this);
+    if (_bandwidthManager) {
+        _bandwidthManager->unregisterUploadDevice(this);
+    }
 }
 
 qint64 UploadDevice::writeData(const char* , qint64 ) {

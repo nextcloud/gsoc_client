@@ -189,7 +189,7 @@ public:
     qint64 _read;
     qint64 _size;
     qint64 _start;
-    BandwidthManager* _bandwidthManager;
+    QPointer<BandwidthManager> _bandwidthManager;
 
     qint64 _bandwidthQuota;
     qint64 _readWithProgress;
