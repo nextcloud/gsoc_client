@@ -56,6 +56,11 @@ static SyncFileItem::Status classifyError(QNetworkReply::NetworkError nerror, in
         return SyncFileItem::SoftError;
     }
 
+    if (httpCode == 423) {
+        // Locked
+        return SyncFileItem::SoftError;
+    }
+
     return SyncFileItem::NormalError;
 }
 
@@ -449,7 +454,11 @@ void PropagateUploadFileQNAM::slotPutFinished()
         qDebug() << replyContent; // display the XML error in the debug
         QRegExp rx("<s:message>(.*)</s:message>"); // Issue #1366: display server exception
         if (rx.indexIn(QString::fromUtf8(replyContent)) != -1) {
-            errorString += QLatin1String(" (") + rx.cap(1) + QLatin1Char(')');
+            if (_item._httpErrorCode == 423) {
+                errorString = rx.cap(1); // For "Locked", the library user doesn't want all the stuff except the <s:message> contents
+            } else {
+                errorString += QLatin1String(" (") + rx.cap(1) + QLatin1Char(')');
+            }
         }
 
         if (_item._httpErrorCode == 412) {

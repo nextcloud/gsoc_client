@@ -352,7 +352,7 @@ bool PropagateNeonJob::updateErrorFromSession(int neon_code, ne_request* req, in
             if (ignoreHttpCode && httpStatusCode == ignoreHttpCode)
                 return false;
 
-            done(SyncFileItem::NormalError, errorString);
+            done((httpStatusCode != 423) ? SyncFileItem::NormalError : SyncFileItem::SoftError, errorString);
             return true;
         case NE_LOOKUP:  /* Server or proxy hostname lookup failed */
         case NE_AUTH:     /* User authentication failed on server */
