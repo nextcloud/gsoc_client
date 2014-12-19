@@ -392,13 +392,13 @@ void PropagateUploadFileQNAM::startNextChunk()
     if( isOpen ) {
         PUTFileJob* job = new PUTFileJob(AccountManager::instance()->account(), _propagator->_remoteFolder + path, device, headers, _currentChunk);
         _jobs.append(job);
+        _currentChunk++;
         connect(job, SIGNAL(finishedSignal()), this, SLOT(slotPutFinished()));
         connect(job, SIGNAL(uploadProgress(qint64,qint64)), this, SLOT(slotUploadProgress(qint64,qint64)));
         connect(job, SIGNAL(uploadProgress(qint64,qint64)), device, SLOT(slotJobUploadProgress(qint64,qint64)));
         connect(job, SIGNAL(destroyed(QObject*)), this, SLOT(slotJobDestroyed(QObject*)));
         job->start();
         _propagator->_activeJobs++;
-        _currentChunk++;
 
         QByteArray env = qgetenv("OWNCLOUD_PARALLEL_CHUNK");
         bool parallelChunkUpload = env=="true" || env =="1";;
@@ -585,12 +585,12 @@ void PropagateUploadFileQNAM::slotUploadProgress(qint64 sent, qint64 t)
     quint64 amount = progressChunk * chunkSize();
     sender()->setProperty("byteWritten", sent);
     if (_jobs.count() > 1) {
-        amount += sent;
-    } else {
         amount -= (_jobs.count() -1) * chunkSize();
         foreach (QObject *j, _jobs) {
             amount += j->property("byteWritten").toULongLong();
         }
+    } else {
+        amount += sent;
     }
     emit progress(_item, amount);
 }
