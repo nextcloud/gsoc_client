@@ -191,7 +191,6 @@ CSYNC_EXCLUDE_TYPE csync_excluded_no_ctx(c_strlist_t *excludes, const char *path
   const char *p = NULL;
   char *bname = NULL;
   char *dname = NULL;
-  char *prev_dname = NULL;
   char *conflict = NULL;
   int rc = -1;
   CSYNC_EXCLUDE_TYPE match = CSYNC_NOT_EXCLUDED;
@@ -304,6 +303,33 @@ CSYNC_EXCLUDE_TYPE csync_excluded_no_ctx(c_strlist_t *excludes, const char *path
       goto out;
   }
 
+  /* split the path into its components */
+
+  /* First, count the number of components, ie. /foo/bar/baz/file.txt has four components */
+  size_t comp_cnt = 1;
+  int starter = 0;
+  if( path[0] == '/' ) {
+      starter = 1; /* in case of trailing slash, skip that one */
+  }
+  for( i = starter; i < strlen(path); i++ ) {
+      if( path[i] == '/' ) {
+          comp_cnt++;
+      }
+  }
+
+  /* Fill a string list with the components to the given path
+   * so far with all the components. */
+  c_strlist_t *path_components = NULL;
+  if( comp_cnt > 0 ) {
+      char *comp_path = c_strdup( path );
+      path_components = c_strlist_new(comp_cnt);
+      for (char *token = strtok(comp_path, "/"); token; token = strtok(NULL, "/")) {
+          c_strlist_add(path_components, c_strdup(token));
+      }
+      SAFE_FREE(comp_path);
+  }
+
+
   /* Loop over all exclude patterns and evaluate the given path */
   for (i = 0; match == CSYNC_NOT_EXCLUDED && i < excludes->count; i++) {
       bool match_dirs_only = false;
@@ -339,53 +365,25 @@ CSYNC_EXCLUDE_TYPE csync_excluded_no_ctx(c_strlist_t *excludes, const char *path
               match = CSYNC_NOT_EXCLUDED;
           }
       }
-
       /* if still not excluded, check each component of the path */
       if (match == CSYNC_NOT_EXCLUDED) {
-          int trailing_component = 1;
-          dname = c_dirname(path);
-          bname = c_basename(path);
-
-          if (bname == NULL || dname == NULL) {
-              match = CSYNC_NOT_EXCLUDED;
-	      SAFE_FREE(bname);
-	      SAFE_FREE(dname);
-              SAFE_FREE(pattern_stored);
-              goto out;
+          size_t stop_at = comp_cnt;
+          if( match_dirs_only && filetype == CSYNC_FTW_TYPE_FILE ) {
+              stop_at--; // do not check the trailing component for files
           }
+          /* Loop over every component of the path and check */
+          for( size_t comp_no = 0; comp_no < stop_at && match == CSYNC_NOT_EXCLUDED; comp_no++ ) {
+              char *component = path_components->vector[comp_no];
 
-          /* Check each component of the path */
-          do {
-              /* Do not check the bname if its a file and the pattern matches dirs only. */
-              if ( !(trailing_component == 1 /* it is the trailing component */
-                     && match_dirs_only      /* but only directories are matched by the pattern */
-                     && filetype == CSYNC_FTW_TYPE_FILE) ) {
-                  /* Check the name component against the pattern */
-                  rc = csync_fnmatch(pattern, bname, 0);
-                  if (rc == 0) {
-                      match = type;
-                  }
+              rc = csync_fnmatch(pattern, component, 0);
+              if (rc == 0) {
+                  match = type;
               }
-              if (!(c_streq(dname, ".") || c_streq(dname, "/"))) {
-                  rc = csync_fnmatch(pattern, dname, 0);
-                  if (rc == 0) {
-                      match = type;
-                  }
-              }
-              trailing_component = 0;
-              prev_dname = dname;
-              SAFE_FREE(bname);
-              bname = c_basename(prev_dname);
-              dname = c_dirname(prev_dname);
-              SAFE_FREE(prev_dname);
-
-          } while( match == CSYNC_NOT_EXCLUDED && !c_streq(dname, ".")
-                     && !c_streq(dname, "/") );
+          }
       }
       SAFE_FREE(pattern_stored);
-      SAFE_FREE(bname);
-      SAFE_FREE(dname);
   }
+  c_strlist_destroy(path_components);
 
 
 out:
