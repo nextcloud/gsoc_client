@@ -772,6 +772,7 @@ Function .onInstSuccess
    ${AndIf} $InstallRunIfSilent == "yes"
      Call LaunchApplication
    ${EndIf}
+   ClearErrors
 FunctionEnd
 
 Function .onInstFailed
@@ -822,6 +823,7 @@ Function un.onInit
 FunctionEnd
 
 Function un.onUnInstSuccess
+   ClearErrors
 FunctionEnd
 
 Function un.onUnInstFailed
