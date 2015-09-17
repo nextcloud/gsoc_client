@@ -720,6 +720,7 @@ Function .onInit
    ${MementoSectionRestore}
 
    UAC_TryAgain:
+      ClearErrors
       !insertmacro UAC_RunElevated
       ${Switch} $0
       ${Case} 0
@@ -740,6 +741,7 @@ Function .onInit
          Abort
          Quit
       ${EndSwitch}
+      ClearErrors
 
    ;Prevent multiple instances.
    System::Call 'kernel32::CreateMutexA(i 0, i 0, t "${APPLICATION_SHORTNAME}Installer") i .r1 ?e'
@@ -785,6 +787,7 @@ Function un.onInit
    Call un.SetLang
 
    UAC_TryAgain:
+      ClearErrors
       !insertmacro UAC_RunElevated
       ${Switch} $0
       ${Case} 0
@@ -805,6 +808,7 @@ Function un.onInit
          Abort
          Quit
       ${EndSwitch}
+      ClearErrors
 
    ;Prevent multiple instances.
    System::Call 'kernel32::CreateMutexA(i 0, i 0, t "${APPLICATION_SHORTNAME}Uninstaller") i .r1 ?e'
