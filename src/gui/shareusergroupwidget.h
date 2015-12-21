@@ -67,6 +67,7 @@ private slots:
     void slotPermissionsSet();
 private:
     void displayPermissions();
+    void loadAvatar();
 
     Ui::ShareWidget *_ui;
     QSharedPointer<Share> _share;

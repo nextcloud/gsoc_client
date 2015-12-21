@@ -39,6 +39,8 @@
 #include <QPropertyAnimation>
 #include <QMenu>
 #include <QAction>
+#include <QCryptographicHash>
+#include <QColor>
 
 namespace OCC {
 
@@ -250,6 +252,47 @@ ShareWidget::ShareWidget(QSharedPointer<Share> share,
     if (!share->account()->capabilities().shareResharing()) {
         _ui->permissionShare->hide();
     }
+
+    loadAvatar();
+}
+
+void ShareWidget::loadAvatar()
+{
+    /* Set the default place holder
+     * This is calculated the same way as on the webinterface
+     * So that the colors match
+     *
+     * This is done first so that we can directly show something
+     */
+
+    // Set size of the placeholder
+    _ui->avatar->setMinimumHeight(48);
+    _ui->avatar->setMinimumWidth(48);
+    _ui->avatar->setMaximumHeight(48);
+    _ui->avatar->setMaximumWidth(48);
+    _ui->avatar->setAlignment(Qt::AlignCenter);
+
+    /* Calculate the hue
+     * We could use more digits but we have the MSB now which
+     * is already plenty
+     */
+    const QString text = _share->getShareWith()->displayName();
+    const QByteArray hash = QCryptographicHash::hash(text.toUtf8(), QCryptographicHash::Md5);
+    int hue = ((double)hash.mid(0, 4).toHex().toInt(0, 16) / (double)0xffffffff) * 255;
+
+    const QColor bg = QColor::fromHsl(hue, 230, 166);
+    const QString style = QString("* {\
+        color: #fff;\
+        background-color: %1;\
+        border-radius: 24px;\
+        font-size: 26px\
+    }").arg(bg.name());
+
+    // Set the style
+    _ui->avatar->setStyleSheet(style);
+
+    // Set the placeholder text
+    _ui->avatar->setText(text.at(0).toUpper());
 }
 
 void ShareWidget::on_deleteShareButton_clicked()
