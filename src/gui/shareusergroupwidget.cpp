@@ -26,6 +26,7 @@
 #include "thumbnailjob.h"
 #include "share.h"
 #include "sharee.h"
+#include "avatarjob.h"
 
 #include "QProgressIndicator.h"
 #include <QBuffer>
@@ -41,6 +42,7 @@
 #include <QAction>
 #include <QCryptographicHash>
 #include <QColor>
+#include <QPainter>
 
 namespace OCC {
 
@@ -147,7 +149,7 @@ void ShareUserGroupWidget::slotSharesFetched(const QList<QSharedPointer<Share>> 
             continue;
         }
 
-        ShareWidget *s = new ShareWidget(share, _isFile, _ui->scrollArea);
+        ShareWidget *s = new ShareWidget(share, _isFile, _account, _ui->scrollArea);
         connect(s, SIGNAL(resizeRequested()), this, SLOT(slotAdjustScrollWidgetSize()));
         layout->addWidget(s);
 
@@ -201,11 +203,13 @@ void ShareUserGroupWidget::slotCompleterActivated(const QModelIndex & index)
 
 ShareWidget::ShareWidget(QSharedPointer<Share> share,
                          bool isFile,
+                         AccountPtr account,
                          QWidget *parent) :
   QWidget(parent),
   _ui(new Ui::ShareWidget),
   _share(share),
-  _isFile(isFile)
+  _isFile(isFile),
+  _account(account)
 {
     _ui->setupUi(this);
 
@@ -293,6 +297,56 @@ void ShareWidget::loadAvatar()
 
     // Set the placeholder text
     _ui->avatar->setText(text.at(0).toUpper());
+
+    // We can only fetch avatars for local users currently
+    if (_share->getShareWith()->type() == Sharee::User) {
+        AvatarJob *job = new AvatarJob(_share->getShareWith()->shareWith(), 48, _account, this);
+        connect(job, SIGNAL(avatarReady(QByteArray, QString)), SLOT(slotAvatarLoaded(QByteArray, QString)));
+        job->start();
+    }
+}
+
+void ShareWidget::slotAvatarLoaded(const QByteArray &data, const QString &mimeType)
+{
+    QPixmap p;
+    bool valid = false;
+    if (mimeType == "image/png") {
+        valid = p.loadFromData(data, "PNG");
+    } else if (mimeType == "image/jpeg") {
+        valid = p.loadFromData(data, "JPG");
+    } else {
+        // Guess the filetype
+        valid = p.loadFromData(data);
+    }
+
+    // If the image was loaded succesfully set it!
+    if (valid) {
+
+        /*
+         * We want round avatars so create a new pixmap to draw
+         * the round avatar on and set a transparent background
+         */
+        QPixmap avatar(p.width(), p.height());
+        avatar.fill(QColor(0,0,0,0));
+
+        // Initialise our painer
+        QPainter painter(&avatar);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        // Set to draw only a cricle
+        QPainterPath path;
+        path.addEllipse(0,0,p.width(),p.height());
+        painter.setClipPath(path);
+
+        // Draw the round avatar
+        painter.drawPixmap(0,0,p.width(),p.width(),p);
+
+        // Set the avatar
+        _ui->avatar->setPixmap(avatar);
+        
+        // Remove the stylesheet
+        _ui->avatar->setStyleSheet("");
+    }
 }
 
 void ShareWidget::on_deleteShareButton_clicked()

@@ -45,6 +45,7 @@ set(client_SRCS
     accountmanager.cpp
     accountsettings.cpp
     application.cpp
+    avatarjob.cpp
     folder.cpp
     folderman.cpp
     folderstatusmodel.cpp

@@ -48,7 +48,10 @@ class ShareWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit ShareWidget(QSharedPointer<Share> Share, bool isFile, QWidget *parent = 0);
+    explicit ShareWidget(QSharedPointer<Share> Share,
+                         bool isFile,
+                         AccountPtr account,
+                         QWidget *parent = 0);
     ~ShareWidget();
 
     QSharedPointer<Share> share() const;
@@ -65,6 +68,8 @@ private slots:
 
     void slotShareDeleted();
     void slotPermissionsSet();
+    void slotAvatarLoaded(const QByteArray &data, const QString &mimeType);
+
 private:
     void displayPermissions();
     void loadAvatar();
@@ -72,6 +77,7 @@ private:
     Ui::ShareWidget *_ui;
     QSharedPointer<Share> _share;
     bool _isFile;
+    AccountPtr _account;
 
     QAction *_permissionCreate;
     QAction *_permissionUpdate;
