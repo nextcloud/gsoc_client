@@ -281,8 +281,14 @@ void ShareWidget::loadAvatar()
      * is already plenty
      */
     const QString text = _share->getShareWith()->displayName();
-    const QByteArray hash = QCryptographicHash::hash(text.toUtf8(), QCryptographicHash::Md5);
-    int hue = ((double)hash.mid(0, 4).toHex().toInt(0, 16) / (double)0xffffffff) * 255;
+
+    QString seed = _share->getShareWith()->shareWith();
+    if (_share->getShareWith()->type() != Sharee::User) {
+        seed += QString(" %1").arg(_share->getShareWith()->type());
+    }
+
+    const QByteArray hash = QCryptographicHash::hash(seed.toUtf8(), QCryptographicHash::Md5);
+    int hue = ((double)hash.mid(0, 3).toHex().toInt(0, 16) / (double)0xffffff) * 255;
 
     const QColor bg = QColor::fromHsl(hue, 230, 166);
     const QString style = QString("* {\
