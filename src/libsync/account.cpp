@@ -236,7 +236,10 @@ QNetworkReply *Account::getRequest(const QUrl &url)
 #if QT_VERSION > QT_VERSION_CHECK(4, 8, 4)
     request.setSslConfiguration(this->getOrCreateSslConfig());
 #endif
-    return _am->get(request);
+    request.setAttribute(QNetworkRequest::HttpPipeliningAllowedAttribute, QVariant(true));
+    QNetworkReply *reply = _am->get(request);
+
+    return reply;
 }
 
 QNetworkReply *Account::davRequest(const QByteArray &verb, const QString &relPath, QNetworkRequest req, QIODevice *data)

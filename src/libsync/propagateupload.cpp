@@ -71,6 +71,7 @@ void PUTFileJob::start() {
     for(QMap<QByteArray, QByteArray>::const_iterator it = _headers.begin(); it != _headers.end(); ++it) {
         req.setRawHeader(it.key(), it.value());
     }
+    req.setAttribute(QNetworkRequest::HttpPipeliningAllowedAttribute, QVariant(true));
 
     setReply(davRequest("PUT", path(), req, _device.data()));
     setupConnections(reply());
