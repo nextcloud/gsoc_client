@@ -93,6 +93,14 @@ public:
     quint64 resumeStart() { return _resumeStart; }
     time_t lastModified() { return _lastModified; }
 
+    bool _allowPipelining;
+    void setPipeliningAllowed(bool b) {
+        _allowPipelining = b;
+    }
+    bool isPipeliningAllowed() {
+        return _allowPipelining;
+    }
+
 
 signals:
     void finishedSignal();

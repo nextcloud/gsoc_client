@@ -205,6 +205,7 @@ void ConnectionValidator::slotAuthFailed(QNetworkReply *reply)
 void ConnectionValidator::slotAuthSuccess()
 {
     _errors.clear();
+    qDebug() << !_isCheckingServerAndAuth;
     if (!_isCheckingServerAndAuth) {
         reportResult(Connected);
         return;

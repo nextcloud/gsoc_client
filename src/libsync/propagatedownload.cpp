@@ -67,6 +67,7 @@ GETFileJob::GETFileJob(AccountPtr account, const QString& path, QFile *device,
 , _bandwidthLimited(false), _bandwidthChoked(false), _bandwidthQuota(0), _bandwidthManager(0)
 , _hasEmittedFinishedSignal(false), _lastModified()
 {
+    _allowPipelining = false;
 }
 
 GETFileJob::GETFileJob(AccountPtr account, const QUrl& url, QFile *device,
@@ -79,6 +80,8 @@ GETFileJob::GETFileJob(AccountPtr account, const QUrl& url, QFile *device,
 , _bandwidthLimited(false), _bandwidthChoked(false), _bandwidthQuota(0), _bandwidthManager(0)
 , _hasEmittedFinishedSignal(false), _lastModified()
 {
+    _allowPipelining = false;
+
 }
 
 
@@ -92,6 +95,10 @@ void GETFileJob::start() {
     QNetworkRequest req;
     for(QMap<QByteArray, QByteArray>::const_iterator it = _headers.begin(); it != _headers.end(); ++it) {
         req.setRawHeader(it.key(), it.value());
+    }
+    if (_allowPipelining) {
+        req.setAttribute(QNetworkRequest::HttpPipeliningAllowedAttribute, true);
+        qDebug() << path() << "pipelining ok!";
     }
 
     if (_directDownloadUrl.isEmpty()) {
@@ -128,6 +135,10 @@ void GETFileJob::slotMetaDataChanged()
     reply()->setReadBufferSize(16 * 1024);
 
     int httpStatus = reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+
+    if (reply()->attribute(QNetworkRequest::HttpPipeliningWasUsedAttribute).toBool()) {
+        qDebug() << reply()->url() << "MARKUS DID USE PIPELINING!";
+    }
 
     // If the status code isn't 2xx, don't write the reply body to the file.
     // For any error: handle it when the job is finished, not here.
@@ -396,6 +407,13 @@ void PropagateDownloadFileQNAM::start()
         _job = new GETFileJob(_propagator->account(),
                             _propagator->_remoteFolder + _item->_file,
                             &_tmpFile, headers, expectedEtagForResume, _resumeStart);
+
+        if (/*false &&*/ _item->_size < 1024*256) {
+            _job->setPipeliningAllowed(true);
+            OwncloudPropagator::_pipelinedRequests++;
+            qDebug() << "MARKUS incrementing" << OwncloudPropagator::_pipelinedRequests;
+
+        }
     } else {
         // We were provided a direct URL, use that one
         qDebug() << Q_FUNC_INFO << "directDownloadUrl given for " << _item->_file << _item->_directDownloadUrl;
@@ -436,6 +454,12 @@ void PropagateDownloadFileQNAM::slotGetFinished()
 
     GETFileJob *job = qobject_cast<GETFileJob *>(sender());
     Q_ASSERT(job);
+
+    if (job->reply()->request().attribute(QNetworkRequest::HttpPipeliningAllowedAttribute).toBool()) {
+        OwncloudPropagator::_pipelinedRequests--;
+        qDebug() << "MARKUS decreasing" << OwncloudPropagator::_pipelinedRequests;
+
+    }
 
     qDebug() << Q_FUNC_INFO << job->reply()->request().url() << "FINISHED WITH STATUS"
              << job->reply()->error()

@@ -267,6 +267,8 @@ public:
     SyncJournalDb * const _journal;
     bool _finishedEmited; // used to ensure that finished is only emitted once
 
+    static int _pipelinedRequests;
+
 
 public:
     OwncloudPropagator(AccountPtr account, const QString &localDir,
@@ -281,7 +283,7 @@ public:
             , _activeJobs(0)
             , _anotherSyncNeeded(false)
             , _account(account)
-    { }
+    { _pipelinedRequests = 0; }
 
     ~OwncloudPropagator();
 

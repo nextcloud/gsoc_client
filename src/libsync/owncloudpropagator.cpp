@@ -412,6 +412,11 @@ void OwncloudPropagator::start(const SyncFileItemVector& items)
 
     qDebug() << "Using QNAM/HTTP parallel code path";
 
+    // We want to clearAccessCache() here because we want QNAM to switch to sending the cookie
+    // only and not the things in the authenticator. Note this is only possible from
+    // server version [...] since only that one has DAV auth possible with cookies only
+    _account->resetNetworkAccessManager();
+
     QTimer::singleShot(0, this, SLOT(scheduleNextJob()));
 }
 
@@ -516,12 +521,26 @@ QString OwncloudPropagator::getFilePath(const QString& tmp_file_name) const
     return _localDir + tmp_file_name;
 }
 
+int OwncloudPropagator::_pipelinedRequests = 0;
 void OwncloudPropagator::scheduleNextJob()
 {
-    if (this->_activeJobs < maximumActiveJob()) {
+     int maximumJobAdjustment = 0; // should be -1 if low bandwidth or +2 if high bandwidth was detected
+
+     // If there is a GET in
+     bool currentJobsCouldPipelineMoreIn = false;
+
+     if (this->_activeJobs < maximumActiveJob() + maximumJobAdjustment) {
         if (_rootJob->scheduleNextJob()) {
+            // Something was scheduled, maybe we can schedule one more?
             QTimer::singleShot(0, this, SLOT(scheduleNextJob()));
         }
+    } else if (_pipelinedRequests > 0 && this->_activeJobs < maximumActiveJob()*3) {
+        // FIXME check if we don't exceed the amount of sockets?
+        // Try to pipeline in some more
+        qDebug() << "Pipeline more!";
+
+        _rootJob->scheduleNextJob();
+        _rootJob->scheduleNextJob();
     }
 }
 
