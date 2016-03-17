@@ -417,5 +417,20 @@ QString Theme::webDavPathNonShib() const
     return QLatin1String("remote.php/nonshib-webdav/");
 }
 
+Theme::UserIDType Theme::userIDType() const
+{
+    return UserIDType::UserIDUserName;
+}
+
+QString Theme::customUserID() const
+{
+    return QString();
+}
+
+QString Theme::userIDHint() const
+{
+    return QString();
+}
+
 } // end namespace client
 
