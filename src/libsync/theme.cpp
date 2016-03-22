@@ -432,5 +432,10 @@ QString Theme::userIDHint() const
     return QString();
 }
 
+QString Theme::wizardUrlPostfix() const
+{
+    return QString();
+}
+
 } // end namespace client
 
