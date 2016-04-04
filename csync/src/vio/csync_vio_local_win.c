@@ -137,45 +137,49 @@ static time_t FileTimeToUnixTime(FILETIME *filetime, DWORD *remainder)
 
 csync_vio_file_stat_t *csync_vio_local_readdir(csync_vio_handle_t *dhandle) {
 
-  dhandle_t *handle = NULL;
-  csync_vio_file_stat_t *file_stat = NULL;
-  ULARGE_INTEGER FileIndex;
-  DWORD rem;
+    dhandle_t *handle = NULL;
+    csync_vio_file_stat_t *file_stat = NULL;
+    ULARGE_INTEGER FileIndex;
+    DWORD rem;
 
-  handle = (dhandle_t *) dhandle;
+    handle = (dhandle_t *) dhandle;
 
-  errno = 0;
-  file_stat = csync_vio_file_stat_new();
-  if (file_stat == NULL) {
-      errno = ENOMEM;
-      goto err;
-  }
-  file_stat->fields = CSYNC_VIO_FILE_STAT_FIELDS_NONE;
+    errno = 0;
+    file_stat = csync_vio_file_stat_new();
+    if (file_stat == NULL) {
+        errno = ENOMEM;
+        goto err;
+    }
+    file_stat->fields = CSYNC_VIO_FILE_STAT_FIELDS_NONE;
 
-  // the win32 functions get the first valid entry with the opendir
-  // thus we must not jump to next entry if it was the first find.
-  if( handle->firstFind ) {
-      handle->firstFind = 0;
-  } else {
-      if( FindNextFile(handle->hFind, &(handle->ffd)) == 0 ) {
-          // might be error, check!
-          int dwError = GetLastError();
-          if (dwError != ERROR_NO_MORE_FILES) {
-              errno = EACCES; // no more files is fine. Otherwise EACCESS
-          }
-          goto err;
-      }
-  }
-  file_stat->name = c_utf8_from_locale(handle->ffd.cFileName);
+    // the win32 functions get the first valid entry with the opendir
+    // thus we must not jump to next entry if it was the first find.
+    if( handle->firstFind ) {
+        handle->firstFind = 0;
+    } else {
+        if( FindNextFile(handle->hFind, &(handle->ffd)) == 0 ) {
+            // might be error, check!
+            int dwError = GetLastError();
+            if (dwError != ERROR_NO_MORE_FILES) {
+                errno = EACCES; // no more files is fine. Otherwise EACCESS
+            }
+            goto err;
+        }
+    }
+    file_stat->name = c_utf8_from_locale(handle->ffd.cFileName);
 
-  file_stat->fields |= CSYNC_VIO_FILE_STAT_FIELDS_TYPE;
-  if (handle->ffd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT
-            && handle->ffd.dwReserved0 & IO_REPARSE_TAG_SYMLINK) {
-        file_stat->flags = CSYNC_VIO_FILE_FLAGS_SYMLINK;
-        file_stat->type = CSYNC_VIO_FILE_TYPE_SYMBOLIC_LINK;
+    file_stat->fields |= CSYNC_VIO_FILE_STAT_FIELDS_TYPE;
+    if (handle->ffd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+        if (handle->ffd.dwReserved0 == IO_REPARSE_TAG_MOUNT_POINT) {
+            file_stat->type = CSYNC_VIO_FILE_TYPE_DIRECTORY;
+            //  a mounted folder, but for us still a directory!
+        } else if (handle->ffd.dwReserved0 & IO_REPARSE_TAG_SYMLINK) {
+            file_stat->flags = CSYNC_VIO_FILE_FLAGS_SYMLINK;
+            file_stat->type = CSYNC_VIO_FILE_TYPE_SYMBOLIC_LINK;
+        }
     } else if (handle->ffd.dwFileAttributes & FILE_ATTRIBUTE_DEVICE
-                || handle->ffd.dwFileAttributes & FILE_ATTRIBUTE_OFFLINE
-                || handle->ffd.dwFileAttributes & FILE_ATTRIBUTE_TEMPORARY) {
+               || handle->ffd.dwFileAttributes & FILE_ATTRIBUTE_OFFLINE
+               || handle->ffd.dwFileAttributes & FILE_ATTRIBUTE_TEMPORARY) {
         file_stat->type = CSYNC_VIO_FILE_TYPE_UNKNOWN;
     } else if (handle->ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
         file_stat->type = CSYNC_VIO_FILE_TYPE_DIRECTORY;
@@ -199,7 +203,7 @@ csync_vio_file_stat_t *csync_vio_local_readdir(csync_vio_handle_t *dhandle) {
     file_stat->fields |= CSYNC_VIO_FILE_STAT_FIELDS_ATIME;
 
     file_stat->mtime = FileTimeToUnixTime(&handle->ffd.ftLastWriteTime, &rem);
-      /* CSYNC_LOG(CSYNC_LOG_PRIORITY_DEBUG, "Local File MTime: %llu", (unsigned long long) buf->mtime ); */
+    /* CSYNC_LOG(CSYNC_LOG_PRIORITY_DEBUG, "Local File MTime: %llu", (unsigned long long) buf->mtime ); */
     file_stat->fields |= CSYNC_VIO_FILE_STAT_FIELDS_MTIME;
 
     file_stat->ctime = FileTimeToUnixTime(&handle->ffd.ftCreationTime, &rem);
@@ -208,9 +212,9 @@ csync_vio_file_stat_t *csync_vio_local_readdir(csync_vio_handle_t *dhandle) {
     return file_stat;
 
 err:
-  SAFE_FREE(file_stat);
+    SAFE_FREE(file_stat);
 
-  return NULL;
+    return NULL;
 }
 
 
@@ -229,15 +233,15 @@ int csync_vio_local_stat(const char *uri, csync_vio_file_stat_t *buf) {
     h = CreateFileW( wuri, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING,
                      FILE_ATTRIBUTE_NORMAL+FILE_FLAG_BACKUP_SEMANTICS+FILE_FLAG_OPEN_REPARSE_POINT, NULL );
     if( h == INVALID_HANDLE_VALUE ) {
-        CSYNC_LOG(CSYNC_LOG_PRIORITY_CRIT, "CreateFileW failed on %s", uri );
         errno = GetLastError();
+        CSYNC_LOG(CSYNC_LOG_PRIORITY_CRIT, "CreateFileW failed on %s, error code %ld", uri, errno);
         c_free_locale_string(wuri);
         return -1;
     }
 
     if(!GetFileInformationByHandle( h, &fileInfo ) ) {
-        CSYNC_LOG(CSYNC_LOG_PRIORITY_CRIT, "GetFileInformationByHandle failed on %s", uri );
         errno = GetLastError();
+        CSYNC_LOG(CSYNC_LOG_PRIORITY_CRIT, "GetFileInformationByHandle failed on %s, error code %ld", uri, errno );
         c_free_locale_string(wuri);
         CloseHandle(h);
         return -1;
