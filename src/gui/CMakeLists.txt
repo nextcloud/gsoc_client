@@ -212,6 +212,10 @@ if(QTKEYCHAIN_FOUND OR QT5KEYCHAIN_FOUND)
     list(APPEND libsync_LINK_TARGETS ${QTKEYCHAIN_LIBRARY})
     include_directories(${QTKEYCHAIN_INCLUDE_DIR})
 endif()
+if(LibsnoreQt5_FOUND)
+    add_definitions(-DHAVE_LIBSNORE)
+
+endif()
 
 # add executable icon on windows and osx
 include( AddAppIconMacro )
@@ -289,6 +293,7 @@ target_link_libraries( ${APPLICATION_EXECUTABLE} ${QT_LIBRARIES} )
 target_link_libraries( ${APPLICATION_EXECUTABLE} ${synclib_NAME} )
 target_link_libraries( ${APPLICATION_EXECUTABLE} updater )
 target_link_libraries( ${APPLICATION_EXECUTABLE} ${OS_SPECIFIC_LINK_LIBRARIES} )
+target_link_libraries( ${APPLICATION_EXECUTABLE} Snore::Libsnore Snore::LibsnoreSettings )
 
 if(WITH_CRASHREPORTER)
     target_link_libraries( ${APPLICATION_EXECUTABLE} crashreporter-handler)

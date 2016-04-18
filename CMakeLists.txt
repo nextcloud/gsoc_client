@@ -151,6 +151,11 @@ endif()
 
 find_package(ZLIB)
 
+find_package(LibsnoreQt5 0.6.0)
+if(LibsnoreQt5_FOUND)
+   find_package(LibsnoreSettingsQt5)
+endif()
+
 configure_file(config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 configure_file(test/test_journal.db "${CMAKE_BINARY_DIR}/test/test_journal.db" COPYONLY)
