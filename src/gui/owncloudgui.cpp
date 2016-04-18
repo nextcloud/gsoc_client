@@ -11,7 +11,7 @@
  * for more details.
  */
 
-#include "application.h"
+#include "ocapplication.h"
 #include "owncloudgui.h"
 #include "theme.h"
 #include "folderman.h"
@@ -47,7 +47,7 @@ namespace OCC {
 
 const char propertyAccountC[] = "oc_account";
 
-ownCloudGui::ownCloudGui(Application *parent) :
+ownCloudGui::ownCloudGui(oCApplication *parent) :
     QObject(parent),
     _tray(0),
 #if defined(Q_OS_MAC)

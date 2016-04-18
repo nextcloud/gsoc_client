@@ -32,7 +32,7 @@ class Folder;
 class SettingsDialog;
 class SettingsDialogMac;
 class ShareDialog;
-class Application;
+class oCApplication;
 class LogBrowser;
 class AccountState;
 
@@ -44,7 +44,7 @@ class ownCloudGui : public QObject
 {
     Q_OBJECT
 public:
-    explicit ownCloudGui(Application *parent = 0);
+    explicit ownCloudGui(oCApplication *parent = 0);
 
     bool checkAccountExists(bool openSettings);
 
@@ -122,7 +122,7 @@ private:
     QSignalMapper *_folderOpenActionMapper;
     QSignalMapper *_recentItemsMapper;
 
-    Application *_app;
+    oCApplication *_app;
 };
 
 } // namespace OCC

@@ -14,7 +14,7 @@
  * for more details.
  */
 
-#include "application.h"
+#include "ocapplication.h"
 
 #include <iostream>
 
@@ -91,7 +91,7 @@ QString applicationTrPath()
 
 // ----------------------------------------------------------------------------------
 
-Application::Application(int &argc, char **argv) :
+oCApplication::oCApplication(int &argc, char **argv) :
     SharedTools::QtSingleApplication(Theme::instance()->appName() ,argc, argv),
     _gui(0),
     _theme(Theme::instance()),
@@ -202,7 +202,7 @@ Application::Application(int &argc, char **argv) :
     connect (this, SIGNAL(aboutToQuit()), SLOT(slotCleanup()));
 }
 
-Application::~Application()
+oCApplication::~oCApplication()
 {
     // Make sure all folders are gone, otherwise removing the
     // accounts will remove the associated folders from the settings.
@@ -214,7 +214,7 @@ Application::~Application()
     AccountManager::instance()->shutdown();
 }
 
-void Application::slotAccountStateRemoved(AccountState *accountState)
+void oCApplication::slotAccountStateRemoved(AccountState *accountState)
 {
     if (_gui) {
         disconnect(accountState, SIGNAL(stateChanged(int)),
@@ -237,7 +237,7 @@ void Application::slotAccountStateRemoved(AccountState *accountState)
     }
 }
 
-void Application::slotAccountStateAdded(AccountState *accountState)
+void oCApplication::slotAccountStateAdded(AccountState *accountState)
 {
     connect(accountState, SIGNAL(stateChanged(int)),
             _gui, SLOT(slotAccountStateChanged()));
@@ -251,7 +251,7 @@ void Application::slotAccountStateAdded(AccountState *accountState)
     _gui->slotTrayMessageIfServerUnsupported(accountState->account().data());
 }
 
-void Application::slotCleanup()
+void oCApplication::slotCleanup()
 {
     AccountManager::instance()->save();
     FolderMan::instance()->unloadAndDeleteAllFolders();
@@ -263,7 +263,7 @@ void Application::slotCleanup()
 // FIXME: This is not ideal yet since a ConnectionValidator might already be running and is in
 // progress of timing out in some seconds.
 // Maybe we need 2 validators, one triggered by timer, one by network configuration changes?
-void Application::slotSystemOnlineConfigurationChanged(QNetworkConfiguration cnf)
+void oCApplication::slotSystemOnlineConfigurationChanged(QNetworkConfiguration cnf)
 {
     if (cnf.state() & QNetworkConfiguration::Active) {
         //qDebug() << "Trying fast reconnect";
@@ -271,7 +271,7 @@ void Application::slotSystemOnlineConfigurationChanged(QNetworkConfiguration cnf
     }
 }
 
-void Application::slotCheckConnection()
+void oCApplication::slotCheckConnection()
 {
     auto list = AccountManager::instance()->accounts();
     foreach (const auto &accountState , list) {
@@ -293,12 +293,12 @@ void Application::slotCheckConnection()
     }
 }
 
-void Application::slotCrash()
+void oCApplication::slotCrash()
 {
     Utility::crash();
 }
 
-void Application::slotownCloudWizardDone( int res )
+void oCApplication::slotownCloudWizardDone( int res )
 {
     AccountManager *accountMan = AccountManager::instance();
     FolderMan *folderMan = FolderMan::instance();
@@ -335,7 +335,7 @@ void Application::slotownCloudWizardDone( int res )
     }
 }
 
-void Application::setupLogging()
+void oCApplication::setupLogging()
 {
     // might be called from second instance
     Logger::instance()->setLogFile(_logFile);
@@ -352,12 +352,12 @@ void Application::setupLogging()
 
 }
 
-void Application::slotUseMonoIconsChanged(bool)
+void oCApplication::slotUseMonoIconsChanged(bool)
 {
     _gui->slotComputeOverallSyncStatus();
 }
 
-void Application::slotParseMessage(const QString &msg, QObject*)
+void oCApplication::slotParseMessage(const QString &msg, QObject*)
 {
     if (msg.startsWith(QLatin1String("MSG_PARSEOPTIONS:"))) {
         const int lengthOfMsgPrefix = 17;
@@ -375,7 +375,7 @@ void Application::slotParseMessage(const QString &msg, QObject*)
     }
 }
 
-void Application::parseOptions(const QStringList &options)
+void oCApplication::parseOptions(const QStringList &options)
 {
     QStringListIterator it(options);
     // skip file name;
@@ -455,7 +455,7 @@ static void displayHelpText(const QString &t)
 }
 #endif
 
-void Application::showHelp()
+void oCApplication::showHelp()
 {
     setHelp();
     QString helpText;
@@ -473,7 +473,7 @@ void Application::showHelp()
     displayHelpText(helpText);
 }
 
-void Application::showVersion()
+void oCApplication::showVersion()
 {
     QString helpText;
     QTextStream stream(&helpText);
@@ -485,7 +485,7 @@ void Application::showVersion()
     displayHelpText(helpText);
 }
 
-void Application::showHint(std::string errorHint)
+void oCApplication::showHint(std::string errorHint)
 {
     static QString binName = QFileInfo(QCoreApplication::applicationFilePath()).fileName();
     std::cerr << errorHint << std::endl;
@@ -493,12 +493,12 @@ void Application::showHint(std::string errorHint)
     std::exit(1);
 }
 
-bool Application::debugMode()
+bool oCApplication::debugMode()
 {
     return _debugMode;
 }
 
-void Application::setHelp()
+void oCApplication::setHelp()
 {
     _helpOnly = true;
 }
@@ -518,7 +518,7 @@ QString substLang(const QString &lang)
     return lang;
 }
 
-void Application::setupTranslations()
+void oCApplication::setupTranslations()
 {
     QStringList uiLanguages;
     // uiLanguages crashes on Windows with 4.8.0 release builds
@@ -582,21 +582,20 @@ void Application::setupTranslations()
 #endif
 }
 
-bool Application::giveHelp()
+bool oCApplication::giveHelp()
 {
     return _helpOnly;
 }
 
-bool Application::versionOnly()
+bool oCApplication::versionOnly()
 {
     return _versionOnly;
 }
 
-void Application::showSettingsDialog()
+void oCApplication::showSettingsDialog()
 {
     _gui->slotShowSettings();
 }
 
 
 } // namespace OCC
-

@@ -31,7 +31,7 @@ class SyncResult;
 namespace Ui {
   class ProtocolWidget;
 }
-class Application;
+class oCApplication;
 
 /**
  * @brief The ProtocolWidget class

@@ -21,7 +21,7 @@
 #include <sys/resource.h>
 #endif
 
-#include "application.h"
+#include "ocapplication.h"
 #include "theme.h"
 #include "utility.h"
 #include "cocoainitializer.h"
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 #ifdef Q_OS_MAC
     Mac::CocoaInitializer cocoaInit; // RIIA
 #endif
-    OCC::Application app(argc, argv);
+    OCC::oCApplication app(argc, argv);
 
 #ifdef Q_OS_WIN
     // The Windows style still has pixelated elements with Qt 5.6,

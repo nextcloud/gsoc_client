@@ -33,7 +33,7 @@ namespace Ui {
 class SettingsDialog;
 }
 class AccountSettings;
-class Application;
+class oCApplication;
 class FolderMan;
 class ownCloudGui;
 class ActivitySettings;

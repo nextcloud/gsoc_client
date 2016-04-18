@@ -21,7 +21,7 @@
 #include "folderstatusmodel.h"
 #include "folderstatusdelegate.h"
 #include "utility.h"
-#include "application.h"
+#include "ocapplication.h"
 #include "configfile.h"
 #include "account.h"
 #include "accountstate.h"

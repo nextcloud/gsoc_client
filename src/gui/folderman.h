@@ -29,7 +29,7 @@ class TestFolderMan;
 
 namespace OCC {
 
-class Application;
+class oCApplication;
 class SyncResult;
 class SocketApi;
 class LockWatcher;
@@ -255,7 +255,7 @@ private:
 
     static FolderMan *_instance;
     explicit FolderMan(QObject *parent = 0);
-    friend class OCC::Application;
+    friend class OCC::oCApplication;
     friend class ::TestFolderMan;
 };
 

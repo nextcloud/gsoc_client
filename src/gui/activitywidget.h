@@ -41,7 +41,7 @@ class ActivityListModel;
 namespace Ui {
   class ActivityWidget;
 }
-class Application;
+class oCApplication;
 
 /**
  * @brief The ActivityWidget class

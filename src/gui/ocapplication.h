@@ -12,8 +12,8 @@
  * for more details.
  */
 
-#ifndef APPLICATION_H
-#define APPLICATION_H
+#ifndef OCAPPLICATION_H
+#define OCAPPLICATION_H
 
 #include <QApplication>
 #include <QPointer>
@@ -49,12 +49,12 @@ class SslErrorDialog;
  * @brief The Application class
  * @ingroup gui
  */
-class Application : public SharedTools::QtSingleApplication
+class oCApplication : public SharedTools::QtSingleApplication
 {
     Q_OBJECT
 public:
-    explicit Application(int &argc, char **argv);
-    ~Application();
+    explicit oCApplication(int &argc, char **argv);
+    ~oCApplication();
 
     bool giveHelp();
     void showHelp();

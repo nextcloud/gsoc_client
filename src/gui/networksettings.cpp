@@ -16,7 +16,7 @@
 
 #include "theme.h"
 #include "configfile.h"
-#include "application.h"
+#include "ocapplication.h"
 #include "utility.h"
 #include "configfile.h"
 #include "folderman.h"

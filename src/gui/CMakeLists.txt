@@ -45,7 +45,7 @@ qt_wrap_ui(client_UI_SRCS ${client_UI})
 set(client_SRCS
     accountmanager.cpp
     accountsettings.cpp
-    application.cpp
+    ocapplication.cpp
     folder.cpp
     folderman.cpp
     folderstatusmodel.cpp
