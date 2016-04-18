@@ -12,6 +12,11 @@
  * for more details.
  */
 
+#ifdef HAVE_LIBSNORE
+#include <libsnore/application.h>
+#include <libsnore/notification/icon.h>
+#endif
+
 #include "systray.h"
 #include "theme.h"
 #include <QDebug>
@@ -28,8 +33,38 @@
 
 namespace OCC {
 
+Systray::Systray( )
+{
+#ifdef HAVE_LIBSNORE
+    Snore::SnoreCore &snore = Snore::SnoreCore::instance();
+    snore.loadPlugins( Snore::SnorePlugin::Backend | Snore::SnorePlugin::SecondaryBackend );
+    snore.setDefaultSettingsValue("Silent", true, Snore::LocalSetting );
+
+    _application = Snore::Application( Theme::instance()->appName(), Theme::instance()->applicationIcon() );
+    _application.hints().setValue( "use-markup", true );
+    _application.hints().setValue( "windows-app-id",  Theme::instance()->appName() );
+    _application.hints().setValue( "desktop-entry",  Theme::instance()->appNameGUI() );
+
+    Snore::Alert alert( Theme::instance()->appNameGUI(), Theme::instance()->applicationIcon() );
+    _alert = alert;
+    _application.addAlert(_alert);
+
+    snore.registerApplication( _application );
+    snore.setDefaultApplication( _application );
+
+    // connect( &snore, SIGNAL( actionInvoked( Snore::Notification ) ), this, SLOT( slotActionInvoked( Snore::Notification ) ) );
+#endif
+}
+
 void Systray::showMessage(const QString & title, const QString & message, MessageIcon icon, int millisecondsTimeoutHint)
 {
+
+#ifdef HAVE_LIBSNORE
+    Snore::Notification n( _application , _alert, title, message, _alert.icon() );
+    Snore::SnoreCore::instance().broadcastNotification( n );
+
+    return;
+#endif
 
 #ifdef USE_FDO_NOTIFICATIONS
     if(QDBusInterface(NOTIFICATIONS_SERVICE, NOTIFICATIONS_PATH, NOTIFICATIONS_IFACE).isValid()) {

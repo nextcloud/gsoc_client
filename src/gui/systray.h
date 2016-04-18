@@ -15,7 +15,12 @@
 #ifndef SYSTRAY_H
 #define SYSTRAY_H
 
+
 #include <QSystemTrayIcon>
+
+#ifdef HAVE_LIBSNORE
+#include <libsnore/snore.h>
+#endif
 
 class QIcon;
 
@@ -34,8 +39,16 @@ class Systray : public QSystemTrayIcon
 {
     Q_OBJECT
 public:
+    explicit Systray();
+
     void showMessage(const QString & title, const QString & message, MessageIcon icon = Information, int millisecondsTimeoutHint = 10000);
     void setToolTip(const QString &tip);
+
+private:
+#ifdef HAVE_LIBSNORE
+    Snore::Application _application;
+    Snore::Alert _alert;
+#endif
 };
 
 } // namespace OCC
