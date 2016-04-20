@@ -849,7 +849,7 @@ int csync_ftw(CSYNC *ctx, const char *uri, csync_walker_fn fn,
       flag = CSYNC_FTW_FLAG_NSTAT;
     }
 
-    CSYNC_LOG(CSYNC_LOG_PRIORITY_DEBUG, "Flag for %s: %ld", filename, flag);
+    CSYNC_LOG(CSYNC_LOG_PRIORITY_DEBUG, "Flag for %s: %d", filename, flag);
 
     previous_fs = ctx->current_fs;
 
