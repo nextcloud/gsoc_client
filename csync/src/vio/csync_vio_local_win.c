@@ -170,15 +170,11 @@ csync_vio_file_stat_t *csync_vio_local_readdir(csync_vio_handle_t *dhandle) {
 
     file_stat->fields |= CSYNC_VIO_FILE_STAT_FIELDS_TYPE;
     CSYNC_LOG(CSYNC_LOG_PRIORITY_DEBUG, "WinStat info: %ld - %ld %s", handle->ffd.dwFileAttributes, handle->ffd.dwReserved0, file_stat->name);
-    if (handle->ffd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-        if (handle->ffd.dwReserved0 & IO_REPARSE_TAG_MOUNT_POINT) {
-            file_stat->type = CSYNC_VIO_FILE_TYPE_DIRECTORY;
-
-            //  a mounted folder, but for us still a directory!
-        } else if (handle->ffd.dwReserved0 & IO_REPARSE_TAG_SYMLINK) {
-            file_stat->flags = CSYNC_VIO_FILE_FLAGS_SYMLINK;
-            file_stat->type = CSYNC_VIO_FILE_TYPE_SYMBOLIC_LINK;
-        }
+    if ( (handle->ffd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+            && (handle->ffd.dwReserved0 & IO_REPARSE_TAG_SYMLINK)
+            && (! (handle->ffd.dwReserved0 & IO_REPARSE_TAG_SIS)) ) { // The SIS flag means MS Deduplication. It is not a normal symlink that we want to ignore.
+        file_stat->flags = CSYNC_VIO_FILE_FLAGS_SYMLINK;
+        file_stat->type = CSYNC_VIO_FILE_TYPE_SYMBOLIC_LINK;
     } else if (handle->ffd.dwFileAttributes & FILE_ATTRIBUTE_DEVICE
                || handle->ffd.dwFileAttributes & FILE_ATTRIBUTE_OFFLINE
                || handle->ffd.dwFileAttributes & FILE_ATTRIBUTE_TEMPORARY) {
