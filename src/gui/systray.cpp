@@ -20,6 +20,7 @@
 #include "systray.h"
 #include "theme.h"
 #include <QDebug>
+#include <QPointer>
 
 #ifdef USE_FDO_NOTIFICATIONS
 #include <QDBusConnection>
@@ -44,10 +45,21 @@ Systray::Systray( )
     _application.hints().setValue( "use-markup", true );
     _application.hints().setValue( "windows-app-id",  Theme::instance()->appName() );
     _application.hints().setValue( "desktop-entry",  Theme::instance()->appNameGUI() );
+    _application.hints().setValue( "tray-icon",  qVariantFromValue(QPointer<QSystemTrayIcon>(this)));
 
-    Snore::Alert alert( Theme::instance()->appNameGUI(), Theme::instance()->applicationIcon() );
-    _alert = alert;
-    _application.addAlert(_alert);
+    // register the Alerts.
+    Snore::Alert alert( Theme::instance()->appNameGUI(), QIcon() );
+    _alerts.insert( QSystemTrayIcon::NoIcon, alert);
+    _application.addAlert(alert);
+    Snore::Alert alert2( Theme::instance()->appNameGUI(), Theme::instance()->syncStateIcon(SyncResult::Success, false ));
+    _alerts.insert( QSystemTrayIcon::Information, alert2);
+    _application.addAlert(alert2);
+    Snore::Alert alert3( Theme::instance()->appNameGUI(), Theme::instance()->syncStateIcon(SyncResult::Problem, false ));
+    _alerts.insert( QSystemTrayIcon::Warning, alert3);
+    _application.addAlert(alert3);
+    Snore::Alert alert4( Theme::instance()->appNameGUI(), Theme::instance()->syncStateIcon(SyncResult::Error, false ));
+    _alerts.insert( QSystemTrayIcon::Critical, alert4);
+    _application.addAlert(alert4);
 
     snore.registerApplication( _application );
     snore.setDefaultApplication( _application );
@@ -56,11 +68,16 @@ Systray::Systray( )
 #endif
 }
 
-void Systray::showMessage(const QString & title, const QString & message, MessageIcon icon, int millisecondsTimeoutHint)
+void Systray::showMessage(const QString & title, const QString & message, MessageIcon icon,
+                          int millisecondsTimeoutHint)
 {
-
 #ifdef HAVE_LIBSNORE
-    Snore::Notification n( _application , _alert, title, message, _alert.icon() );
+    Snore::Alert a = _alerts[NoIcon];
+    if( _alerts.contains(icon) ) {
+        a = _alerts[icon];
+    }
+
+    Snore::Notification n( _application , a, title, message, a.icon() );
     Snore::SnoreCore::instance().broadcastNotification( n );
 
     return;

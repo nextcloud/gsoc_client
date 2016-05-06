@@ -74,14 +74,14 @@ Logger::~Logger() {
 }
 
 
-void Logger::postGuiLog(const QString &title, const QString &message)
+void Logger::postGuiLog(const QString &title, const QString &message, NotificationType type )
 {
-    emit guiLog(title, message);
+    emit guiLog(title, message, type);
 }
 
-void Logger::postOptionalGuiLog(const QString &title, const QString &message)
+void Logger::postOptionalGuiLog(const QString &title, const QString &message, NotificationType type )
 {
-    emit optionalGuiLog(title, message);
+    emit optionalGuiLog(title, message, type);
 }
 
 void Logger::postGuiMessage(const QString &title, const QString &message)

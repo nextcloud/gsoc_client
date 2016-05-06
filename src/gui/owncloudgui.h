@@ -17,6 +17,7 @@
 #include "systray.h"
 #include "connectionvalidator.h"
 #include "progressdispatcher.h"
+#include "logger.h"
 
 #include <QObject>
 #include <QPointer>
@@ -58,8 +59,8 @@ signals:
 public slots:
     void setupContextMenu();
     void slotComputeOverallSyncStatus();
-    void slotShowTrayMessage(const QString &title, const QString &msg);
-    void slotShowOptionalTrayMessage(const QString &title, const QString &msg);
+    void slotShowTrayMessage(const QString &title, const QString &msg, Logger::NotificationType type);
+    void slotShowOptionalTrayMessage(const QString &title, const QString &msg, Logger::NotificationType type);
     void slotFolderOpenAction( const QString& alias );
     void slotRebuildRecentMenus();
     void slotUpdateProgress(const QString &folder, const ProgressInfo& progress);

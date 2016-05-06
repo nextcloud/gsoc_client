@@ -45,6 +45,14 @@ class OWNCLOUDSYNC_EXPORT Logger : public QObject
 {
   Q_OBJECT
 public:
+    enum NotificationType {
+        NoIcon = 0,
+        Information,
+        SoftError,
+        Error,
+        Critical
+    };
+
 
   bool isNoop() const;
   void log(Log log);
@@ -57,8 +65,8 @@ public:
 
   static Logger* instance();
 
-  void postGuiLog(const QString& title, const QString& message);
-  void postOptionalGuiLog(const QString& title, const QString& message);
+  void postGuiLog(const QString& title, const QString& message, NotificationType type = Information);
+  void postOptionalGuiLog(const QString& title, const QString& message, NotificationType type = Information);
   void postGuiMessage(const QString& title, const QString& message);
 
   void setLogFile( const QString & name );
@@ -68,9 +76,9 @@ public:
 
 signals:
   void newLog(const QString&);
-  void guiLog(const QString&, const QString&);
+  void guiLog(const QString&, const QString&, Logger::NotificationType type);
   void guiMessage(const QString&, const QString&);
-  void optionalGuiLog(const QString&, const QString&);
+  void optionalGuiLog(const QString&, const QString&, Logger::NotificationType type);
 
 public slots:
   void enterNextLogFile();

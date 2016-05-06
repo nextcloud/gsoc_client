@@ -96,10 +96,10 @@ ownCloudGui::ownCloudGui(oCApplication *parent) :
     connect( AccountManager::instance(), SIGNAL(accountRemoved(AccountState*)),
              SLOT(setupContextMenu()));
 
-    connect( Logger::instance(), SIGNAL(guiLog(QString,QString)),
-             SLOT(slotShowTrayMessage(QString,QString)));
-    connect( Logger::instance(), SIGNAL(optionalGuiLog(QString,QString)),
-             SLOT(slotShowOptionalTrayMessage(QString,QString)));
+    connect( Logger::instance(), SIGNAL(guiLog(QString,QString, Logger::NotificationType)),
+             SLOT(slotShowTrayMessage(QString,QString, Logger::NotificationType)));
+    connect( Logger::instance(), SIGNAL(optionalGuiLog(QString,QString, Logger::NotificationType)),
+             SLOT(slotShowOptionalTrayMessage(QString,QString,Logger::NotificationType)));
     connect( Logger::instance(), SIGNAL(guiMessage(QString,QString)),
              SLOT(slotShowGuiMessage(QString,QString)));
 
@@ -237,7 +237,8 @@ void ownCloudGui::slotTrayMessageIfServerUnsupported(Account* account)
                 tr("The server on account %1 runs an old and unsupported version %2. "
                    "Using this client with unsupported server versions is untested and "
                    "potentially dangerous. Proceed at your own risk.")
-                    .arg(account->displayName(), account->serverVersion()));
+                    .arg(account->displayName(), account->serverVersion()),
+                    Logger::Critical );
     }
 }
 
@@ -535,19 +536,36 @@ void ownCloudGui::setupContextMenu()
 }
 
 
-void ownCloudGui::slotShowTrayMessage(const QString &title, const QString &msg)
+void ownCloudGui::slotShowTrayMessage(const QString &title, const QString &msg, Logger::NotificationType type)
 {
-    if( _tray )
-        _tray->showMessage(title, msg);
-    else
+    if( _tray ) {
+        QSystemTrayIcon::MessageIcon trayIcon = QSystemTrayIcon::NoIcon;
+        switch( type ) {
+        case Logger::NoIcon:
+            break;
+        case Logger::Information:
+            trayIcon = QSystemTrayIcon::Information;
+            break;
+        case Logger::SoftError:
+            trayIcon = QSystemTrayIcon::Warning;
+            break;
+        case Logger::Error:
+        case Logger::Critical:
+            trayIcon = QSystemTrayIcon::Critical;
+            break;
+        }
+
+        _tray->showMessage(title, msg, trayIcon);
+    } else {
         qDebug() << "Tray not ready: " << msg;
+    }
 }
 
-void ownCloudGui::slotShowOptionalTrayMessage(const QString &title, const QString &msg)
+void ownCloudGui::slotShowOptionalTrayMessage(const QString &title, const QString &msg, Logger::NotificationType type)
 {
     ConfigFile cfg;
     if (cfg.optionalDesktopNotifications()) {
-        slotShowTrayMessage(title, msg);
+        slotShowTrayMessage(title, msg, type);
     }
 }
 

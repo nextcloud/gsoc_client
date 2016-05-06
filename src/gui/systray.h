@@ -15,7 +15,7 @@
 #ifndef SYSTRAY_H
 #define SYSTRAY_H
 
-
+#include "logger.h"
 #include <QSystemTrayIcon>
 
 #ifdef HAVE_LIBSNORE
@@ -41,13 +41,14 @@ class Systray : public QSystemTrayIcon
 public:
     explicit Systray();
 
-    void showMessage(const QString & title, const QString & message, MessageIcon icon = Information, int millisecondsTimeoutHint = 10000);
+    void showMessage(const QString & title, const QString & message, MessageIcon icon = Information,
+                     int millisecondsTimeoutHint = 10000);
     void setToolTip(const QString &tip);
 
 private:
 #ifdef HAVE_LIBSNORE
     Snore::Application _application;
-    Snore::Alert _alert;
+    QHash<QSystemTrayIcon::MessageIcon, Snore::Alert> _alerts;
 #endif
 };
 
