@@ -63,7 +63,9 @@ ActivityWidget::ActivityWidget(QWidget *parent) :
     _ui->_activityList->setMinimumWidth(400);
 #endif
 
-    _model = new ActivityListModel(this);
+    _model = new ActivitySortProxyModel(this);
+    _model->setSourceModel(new ActivityListModel);
+
     ActivityItemDelegate *delegate = new ActivityItemDelegate;
     delegate->setParent(this);
     _ui->_activityList->setItemDelegate(delegate);
@@ -107,8 +109,9 @@ ActivityWidget::~ActivityWidget()
 
 void ActivityWidget::slotRefreshActivities(AccountState *ptr)
 {
-    _model->slotRefreshActivity(ptr);
+    qobject_cast<ActivityListModel*>(_model->sourceModel())->slotRefreshActivity(ptr);
 }
+
 
 void ActivityWidget::slotRefreshNotifications(AccountState *ptr)
 {
@@ -127,7 +130,7 @@ void ActivityWidget::slotRefreshNotifications(AccountState *ptr)
 
 void ActivityWidget::slotRemoveAccount( AccountState *ptr )
 {
-    _model->slotRemoveAccount(ptr);
+    qobject_cast<ActivityListModel*>(_model->sourceModel())->slotRemoveAccount(ptr);
 }
 
 void ActivityWidget::showLabels()
@@ -174,7 +177,7 @@ QString ActivityWidget::timeString(QDateTime dt, QLocale::FormatType format) con
 
 void ActivityWidget::storeActivityList( QTextStream& ts )
 {
-    ActivityList activities = _model->activityList();
+    ActivityList activities = qobject_cast<ActivityListModel*>(_model->sourceModel())->activityList();
 
     foreach( Activity activity, activities ) {
         ts << right

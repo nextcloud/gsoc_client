@@ -42,6 +42,7 @@ namespace Ui {
   class ActivityWidget;
 }
 class Application;
+class ActivitySortProxyModel;
 
 /**
  * @brief The ActivityWidget class
@@ -111,7 +112,7 @@ private:
     // no query for notifications is started.
     int _notificationRequestsRunning;
 
-    ActivityListModel *_model;
+    ActivitySortProxyModel *_model;
     QVBoxLayout *_notificationsLayout;
 
 };

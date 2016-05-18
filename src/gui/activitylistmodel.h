@@ -22,6 +22,18 @@ namespace OCC {
 
 class AccountState;
 
+class ActivitySortProxyModel : public QSortFilterProxyModel
+{
+    Q_OBJECT
+
+public:
+    ActivitySortProxyModel(QObject *parent = 0);
+
+protected:
+    bool lessThan(const QModelIndex &left, const QModelIndex &right) const Q_DECL_OVERRIDE;
+
+};
+
 /**
  * @brief The ActivityListModel
  * @ingroup gui
@@ -41,7 +53,8 @@ public:
     bool canFetchMore(const QModelIndex& ) const Q_DECL_OVERRIDE;
     void fetchMore(const QModelIndex&) Q_DECL_OVERRIDE;
 
-    ActivityList activityList() { return _finalList; }
+    ActivityList activityList();
+    Activity findItem(int indx) const;
 
 public slots:
     void slotRefreshActivity(AccountState* ast);
@@ -54,14 +67,14 @@ signals:
     void activityJobStatusCode(AccountState* ast, int statusCode);
 
 private:
+    void addNewActivities(const ActivityList& list);
     void startFetchJob(AccountState* s);
     void combineActivityLists();
 
-    QMap<AccountState*, ActivityList> _activityLists;
+    QList<ActivityList> _activityLists;
     ActivityList _finalList;
     QSet<AccountState*> _currentlyFetching;
 };
-
 
 }
 #endif // ACTIVITYLISTMODEL_H
