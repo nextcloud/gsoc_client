@@ -7,7 +7,6 @@ configure_file( version.h.in "${CMAKE_CURRENT_BINARY_DIR}/version.h" )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 # csync is required.
 include_directories(${CMAKE_SOURCE_DIR}/csync/src
-                    ${CMAKE_SOURCE_DIR}/csync/src/httpbf/src
                     ${CMAKE_BINARY_DIR}/csync
                     ${CMAKE_BINARY_DIR}/csync/src
                    )
@@ -57,27 +56,27 @@ set(libsync_SRCS
     propagateremotemkdir.cpp
     syncengine.cpp
     syncfilestatus.cpp
+    syncfilestatustracker.cpp
     syncjournaldb.cpp
     syncjournalfilerecord.cpp
     syncresult.cpp
     theme.cpp
     utility.cpp
     ownsql.cpp
-    transmissionchecksumvalidator.cpp
+    checksums.cpp
+    excludedfiles.cpp
     creds/dummycredentials.cpp
     creds/abstractcredentials.cpp
     creds/credentialscommon.cpp
-    creds/httpcredentials.cpp
     ../3rdparty/qjson/json.cpp
     ../3rdparty/certificates/p12topem.cpp
 )
 
-if(USE_NEON)
-    list(APPEND libsync_SRCS
-        propagator_legacy.cpp
-    )
-    add_definitions(-DUSE_NEON)
-endif(USE_NEON)
+if(TOKEN_AUTH_ONLY)
+    set (libsync_SRCS ${libsync_SRCS} creds/tokencredentials.cpp)
+else()
+    set (libsync_SRCS ${libsync_SRCS} creds/httpcredentials.cpp)
+endif()
 
 # These headers are installed for libowncloudsync to be used by 3rd party apps
 set(owncloudsync_HEADERS
@@ -124,15 +123,6 @@ if(INOTIFY_FOUND)
     link_directories(${INOTIFY_LIBRARY_DIR})
 endif()
 
-if(NEON_FOUND)
-    list(APPEND libsync_LINK_TARGETS ${NEON_LIBRARIES} httpbf)
-    include_directories(${NEON_INCLUDE_DIRS})
-
-    if(NEON_WITH_LFS)
-        add_definitions(-DNE_LFS)
-    endif()
-endif()
-
 if(ZLIB_FOUND)
     list(APPEND libsync_LINK_TARGETS ${ZLIB_LIBRARIES})
     include_directories(${ZLIB_INCLUDE_DIRS})
@@ -149,7 +139,7 @@ GENERATE_EXPORT_HEADER( ${synclib_NAME}
 if(TOKEN_AUTH_ONLY)
     qt5_use_modules(${synclib_NAME} Network Concurrent)
 else()
-    qt5_use_modules(${synclib_NAME} Widgets Network WebKitWidgets Concurrent)
+    qt5_use_modules(${synclib_NAME} Widgets Network Concurrent)
 endif()
 
 set_target_properties( ${synclib_NAME}  PROPERTIES

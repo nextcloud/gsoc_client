@@ -64,13 +64,6 @@ public:
      */
     void adjustTotalsForFile(const SyncFileItem & item);
 
-    /**
-     * Adjust the total size by some value.
-     *
-     * Deprecated. Used only in the legacy propagator.
-     */
-    void adjustTotalSize(qint64 change);
-
     quint64 totalFiles() const;
     quint64 completedFiles() const;
 
@@ -86,7 +79,8 @@ public:
         return ! item._isDirectory && (
                item._instruction == CSYNC_INSTRUCTION_CONFLICT
             || item._instruction == CSYNC_INSTRUCTION_SYNC
-            || item._instruction == CSYNC_INSTRUCTION_NEW);
+            || item._instruction == CSYNC_INSTRUCTION_NEW
+            || item._instruction == CSYNC_INSTRUCTION_TYPE_CHANGE);
     }
 
     /**
@@ -244,8 +238,6 @@ signals:
     void itemCompleted(const QString &folder,
                        const SyncFileItem & item,
                        const PropagatorJob & job);
-
-    void syncItemDiscovered(const QString &folder, const SyncFileItem & item);
 
 protected:
     void setProgressInfo(const QString& folder, const ProgressInfo& progress);

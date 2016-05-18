@@ -27,6 +27,7 @@
 #include "folder.h"
 #include "openfilemanager.h"
 #include "owncloudpropagator.h"
+#include "activityitemdelegate.h"
 
 #include "ui_protocolwidget.h"
 
@@ -57,6 +58,9 @@ ProtocolWidget::ProtocolWidget(QWidget *parent) :
     header << tr("Size");
 
     _ui->_treeWidget->setHeaderLabels( header );
+    int timestampColumnWidth =
+        _ui->_treeWidget->fontMetrics().width(timeString(QDateTime::currentDateTime()));
+    _ui->_treeWidget->setColumnWidth(0, timestampColumnWidth);
     _ui->_treeWidget->setColumnWidth(1, 180);
     _ui->_treeWidget->setColumnCount(5);
     _ui->_treeWidget->setRootIsDecorated(false);
@@ -65,73 +69,33 @@ ProtocolWidget::ProtocolWidget(QWidget *parent) :
 #if defined(Q_OS_MAC)
     _ui->_treeWidget->setMinimumWidth(400);
 #endif
+    _ui->_headerLabel->setText(tr("Local sync protocol"));
 
-    connect(this, SIGNAL(guiLog(QString,QString)), Logger::instance(), SIGNAL(guiLog(QString,QString)));
+    QPushButton *copyBtn = _ui->_dialogButtonBox->addButton(tr("Copy"), QDialogButtonBox::ActionRole);
+    copyBtn->setToolTip( tr("Copy the activity list to the clipboard."));
+    copyBtn->setEnabled(true);
+    connect(copyBtn, SIGNAL(clicked()), SIGNAL(copyToClipboard()));
 
-    _retrySyncBtn = _ui->_dialogButtonBox->addButton(tr("Retry Sync"), QDialogButtonBox::ActionRole);
-    _retrySyncBtn->setEnabled(false);
-    connect(_retrySyncBtn, SIGNAL(clicked()), SLOT(slotRetrySync()));
-
-    _copyBtn = _ui->_dialogButtonBox->addButton(tr("Copy"), QDialogButtonBox::ActionRole);
-    _copyBtn->setToolTip( tr("Copy the activity list to the clipboard."));
-    _copyBtn->setEnabled(false);
-    connect(_copyBtn, SIGNAL(clicked()), SLOT(copyToClipboard()));
+    // this view is used to display all errors such as real errors, soft errors and ignored files
+    // it is instantiated here, but made accessible via the method issueWidget() so that it can
+    // be embedded into another gui element.
+    _issueItemView = new QTreeWidget(this);
+    header.removeLast();
+    _issueItemView->setHeaderLabels( header );
+    timestampColumnWidth =
+            ActivityItemDelegate::rowHeight() // icon
+            + _issueItemView->fontMetrics().width(timeString(QDateTime::currentDateTime()));
+    _issueItemView->setColumnWidth(0, timestampColumnWidth);
+    _issueItemView->setColumnWidth(1, 180);
+    _issueItemView->setColumnCount(4);
+    _issueItemView->setRootIsDecorated(false);
+    _issueItemView->setTextElideMode(Qt::ElideMiddle);
+    _issueItemView->header()->setObjectName("ActivityErrorListHeader");
 }
 
 ProtocolWidget::~ProtocolWidget()
 {
     delete _ui;
-}
-
-void ProtocolWidget::copyToClipboard()
-{
-    QString text;
-    QTextStream ts(&text);
-
-    int topLevelItems = _ui->_treeWidget->topLevelItemCount();
-    for (int i = 0; i < topLevelItems; i++) {
-        QTreeWidgetItem *child = _ui->_treeWidget->topLevelItem(i);
-        ts << left
-                // time stamp
-            << qSetFieldWidth(10)
-            << child->data(0,Qt::DisplayRole).toString()
-                // file name
-            << qSetFieldWidth(64)
-            << child->data(1,Qt::DisplayRole).toString()
-                // folder
-            << qSetFieldWidth(30)
-            << child->data(2, Qt::DisplayRole).toString()
-                // action
-            << qSetFieldWidth(15)
-            << child->data(3, Qt::DisplayRole).toString()
-                // size
-            << qSetFieldWidth(10)
-            << child->data(4, Qt::DisplayRole).toString()
-            << qSetFieldWidth(0)
-            << endl;
-    }
-
-    QApplication::clipboard()->setText(text);
-    emit guiLog(tr("Copied to clipboard"), tr("The sync status has been copied to the clipboard."));
-}
-
-void ProtocolWidget::slotRetrySync()
-{
-    FolderMan *folderMan = FolderMan::instance();
-
-    Folder::Map folders = folderMan->map();
-
-    foreach( Folder *f, folders ) {
-        int num = f->slotWipeErrorBlacklist();
-        qDebug() << num << "entries were removed from"
-                 << f->alias() << "blacklist";
-
-        num = f->slotDiscardDownloadProgress();
-        qDebug() << num << "temporary files with partial downloads"
-                 << "were removed from" << f->alias();
-    }
-
-    folderMan->slotScheduleAllFolders();
 }
 
 void ProtocolWidget::showEvent(QShowEvent *ev)
@@ -148,7 +112,7 @@ void ProtocolWidget::hideEvent(QHideEvent *ev)
     QWidget::hideEvent(ev);
 }
 
-void ProtocolWidget::cleanIgnoreItems(const QString& folder)
+void ProtocolWidget::cleanItems(const QString& folder)
 {
     int itemCnt = _ui->_treeWidget->topLevelItemCount();
 
@@ -158,14 +122,18 @@ void ProtocolWidget::cleanIgnoreItems(const QString& folder)
         itemCnt--;
     }
 
+    // The issue list is a state, clear it and let the next sync fill it
+    // with ignored files and propagation errors.
+    itemCnt = _issueItemView->topLevelItemCount();
     for( int cnt = itemCnt-1; cnt >=0 ; cnt-- ) {
-        QTreeWidgetItem *item = _ui->_treeWidget->topLevelItem(cnt);
-        bool isErrorItem = item->data(0, IgnoredIndicatorRole).toBool();
+        QTreeWidgetItem *item = _issueItemView->topLevelItem(cnt);
         QString itemFolder = item->data(2, Qt::UserRole).toString();
-        if( isErrorItem && itemFolder == folder ) {
+        if( itemFolder == folder ) {
             delete item;
         }
     }
+    // update the tabtext
+    emit( issueItemCountUpdated(_issueItemView->topLevelItemCount()) );
 }
 
 QString ProtocolWidget::timeString(QDateTime dt, QLocale::FormatType format) const
@@ -192,15 +160,6 @@ void ProtocolWidget::slotOpenFile( QTreeWidgetItem *item, int )
     }
 }
 
-QString ProtocolWidget::fixupFilename( const QString& name )
-{
-    if( Utility::isMac() ) {
-        QString n(name);
-        return n.replace(QChar(':'), QChar('/'));
-    }
-    return name;
-}
-
 QTreeWidgetItem* ProtocolWidget::createCompletedTreewidgetItem(const QString& folder, const SyncFileItem& item)
 {
     auto f = FolderMan::instance()->folder(folder);
@@ -214,8 +173,8 @@ QTreeWidgetItem* ProtocolWidget::createCompletedTreewidgetItem(const QString& fo
     const QString longTimeStr = timeString(timestamp, QLocale::LongFormat);
 
     columns << timeStr;
-    columns << fixupFilename(item._originalFile);
-    columns << f->shortGuiPath();
+    columns << Utility::fileNameForGuiUse(item._originalFile);
+    columns << f->shortGuiLocalPath();
 
     // If the error string is set, it's prefered because it is a useful user message.
     QString message = item._errorString;
@@ -242,6 +201,7 @@ QTreeWidgetItem* ProtocolWidget::createCompletedTreewidgetItem(const QString& fo
         twitem->setData(0, IgnoredIndicatorRole, true);
     }
 
+    twitem->setData(0, Qt::SizeHintRole, QSize(0, ActivityItemDelegate::rowHeight()));
     twitem->setIcon(0, icon);
     twitem->setToolTip(0, longTimeStr);
     twitem->setToolTip(1, item._file);
@@ -250,40 +210,13 @@ QTreeWidgetItem* ProtocolWidget::createCompletedTreewidgetItem(const QString& fo
     return twitem;
 }
 
-void ProtocolWidget::computeResyncButtonEnabled()
-{
-    FolderMan *folderMan = FolderMan::instance();
-    Folder::Map folders = folderMan->map();
-
-    int blacklist_cnt = 0;
-    int downloads_cnt = 0;
-    foreach( Folder *f, folders ) {
-        blacklist_cnt += f->errorBlackListEntryCount();
-        downloads_cnt += f->downloadInfoCount();
-    }
-
-    QString t = tr("Currently no files are ignored because of previous errors and no downloads are in progress.");
-    bool enabled = blacklist_cnt > 0 || downloads_cnt > 0;
-    if (enabled) {
-        t =   tr("%n files are ignored because of previous errors.\n", 0, blacklist_cnt)
-            + tr("%n files are partially downloaded.\n", 0, downloads_cnt)
-            + tr("Try to sync these again.");
-    }
-
-    _retrySyncBtn->setEnabled(enabled);
-    _retrySyncBtn->setToolTip(t);
-
-}
-
 void ProtocolWidget::slotProgressInfo( const QString& folder, const ProgressInfo& progress )
 {
     if( !progress.hasStarted() ) {
         // The sync is restarting, clean the old items
-        cleanIgnoreItems(folder);
-        computeResyncButtonEnabled();
+        cleanItems(folder);
     } else if (progress.completedFiles() >= progress.totalFiles()) {
         //Sync completed
-        computeResyncButtonEnabled();
     }
 }
 
@@ -295,10 +228,85 @@ void ProtocolWidget::slotItemCompleted(const QString &folder, const SyncFileItem
 
     QTreeWidgetItem *line = createCompletedTreewidgetItem(folder, item);
     if(line) {
-        _ui->_treeWidget->insertTopLevelItem(0, line);
-        if (!_copyBtn->isEnabled()) {
-            _copyBtn->setEnabled(true);
+       if( item.hasErrorStatus() ) {
+            _issueItemView->insertTopLevelItem(0, line);
+            emit issueItemCountUpdated(_issueItemView->topLevelItemCount());
+        } else {
+            _ui->_treeWidget->insertTopLevelItem(0, line);
         }
+    }
+}
+
+
+void ProtocolWidget::storeSyncActivity(QTextStream& ts)
+{
+    int topLevelItems = _ui->_treeWidget->topLevelItemCount();
+
+    for (int i = 0; i < topLevelItems; i++) {
+        QTreeWidgetItem *child = _ui->_treeWidget->topLevelItem(i);
+        ts << right
+              // time stamp
+           << qSetFieldWidth(20)
+           << child->data(0,Qt::DisplayRole).toString()
+              // separator
+           << qSetFieldWidth(0) << ","
+
+              // file name
+           << qSetFieldWidth(64)
+           << child->data(1,Qt::DisplayRole).toString()
+              // separator
+           << qSetFieldWidth(0) << ","
+
+              // folder
+           << qSetFieldWidth(30)
+           << child->data(2, Qt::DisplayRole).toString()
+              // separator
+           << qSetFieldWidth(0) << ","
+
+              // action
+           << qSetFieldWidth(15)
+           << child->data(3, Qt::DisplayRole).toString()
+              // separator
+           << qSetFieldWidth(0) << ","
+
+              // size
+           << qSetFieldWidth(10)
+           << child->data(4, Qt::DisplayRole).toString()
+           << qSetFieldWidth(0)
+           << endl;
+    }
+}
+
+void ProtocolWidget::storeSyncIssues(QTextStream& ts)
+{
+    int topLevelItems = _issueItemView->topLevelItemCount();
+
+    for (int i = 0; i < topLevelItems; i++) {
+        QTreeWidgetItem *child = _issueItemView->topLevelItem(i);
+        ts << right
+              // time stamp
+           << qSetFieldWidth(20)
+           << child->data(0,Qt::DisplayRole).toString()
+              // separator
+           << qSetFieldWidth(0) << ","
+
+              // file name
+           << qSetFieldWidth(64)
+           << child->data(1,Qt::DisplayRole).toString()
+              // separator
+           << qSetFieldWidth(0) << ","
+
+              // folder
+           << qSetFieldWidth(30)
+           << child->data(2, Qt::DisplayRole).toString()
+              // separator
+           << qSetFieldWidth(0) << ","
+
+              // action
+           << qSetFieldWidth(15)
+           << child->data(3, Qt::DisplayRole).toString()
+           << qSetFieldWidth(0)
+           << endl;
     }
 }
 

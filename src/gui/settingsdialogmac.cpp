@@ -25,6 +25,7 @@
 #include "progressdispatcher.h"
 #include "owncloudgui.h"
 #include "protocolwidget.h"
+#include "activitywidget.h"
 #include "accountmanager.h"
 
 #include <QLabel>
@@ -41,7 +42,7 @@ namespace OCC {
 SettingsDialogMac::SettingsDialogMac(ownCloudGui *gui, QWidget *parent)
     : MacPreferencesWindow(parent), _gui(gui)
 {
-    // do not show minimize button. There is no use, and retoring the
+    // do not show minimize button. There is no use, and restoring the
     // dialog from minimize is broken in MacPreferencesWindow
     setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::CustomizeWindowHint |
                    Qt::WindowCloseButtonHint | Qt::WindowMaximizeButtonHint);
@@ -67,6 +68,12 @@ SettingsDialogMac::SettingsDialogMac(ownCloudGui *gui, QWidget *parent)
 
     setWindowTitle(tr("%1").arg(Theme::instance()->appNameGUI()));
 
+    QIcon activityIcon(QLatin1String(":/client/resources/activity.png"));
+    _activitySettings = new ActivitySettings;
+    addPreferencesPanel(activityIcon, tr("Activity"), _activitySettings);
+    connect( _activitySettings, SIGNAL(guiLog(QString,QString)), _gui,
+        SLOT(slotShowOptionalTrayMessage(QString,QString)) );
+
     connect(AccountManager::instance(), &AccountManager::accountAdded,
             this, &SettingsDialogMac::accountAdded);
     connect(AccountManager::instance(), &AccountManager::accountRemoved,
@@ -74,10 +81,6 @@ SettingsDialogMac::SettingsDialogMac(ownCloudGui *gui, QWidget *parent)
     foreach (auto ai , AccountManager::instance()->accounts()) {
         accountAdded(ai.data());
     }
-
-    QIcon protocolIcon(QLatin1String(":/client/resources/activity.png"));
-    _protocolWidget = new ProtocolWidget;
-    addPreferencesPanel(protocolIcon, tr("Activity"), _protocolWidget);
 
     QIcon generalIcon = MacStandardIcon::icon(MacStandardIcon::PreferencesGeneral);
     GeneralSettings *generalSettings = new GeneralSettings;
@@ -114,12 +117,14 @@ void SettingsDialogMac::accountAdded(AccountState *s)
     QIcon accountIcon = MacStandardIcon::icon(MacStandardIcon::UserAccounts);
     auto accountSettings = new AccountSettings(s, this);
 
-    QString displayName = s->shortDisplayNameForSettings();
+    QString displayName = Theme::instance()->multiAccount() ? s->shortDisplayNameForSettings() : tr("Account");
 
     insertPreferencesPanel(0, accountIcon, displayName, accountSettings);
 
     connect( accountSettings, &AccountSettings::folderChanged, _gui,  &ownCloudGui::slotFoldersChanged);
     connect( accountSettings, &AccountSettings::openFolderAlias, _gui, &ownCloudGui::slotFolderOpenAction);
+
+    slotRefreshActivity(s);
 }
 
 void SettingsDialogMac::accountRemoved(AccountState *s)
@@ -130,7 +135,15 @@ void SettingsDialogMac::accountRemoved(AccountState *s)
             removePreferencesPanel(p);
         }
     }
+
+    _activitySettings->slotRemoveAccount(s);
 }
 
+void SettingsDialogMac::slotRefreshActivity( AccountState* accountState )
+{
+    if (accountState) {
+        _activitySettings->slotRefresh(accountState);
+    }
+}
 
 }

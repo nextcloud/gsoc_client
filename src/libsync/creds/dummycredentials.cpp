@@ -17,12 +17,6 @@
 namespace OCC
 {
 
-void DummyCredentials::syncContextPreInit(CSYNC*)
-{}
-
-void DummyCredentials::syncContextPreStart(CSYNC*)
-{}
-
 bool DummyCredentials::changed(AbstractCredentials* credentials) const
 {
     DummyCredentials* dummy(dynamic_cast< DummyCredentials* >(credentials));
@@ -56,9 +50,14 @@ bool DummyCredentials::stillValid(QNetworkReply *reply)
     return true;
 }
 
-void DummyCredentials::fetch()
+void DummyCredentials::fetchFromKeychain()
 {
     Q_EMIT(fetched());
+}
+
+void DummyCredentials::askFromUser()
+{
+    Q_EMIT(asked());
 }
 
 void DummyCredentials::persist()

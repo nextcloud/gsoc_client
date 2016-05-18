@@ -102,7 +102,8 @@ enum csync_status_codes_e {
     CYSNC_STATUS_FILE_LOCKED_OR_OPEN,
     CSYNC_STATUS_INDIVIDUAL_EXCLUDE_HIDDEN,
     CSYNC_STATUS_INVALID_CHARACTERS,
-    CSYNC_STATUS_INDIVIDUAL_STAT_FAILED
+    CSYNC_STATUS_INDIVIDUAL_STAT_FAILED,
+    CSYNC_STATUS_FORBIDDEN
 };
 
 typedef enum csync_status_codes_e CSYNC_STATUS;
@@ -133,7 +134,10 @@ enum csync_instructions_e {
   CSYNC_INSTRUCTION_IGNORE     = 0x00000020,  /* The file is ignored (UPDATE|RECONCILE) */
   CSYNC_INSTRUCTION_SYNC       = 0x00000040,  /* The file need to be pushed to the other remote (RECONCILE) */
   CSYNC_INSTRUCTION_STAT_ERROR = 0x00000080,
-  CSYNC_INSTRUCTION_ERROR      = 0x00000100
+  CSYNC_INSTRUCTION_ERROR      = 0x00000100,
+  CSYNC_INSTRUCTION_TYPE_CHANGE = 0x0000200,  /* Like NEW, but deletes the old entity first (RECONCILE)
+                                                 Used when the type of something changes from directory to file
+                                                 or back. */
 };
 
 enum csync_ftw_type_e {
@@ -144,7 +148,7 @@ enum csync_ftw_type_e {
 };
 
 
-#define FILE_ID_BUF_SIZE 21
+#define FILE_ID_BUF_SIZE 36
 
 // currently specified at https://github.com/owncloud/core/issues/8322 are 9 to 10
 #define REMOTE_PERM_BUF_SIZE 15
@@ -173,7 +177,7 @@ enum csync_vio_file_stat_fields_e {
   CSYNC_VIO_FILE_STAT_FIELDS_TYPE = 1 << 0,
   CSYNC_VIO_FILE_STAT_FIELDS_MODE = 1 << 1, // local POSIX mode
   CSYNC_VIO_FILE_STAT_FIELDS_FLAGS = 1 << 2,
-  CSYNC_VIO_FILE_STAT_FIELDS_DEVICE = 1 << 3,
+//  CSYNC_VIO_FILE_STAT_FIELDS_DEVICE = 1 << 3,
   CSYNC_VIO_FILE_STAT_FIELDS_INODE = 1 << 4,
 //  CSYNC_VIO_FILE_STAT_FIELDS_LINK_COUNT = 1 << 5,
   CSYNC_VIO_FILE_STAT_FIELDS_SIZE = 1 << 6,
@@ -212,7 +216,6 @@ struct csync_vio_file_stat_s {
 
   mode_t mode;
 
-  dev_t device;
   uint64_t inode;
 
   int fields; // actually enum csync_vio_file_stat_fields_e fields;
@@ -262,6 +265,10 @@ struct csync_tree_walk_file_s {
     const char *remotePerm;
     char *directDownloadUrl;
     char *directDownloadCookies;
+
+    const char *checksum;
+    uint32_t checksumTypeId;
+
     struct {
         int64_t     size;
         time_t      modtime;
@@ -301,14 +308,16 @@ typedef void (*csync_vio_closedir_hook) (csync_vio_handle_t *dhhandle,
 typedef int (*csync_vio_stat_hook) (csync_vio_handle_t *dhhandle,
                                                               void *userdata);
 
+/* Compute the checksum of the given \a checksumTypeId for \a path. */
+typedef const char* (*csync_checksum_hook) (
+        const char *path, uint32_t checksumTypeId, void *userdata);
+
 /**
  * @brief Allocate a csync context.
  *
  * @param csync  The context variable to allocate.
- *
- * @return  0 on success, less than 0 if an error occured.
  */
-int csync_create(CSYNC **csync, const char *local, const char *remote);
+void csync_create(CSYNC **csync, const char *local, const char *remote);
 
 /**
  * @brief Initialize the file synchronizer.
@@ -316,17 +325,15 @@ int csync_create(CSYNC **csync, const char *local, const char *remote);
  * This function loads the configuration
  *
  * @param ctx  The context to initialize.
- *
- * @return  0 on success, less than 0 if an error occured.
  */
-int csync_init(CSYNC *ctx);
+void csync_init(CSYNC *ctx);
 
 /**
  * @brief Update detection
  *
  * @param ctx  The context to run the update detection on.
  *
- * @return  0 on success, less than 0 if an error occured.
+ * @return  0 on success, less than 0 if an error occurred.
  */
 int csync_update(CSYNC *ctx);
 
@@ -335,7 +342,7 @@ int csync_update(CSYNC *ctx);
  *
  * @param ctx  The context to run the reconciliation on.
  *
- * @return  0 on success, less than 0 if an error occured.
+ * @return  0 on success, less than 0 if an error occurred.
  */
 int csync_reconcile(CSYNC *ctx);
 
@@ -344,7 +351,7 @@ int csync_reconcile(CSYNC *ctx);
  *
  * @param ctx  The context to commit.
  *
- * @return  0 on success, less than 0 if an error occured.
+ * @return  0 on success, less than 0 if an error occurred.
  */
 int csync_commit(CSYNC *ctx);
 
@@ -355,27 +362,9 @@ int csync_commit(CSYNC *ctx);
  *
  * @param ctx  The context to destroy.
  *
- * @return  0 on success, less than 0 if an error occured.
+ * @return  0 on success, less than 0 if an error occurred.
  */
 int csync_destroy(CSYNC *ctx);
-
-/**
- * @brief Add an additional exclude list.
- *
- * @param ctx           The context to add the exclude list.
- *
- * @param path          The path pointing to the file.
- *
- * @return              0 on success, less than 0 if an error occured.
- */
-int csync_add_exclude_list(CSYNC *ctx, const char *path);
-
-/**
- * @brief Removes all items imported from exclude lists.
- *
- * @param ctx           The context to add the exclude list.
- */
-void csync_clear_exclude_list(CSYNC *ctx);
 
 /**
  * @brief Get the userdata saved in the context.
@@ -383,7 +372,7 @@ void csync_clear_exclude_list(CSYNC *ctx);
  * @param ctx           The csync context.
  *
  * @return              The userdata saved in the context, NULL if an error
- *                      occured.
+ *                      occurred.
  */
 void *csync_get_userdata(CSYNC *ctx);
 
@@ -395,7 +384,7 @@ void *csync_get_userdata(CSYNC *ctx);
  *
  * @param userdata      The userdata to be stored in the context.
  *
- * @return              0 on success, less than 0 if an error occured.
+ * @return              0 on success, less than 0 if an error occurred.
  */
 int csync_set_userdata(CSYNC *ctx, void *userdata);
 
@@ -405,7 +394,7 @@ int csync_set_userdata(CSYNC *ctx, void *userdata);
  * @param ctx           The csync context.
  *
  * @return              The authentication callback set or NULL if an error
- *                      occured.
+ *                      occurred.
  */
 csync_auth_callback csync_get_auth_callback(CSYNC *ctx);
 
@@ -416,7 +405,7 @@ csync_auth_callback csync_get_auth_callback(CSYNC *ctx);
  *
  * @param cb            The authentication callback.
  *
- * @return              0 on success, less than 0 if an error occured.
+ * @return              0 on success, less than 0 if an error occurred.
  */
 int csync_set_auth_callback(CSYNC *ctx, csync_auth_callback cb);
 
@@ -425,7 +414,7 @@ int csync_set_auth_callback(CSYNC *ctx, csync_auth_callback cb);
  *
  * @param[in]  level  The log verbosity.
  *
- * @return 0 on success, < 0 if an error occured.
+ * @return 0 on success, < 0 if an error occurred.
  */
 int csync_set_log_level(int level);
 
@@ -440,7 +429,7 @@ int csync_get_log_level(void);
  * @brief Get the logging callback set.
  *
  * @return              The logging callback set or NULL if an error
- *                      occured.
+ *                      occurred.
  */
 csync_log_callback csync_get_log_callback(void);
 
@@ -449,7 +438,7 @@ csync_log_callback csync_get_log_callback(void);
  *
  * @param cb            The logging callback.
  *
- * @return              0 on success, less than 0 if an error occured.
+ * @return              0 on success, less than 0 if an error occurred.
  */
 int csync_set_log_callback(csync_log_callback cb);
 
@@ -465,7 +454,7 @@ void *csync_get_log_userdata(void);
  *
  * @param[in]  data     The userdata to set.
  *
- * @return              0 on success, less than 0 if an error occured.
+ * @return              0 on success, less than 0 if an error occurred.
  */
 int csync_set_log_userdata(void *data);
 
@@ -484,7 +473,7 @@ typedef int csync_treewalk_visit_func(TREE_WALK_FILE* ,void*);
  * @param visitor       A callback function to handle the file info.
  * @param filter        A filter, built from or'ed csync_instructions_e
  *
- * @return              0 on success, less than 0 if an error occured.
+ * @return              0 on success, less than 0 if an error occurred.
  */
 int csync_walk_local_tree(CSYNC *ctx, csync_treewalk_visit_func *visitor, int filter);
 
@@ -495,7 +484,7 @@ int csync_walk_local_tree(CSYNC *ctx, csync_treewalk_visit_func *visitor, int fi
  * @param visitor       A callback function to handle the file info.
  * @param filter        A filter, built from and'ed csync_instructions_e
  *
- * @return              0 on success, less than 0 if an error occured.
+ * @return              0 on success, less than 0 if an error occurred.
  */
 int csync_walk_remote_tree(CSYNC *ctx, csync_treewalk_visit_func *visitor, int filter);
 
@@ -518,19 +507,6 @@ const char *csync_get_status_string(CSYNC *ctx);
  */
 int csync_set_iconv_codec(const char *from);
 #endif
-
-/**
- * @brief Set a property to module
- *
- * @param ctx           The csync context.
- *
- * @param key           The property key
- *
- * @param value         An opaque pointer to the data.
- *
- * @return              0 on success, less than 0 if an error occured.
- */
-int csync_set_module_property(CSYNC *ctx, const char *key, void *value);
 
 /**
  * @brief Aborts the current sync run as soon as possible. Can be called from another thread.

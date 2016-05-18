@@ -25,6 +25,7 @@
 #define _GNU_SOURCE
 #endif
 
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -58,12 +59,6 @@
 #include "csync_rename.h"
 #include "c_jhash.h"
 
-
-#ifdef USE_NEON
-// Breaking the abstraction for fun and profit.
-#include "csync_owncloud.h"
-#endif
-
 static int _key_cmp(const void *key, const void *data) {
   uint64_t a;
   csync_file_stat_t *b;
@@ -95,14 +90,11 @@ static int _data_cmp(const void *key, const void *data) {
   return 0;
 }
 
-int csync_create(CSYNC **csync, const char *local, const char *remote) {
+void csync_create(CSYNC **csync, const char *local, const char *remote) {
   CSYNC *ctx;
   size_t len = 0;
 
   ctx = c_malloc(sizeof(CSYNC));
-  if (ctx == NULL) {
-    return -1;
-  }
 
   ctx->status_code = CSYNC_STATUS_OK;
 
@@ -127,49 +119,21 @@ int csync_create(CSYNC **csync, const char *local, const char *remote) {
   ctx->ignore_hidden_files = true;
 
   *csync = ctx;
-  return 0;
 }
 
-int csync_init(CSYNC *ctx) {
-  int rc;
-
-  if (ctx == NULL) {
-    errno = EBADF;
-    return -1;
-  }
-
-  ctx->status_code = CSYNC_STATUS_OK;
-
+void csync_init(CSYNC *ctx) {
+  assert(ctx);
   /* Do not initialize twice */
-  if (ctx->status & CSYNC_STATUS_INIT) {
-    return 1;
-  }
 
-  /* check for uri */
-  if (csync_fnmatch("owncloud://*", ctx->remote.uri, 0) == 0 && csync_fnmatch("ownclouds://*", ctx->remote.uri, 0) == 0) {
-      ctx->status_code = CSYNC_STATUS_NO_MODULE;
-      rc = -1;
-      goto out;
-  }
+  assert(!(ctx->status & CSYNC_STATUS_INIT));
+  ctx->status_code = CSYNC_STATUS_OK;
 
   ctx->local.type = LOCAL_REPLICA;
 
-#ifdef USE_NEON
-  owncloud_init(ctx);
-#endif
   ctx->remote.type = REMOTE_REPLICA;
 
-  if (c_rbtree_create(&ctx->local.tree, _key_cmp, _data_cmp) < 0) {
-    ctx->status_code = CSYNC_STATUS_TREE_ERROR;
-    rc = -1;
-    goto out;
-  }
-
-  if (c_rbtree_create(&ctx->remote.tree, _key_cmp, _data_cmp) < 0) {
-    ctx->status_code = CSYNC_STATUS_TREE_ERROR;
-    rc = -1;
-    goto out;
-  }
+  c_rbtree_create(&ctx->local.tree, _key_cmp, _data_cmp);
+  c_rbtree_create(&ctx->remote.tree, _key_cmp, _data_cmp);
 
   ctx->remote.root_perms = 0;
 
@@ -177,11 +141,6 @@ int csync_init(CSYNC *ctx) {
 
   /* initialize random generator */
   srand(time(NULL));
-
-  rc = 0;
-
-out:
-  return rc;
 }
 
 int csync_update(CSYNC *ctx) {
@@ -215,14 +174,6 @@ int csync_update(CSYNC *ctx) {
   if (!ctx->excludes) {
       CSYNC_LOG(CSYNC_LOG_PRIORITY_DEBUG, "No exclude file loaded or defined!");
   }
-
-#ifdef USE_NEON
-  /* This is not actually connecting, just setting the info for neon. The legacy propagator can use it.. */
-  if (dav_connect( ctx, ctx->remote.uri ) < 0) {
-      ctx->status_code = CSYNC_STATUS_CONNECT_ERROR;
-      return -1;
-  }
-#endif
 
   /* update detection for local replica */
   csync_gettime(&start);
@@ -438,6 +389,8 @@ static int _csync_treewalk_visitor(void *obj, void *data) {
       trav.error_status = cur->error_status;
       trav.should_update_metadata = cur->should_update_metadata;
       trav.has_ignored_files = cur->has_ignored_files;
+      trav.checksum = cur->checksum;
+      trav.checksumTypeId = cur->checksumTypeId;
 
       if( other_node ) {
           csync_file_stat_t *other_stat = (csync_file_stat_t*)other_node->data;
@@ -595,29 +548,17 @@ int csync_commit(CSYNC *ctx) {
   ctx->remote.read_from_db = 0;
   ctx->read_remote_from_db = true;
   ctx->db_is_empty = false;
-  ctx->ignore_hidden_files = true; // do NOT sync hidden files by default.
 
 
   /* Create new trees */
-  rc = c_rbtree_create(&ctx->local.tree, _key_cmp, _data_cmp);
-  if (rc < 0) {
-    ctx->status_code = CSYNC_STATUS_TREE_ERROR;
-    goto out;
-  }
-
-  rc = c_rbtree_create(&ctx->remote.tree, _key_cmp, _data_cmp);
-  if (rc < 0) {
-    ctx->status_code = CSYNC_STATUS_TREE_ERROR;
-    goto out;
-  }
+  c_rbtree_create(&ctx->local.tree, _key_cmp, _data_cmp);
+  c_rbtree_create(&ctx->remote.tree, _key_cmp, _data_cmp);
 
 
   ctx->status = CSYNC_STATUS_INIT;
   SAFE_FREE(ctx->error_string);
 
   rc = 0;
-
-out:
   return rc;
 }
 
@@ -637,18 +578,11 @@ int csync_destroy(CSYNC *ctx) {
   }
   ctx->statedb.db = NULL;
 
-  /* destroy exclude list */
-  csync_exclude_destroy(ctx);
-
   _csync_clean_ctx(ctx);
 
   SAFE_FREE(ctx->local.uri);
   SAFE_FREE(ctx->remote.uri);
   SAFE_FREE(ctx->error_string);
-
-#ifdef USE_NEON
-  owncloud_destroy(ctx);
-#endif
 
 #ifdef WITH_ICONV
   c_close_iconv();
@@ -657,34 +591,6 @@ int csync_destroy(CSYNC *ctx) {
   SAFE_FREE(ctx);
 
   return rc;
-}
-
-int csync_add_exclude_list(CSYNC *ctx, const char *path) {
-  if (ctx == NULL || path == NULL) {
-    return -1;
-  }
-
-  return csync_exclude_load(path, &ctx->excludes);
-}
-
-void csync_clear_exclude_list(CSYNC *ctx)
-{
-    csync_exclude_clear(ctx);
-}
-
-int csync_set_auth_callback(CSYNC *ctx, csync_auth_callback cb) {
-  if (ctx == NULL || cb == NULL) {
-    return -1;
-  }
-
-  if (ctx->status & CSYNC_STATUS_INIT) {
-    ctx->status_code = CSYNC_STATUS_CSYNC_STATUS_ERROR;
-    fprintf(stderr, "This function must be called before initialization.");
-    return -1;
-  }
-  ctx->callbacks.auth_function = cb;
-
-  return 0;
 }
 
 void *csync_get_userdata(CSYNC *ctx) {
@@ -778,17 +684,7 @@ void csync_file_stat_free(csync_file_stat_t *st)
     SAFE_FREE(st->directDownloadCookies);
     SAFE_FREE(st->etag);
     SAFE_FREE(st->destpath);
+    SAFE_FREE(st->checksum);
     SAFE_FREE(st);
   }
 }
-
-int csync_set_module_property(CSYNC* ctx, const char* key, void* value)
-{
-#ifdef USE_NEON
-    return owncloud_set_property(ctx, key, value);
-#else
-    (void)ctx, (void)key, (void)value;
-    return 0;
-#endif
-}
-

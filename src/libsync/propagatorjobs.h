@@ -32,7 +32,6 @@ static const char checkSumHeaderC[] = "OC-Checksum";
 static const char checkSumMD5C[] = "MD5";
 static const char checkSumSHA1C[] = "SHA1";
 static const char checkSumAdlerC[] = "Adler32";
-static const char checkSumAdlerUpperC[] = "ADLER32";
 
 /**
  * @brief Declaration of the other propagation jobs
@@ -55,9 +54,20 @@ private:
 class PropagateLocalMkdir : public PropagateItemJob {
     Q_OBJECT
 public:
-    PropagateLocalMkdir (OwncloudPropagator* propagator,const SyncFileItemPtr& item)  : PropagateItemJob(propagator, item) {}
+    PropagateLocalMkdir (OwncloudPropagator* propagator,const SyncFileItemPtr& item)
+        : PropagateItemJob(propagator, item), _deleteExistingFile(false) {}
     void start() Q_DECL_OVERRIDE;
 
+    /**
+     * Whether an existing file with the same name may be deleted before
+     * creating the directory.
+     *
+     * Default: false.
+     */
+    void setDeleteExistingFile(bool enabled);
+
+private:
+    bool _deleteExistingFile;
 };
 
 /**
@@ -71,6 +81,5 @@ public:
     void start() Q_DECL_OVERRIDE;
     JobParallelism parallelism() Q_DECL_OVERRIDE { return WaitForFinishedInParentDirectory; }
 };
-
 
 }

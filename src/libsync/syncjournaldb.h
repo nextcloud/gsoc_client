@@ -27,9 +27,9 @@ class SyncJournalFileRecord;
 class SyncJournalErrorBlacklistRecord;
 
 /**
- * @brief Class that handle the sync database
+ * @brief Class that handles the sync database
  *
- * This class is thread safe. All public function are locking the mutex.
+ * This class is thread safe. All public functions lock the mutex.
  * @ingroup libsync
  */
 class OWNCLOUDSYNC_EXPORT SyncJournalDb : public QObject
@@ -38,10 +38,20 @@ class OWNCLOUDSYNC_EXPORT SyncJournalDb : public QObject
 public:
     explicit SyncJournalDb(const QString& path, QObject *parent = 0);
     virtual ~SyncJournalDb();
-    SyncJournalFileRecord getFileRecord( const QString& filename );
+
+    // to verify that the record could be queried successfully check
+    // with SyncJournalFileRecord::isValid()
+    SyncJournalFileRecord getFileRecord(const QString& filename);
     bool setFileRecord( const SyncJournalFileRecord& record );
+
+    /// Like setFileRecord, but preserves checksums
+    bool setFileRecordMetadata( const SyncJournalFileRecord& record );
+
     bool deleteFileRecord( const QString& filename, bool recursively = false );
     int getFileRecordCount();
+    bool updateFileRecordChecksum(const QString& filename,
+                                  const QByteArray& contentChecksum,
+                                  const QByteArray& contentChecksumType);
     bool exists();
     void walCheckpoint();
 
@@ -97,21 +107,21 @@ public:
          * For the sync engine, those folders are considered as if they were not there, so the local
          * folders will be deleted */
         SelectiveSyncBlackList = 1,
-        /** When a shared flder has a size bigger than a configured size, it is by default not sync'ed
+        /** When a shared folder has a size bigger than a configured size, it is by default not sync'ed
          * Unless it is in the white list, in which case the folder is sync'ed and all its children.
          * If a folder is both on the black and the white list, the black list wins */
         SelectiveSyncWhiteList = 2,
-        /** List of big sync folder that have not been confirmed by the user yet and that the UI
+        /** List of big sync folders that have not been confirmed by the user yet and that the UI
          * should notify about */
         SelectiveSyncUndecidedList = 3
     };
     /* return the specified list from the database */
-    QStringList getSelectiveSyncList(SelectiveSyncListType type);
+    QStringList getSelectiveSyncList(SelectiveSyncListType type, bool *ok);
     /* Write the selective sync list (remove all other entries of that list */
     void setSelectiveSyncList(SelectiveSyncListType type, const QStringList &list);
 
     /**
-     * Make sure that on the next sync, filName is not read from the DB but use the PROPFIND to
+     * Make sure that on the next sync, fileName is not read from the DB but uses the PROPFIND to
      * get the info from the server
      */
     void avoidReadFromDbOnNextSync(const QString& fileName);
@@ -126,7 +136,7 @@ public:
     bool postSyncCleanup(const QSet<QString>& filepathsToKeep,
                          const QSet<QString>& prefixesToKeep);
 
-    /* Because sqlite transactions is really slow, we encapsulate everything in big transactions
+    /* Because sqlite transactions are really slow, we encapsulate everything in big transactions
      * Commit will actually commit the transaction and create a new one.
      */
     void commit(const QString &context, bool startTrans = true);
@@ -138,6 +148,11 @@ public:
      * return true if everything is correct
      */
     bool isConnected();
+
+    /**
+     * Returns the checksum type for an id.
+     */
+    QByteArray getChecksumType(int checksumTypeId);
 
 private:
     bool updateDatabaseStructure();
@@ -153,12 +168,20 @@ private:
     // Same as forceRemoteDiscoveryNextSync but without acquiring the lock
     void forceRemoteDiscoveryNextSyncLocked();
 
+    // Returns the integer id of the checksum type
+    //
+    // Returns 0 on failure and for empty checksum types.
+    int mapChecksumType(const QByteArray& checksumType);
+
     SqlDatabase _db;
     QString _dbFile;
     QMutex _mutex; // Public functions are protected with the mutex.
     int _transaction;
+
+    // NOTE! when adding a query, don't forget to reset it in SyncJournalDb::close
     QScopedPointer<SqlQuery> _getFileRecordQuery;
     QScopedPointer<SqlQuery> _setFileRecordQuery;
+    QScopedPointer<SqlQuery> _setFileRecordChecksumQuery;
     QScopedPointer<SqlQuery> _getDownloadInfoQuery;
     QScopedPointer<SqlQuery> _setDownloadInfoQuery;
     QScopedPointer<SqlQuery> _deleteDownloadInfoQuery;
@@ -170,6 +193,9 @@ private:
     QScopedPointer<SqlQuery> _getErrorBlacklistQuery;
     QScopedPointer<SqlQuery> _setErrorBlacklistQuery;
     QScopedPointer<SqlQuery> _getSelectiveSyncListQuery;
+    QScopedPointer<SqlQuery> _getChecksumTypeIdQuery;
+    QScopedPointer<SqlQuery> _getChecksumTypeQuery;
+    QScopedPointer<SqlQuery> _insertChecksumTypeQuery;
 
     /* This is the list of paths we called avoidReadFromDbOnNextSync on.
      * It means that they should not be written to the DB in any case since doing

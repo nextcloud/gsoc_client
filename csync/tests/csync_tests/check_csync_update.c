@@ -41,6 +41,12 @@ static void statedb_create_metadata_table(sqlite3 *db)
                           "modtime INTEGER(8),"
                           "type INTEGER,"
                           "md5 VARCHAR(32),"
+                          "fileid VARCHAR(128),"
+                          "remotePerm VARCHAR(128),"
+                          "filesize BIGINT,"
+                          "ignoredChildrenRemote INT,"
+                          "contentChecksum TEXT,"
+                          "contentChecksumTypeId INTEGER,"
                           "PRIMARY KEY(phash));";
 
         rc = sqlite3_exec(db, sql, NULL, NULL, NULL);
@@ -87,10 +93,8 @@ static void setup(void **state)
     assert_int_equal(rc, 0);
     rc = system("mkdir -p /tmp/check_csync2");
     assert_int_equal(rc, 0);
-    rc = csync_create(&csync, "/tmp/check_csync1", "/tmp/check_csync2");
-    assert_int_equal(rc, 0);
-    rc = csync_init(csync);
-    assert_int_equal(rc, 0);
+    csync_create(&csync, "/tmp/check_csync1", "/tmp/check_csync2");
+    csync_init(csync);
 
     /* Create a new db with metadata */
     sqlite3 *db;
@@ -120,10 +124,8 @@ static void setup_ftw(void **state)
     assert_int_equal(rc, 0);
     rc = system("mkdir -p /tmp/check_csync2");
     assert_int_equal(rc, 0);
-    rc = csync_create(&csync, "/tmp", "/tmp");
-    assert_int_equal(rc, 0);
-    rc = csync_init(csync);
-    assert_int_equal(rc, 0);
+    csync_create(&csync, "/tmp", "/tmp");
+    csync_init(csync);
 
     sqlite3 *db = NULL;
     rc = sqlite3_open_v2(TESTDB, &db, SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, NULL);
@@ -201,7 +203,6 @@ static csync_vio_file_stat_t* create_fstat(const char *name,
     }
     fs->fields |= CSYNC_VIO_FILE_STAT_FIELDS_INODE;
 
-    fs->device = 0;
 
     fs->size = 157459;
     fs->fields |= CSYNC_VIO_FILE_STAT_FIELDS_SIZE;

@@ -47,10 +47,33 @@ int main(int argc, char **argv)
 {
     Q_INIT_RESOURCE(client);
 
+#ifndef Q_OS_MAC
+    // If the font size ratio is set on Windows, we need to
+    // enable the auto pixelRatio in Qt since we don't
+    // want to use sizes relative to the font size everywhere.
+    // This is automatic on OS X, but opt-in on Windows and Linux
+    // https://doc-snapshots.qt.io/qt5-5.6/highdpi.html#qt-support
+#if QT_VERSION < QT_VERSION_CHECK(5, 6, 0)
+    qputenv("QT_DEVICE_PIXEL_RATIO", "auto");
+#else
+    qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", "1");
+#endif
+#endif // !Q_OS_MAC
+
 #ifdef Q_OS_MAC
     Mac::CocoaInitializer cocoaInit; // RIIA
 #endif
     OCC::Application app(argc, argv);
+
+#ifdef Q_OS_WIN
+    // The Windows style still has pixelated elements with Qt 5.6,
+    // it's recommended to use the Fusion style in this case, even
+    // though it looks slightly less native. Check here after the
+    // QApplication was constructed, but before any QWidget is
+    // constructed.
+    if (app.devicePixelRatio() > 1)
+        QApplication::setStyle(QStringLiteral("fusion"));
+#endif // Q_OS_WIN
 
 #ifndef Q_OS_WIN
     signal(SIGPIPE, SIG_IGN);
@@ -104,8 +127,17 @@ int main(int argc, char **argv)
             return -1;
         }
         return 0;
-    } else {
+    }
+#if QT_VERSION > QT_VERSION_CHECK(5, 0, 0)
+    if (qgetenv("QT_QPA_PLATFORMTHEME") != "appmenu-qt5")
+        // We can't call isSystemTrayAvailable with appmenu-qt5 begause it hides the systemtray
+        // (issue #4693)
+#endif
+    {
         if (!QSystemTrayIcon::isSystemTrayAvailable()) {
+            // If the systemtray is not there, we will wait one second for it to maybe start
+            // (eg boot time) then we show the settings dialog if there is still no systemtray.
+            // On XFCE however, we show a message box with explainaition how to install a systemtray.
             Utility::sleep(1);
             auto desktopSession = qgetenv("XDG_CURRENT_DESKTOP").toLower();
             if (desktopSession.isEmpty()) {
@@ -129,6 +161,7 @@ int main(int argc, char **argv)
             }
         }
     }
+
     return app.exec();
 }
 

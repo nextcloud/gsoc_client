@@ -16,12 +16,8 @@
 #ifndef SOCKETAPI_H
 #define SOCKETAPI_H
 
-extern "C" {
-#include <std/c_string.h>
-}
-
 #include "syncfileitem.h"
-#include "syncjournalfilerecord.h"
+#include "syncfilestatus.h"
 #include "ownsql.h"
 
 #if defined(Q_OS_MAC)
@@ -49,31 +45,25 @@ class SocketApi : public QObject
 Q_OBJECT
 
 public:
-    SocketApi(QObject* parent);
+    explicit SocketApi(QObject* parent = 0);
     virtual ~SocketApi();
 
 public slots:
     void slotUpdateFolderView(Folder *f);
     void slotUnregisterPath( const QString& alias );
     void slotRegisterPath( const QString& alias );
-    void slotReadExcludes();
-    void slotClearExcludesList();
 
 signals:
     void shareCommandReceived(const QString &sharePath, const QString &localPath, bool resharingAllowed);
+    void shareUserGroupCommandReceived(const QString &sharePath, const QString &localPath, bool resharingAllowed);
 
 private slots:
     void slotNewConnection();
     void onLostConnection();
     void slotReadSocket();
-    void slotItemCompleted(const QString &, const SyncFileItem &);
-    void slotSyncItemDiscovered(const QString &, const SyncFileItem &);
+    void slotFileStatusChanged(const QString& systemFileName, SyncFileStatus fileStatus);
 
 private:
-    SyncFileStatus fileStatus(Folder *folder, const QString& systemFileName, c_strlist_t *excludes );
-    SyncJournalFileRecord dbFileRecord_capi( Folder *folder, QString fileName );
-    SqlQuery *getSqlQuery( Folder *folder );
-
     void sendMessage(QIODevice* socket, const QString& message, bool doWait = false);
     void broadcastMessage(const QString& verb, const QString &path, const QString &status = QString::null, bool doWait = false);
 
@@ -83,14 +73,13 @@ private:
 
     Q_INVOKABLE void command_VERSION(const QString& argument, QIODevice* socket);
 
+    Q_INVOKABLE void command_SHARE_STATUS(const QString& localFile, QIODevice *socket);
     Q_INVOKABLE void command_SHARE_MENU_TITLE(const QString& argument, QIODevice* socket);
     QString buildRegisterPathMessage(const QString& path);
 
+    QSet<QString> _registeredAliases;
     QList<QIODevice*> _listeners;
     SocketApiServer _localServer;
-    c_strlist_t *_excludes;
-    QHash<Folder*, QSharedPointer<SqlQuery>> _dbQueries;
-    QHash<Folder*, QSharedPointer<SqlDatabase>> _openDbs;
 };
 
 }

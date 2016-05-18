@@ -21,6 +21,7 @@
 #include "configfile.h"
 #include "owncloudsetupwizard.h"
 #include "accountmanager.h"
+#include "synclogdialog.h"
 
 #include "updater/updater.h"
 #include "updater/ocupdater.h"
@@ -83,18 +84,12 @@ GeneralSettings::GeneralSettings(QWidget *parent) :
     _ui->monoIconsCheckBox->setVisible(QDir(themeDir).exists());
 
     connect(_ui->ignoredFilesButton, SIGNAL(clicked()), SLOT(slotIgnoreFilesEditor()));
-    connect(_ui->addAccountButton, SIGNAL(clicked()), SLOT(slotOpenAccountWizard()));
-
-    connect(AccountManager::instance(), SIGNAL(accountAdded(AccountState*)),
-            SLOT(slotAccountAddedOrRemoved()));
-    connect(AccountManager::instance(), SIGNAL(accountRemoved(AccountState*)),
-            SLOT(slotAccountAddedOrRemoved()));
-    slotAccountAddedOrRemoved();
 }
 
 GeneralSettings::~GeneralSettings()
 {
     delete _ui;
+    delete _syncLogDialog;
 }
 
 QSize GeneralSettings::sizeHint() const {
@@ -114,7 +109,12 @@ void GeneralSettings::loadMiscSettings()
 
 void GeneralSettings::slotUpdateInfo()
 {
-    if (OCUpdater *updater = dynamic_cast<OCUpdater*>(Updater::instance())) {
+    OCUpdater *updater = dynamic_cast<OCUpdater*>(Updater::instance());
+    if (ConfigFile().skipUpdateCheck()) {
+        updater = 0; // don't show update info if updates are disabled
+    }
+
+    if (updater) {
         connect(updater, SIGNAL(downloadStateChanged()), SLOT(slotUpdateInfo()), Qt::UniqueConnection);
         connect(_ui->restartButton, SIGNAL(clicked()), updater, SLOT(slotStartInstaller()), Qt::UniqueConnection);
         connect(_ui->restartButton, SIGNAL(clicked()), qApp, SLOT(quit()), Qt::UniqueConnection);
@@ -168,13 +168,5 @@ void GeneralSettings::slotOpenAccountWizard()
     }
     OwncloudSetupWizard::runWizard(qApp, SLOT(slotownCloudWizardDone(int)), 0);
 }
-
-void GeneralSettings::slotAccountAddedOrRemoved()
-{
-    _ui->addAccountButton->setVisible(
-        AccountManager::instance()->accounts().isEmpty()
-            || !Theme::instance()->singleAccount());
-}
-
 
 } // namespace OCC

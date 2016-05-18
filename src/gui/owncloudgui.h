@@ -31,10 +31,10 @@ class Folder;
 
 class SettingsDialog;
 class SettingsDialogMac;
+class ShareDialog;
 class Application;
 class LogBrowser;
 class AccountState;
-typedef QSharedPointer<AccountState> AccountStatePtr;
 
 /**
  * @brief The ownCloudGui class
@@ -76,14 +76,19 @@ public slots:
     void slotHelp();
     void slotOpenPath(const QString& path);
     void slotAccountStateChanged();
+    void slotTrayMessageIfServerUnsupported(Account *account);
     void slotShowShareDialog(const QString &sharePath, const QString &localPath, bool resharingAllowed);
+    void slotRemoveDestroyedShareDialogs();
 
 private slots:
     void slotDisplayIdle();
     void slotLogin();
     void slotLogout();
+    void slotUnpauseAllFolders();
+    void slotPauseAllFolders();
 
 private:
+    void setPauseOnAllFoldersHelper(bool pause);
     void setupActions();
     void addAccountContextMenu(AccountStatePtr accountState, QMenu* menu, bool separateMenu);
 
@@ -99,6 +104,7 @@ private:
     QMenu *_recentActionsMenu;
     QVector<QMenu*> _accountMenus;
     bool _qdbusmenuWorkaround;
+    QMap<QString, QPointer<ShareDialog> > _shareDialogs;
 
     QAction *_actionLogin;
     QAction *_actionLogout;

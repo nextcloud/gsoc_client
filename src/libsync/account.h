@@ -67,6 +67,7 @@ public:
      */
     QString davPath() const;
     void setDavPath(const QString&s) { _davPath = s; }
+    void setNonShib(bool nonShib);
 
     static AccountPtr create();
     ~Account();
@@ -110,6 +111,7 @@ public:
     QNetworkReply* headRequest(const QUrl &url);
     QNetworkReply* getRequest(const QString &relPath);
     QNetworkReply* getRequest(const QUrl &url);
+    QNetworkReply* deleteRequest( const QUrl &url);
     QNetworkReply* davRequest(const QByteArray &verb, const QString &relPath, QNetworkRequest req, QIODevice *data = 0);
     QNetworkReply* davRequest(const QByteArray &verb, const QUrl &url, QNetworkRequest req, QIODevice *data = 0);
 
@@ -141,7 +143,7 @@ public:
                               const QList< QPair<QString, QString> > &queryItems = (QList<QPair<QString, QString>>()));
 
     /**  Returns a new settings pre-set in a specific group.  The Settings will be created
-         with the given parent. If no parents is specified, the caller must destroy the settings */
+         with the given parent. If no parent is specified, the caller must destroy the settings */
     static std::unique_ptr<QSettings> settingsWithGroup(const QString& group, QObject* parent = 0);
 
     // to be called by credentials only
@@ -153,7 +155,23 @@ public:
     void setCapabilities(const QVariantMap &caps);
     const Capabilities &capabilities() const;
     void setServerVersion(const QString &version);
-    QString serverVersion();
+    QString serverVersion() const;
+    int serverVersionInt() const;
+
+    /** Whether the server is too old.
+     *
+     * Not supporting server versions is a gradual process. There's a hard
+     * compatibility limit (see ConnectionValidator) that forbids connecting
+     * to extremely old servers. And there's a weak "untested, not
+     * recommended, potentially dangerous" limit, that users might want
+     * to go beyond.
+     *
+     * This function returns true if the server is beyond the weak limit.
+     */
+    bool serverVersionUnsupported() const;
+
+    // Fixed from 8.1 https://github.com/owncloud/client/issues/3730
+    bool rootEtagChangesNotOnlySubFolderEtags();
 
     void clearCookieJar();
     void lendCookieJarTo(QNetworkAccessManager *guest);
@@ -168,16 +186,20 @@ signals:
     void propagatorNetworkActivity();
     void invalidCredentials();
     void credentialsFetched(AbstractCredentials* credentials);
+    void credentialsAsked(AbstractCredentials* credentials);
 
     /// Forwards from QNetworkAccessManager::proxyAuthenticationRequired().
     void proxyAuthenticationRequired(const QNetworkProxy&, QAuthenticator*);
 
     // e.g. when the approved SSL certificates changed
-    void wantsAccountSaved(AccountPtr acc);
+    void wantsAccountSaved(Account* acc);
+
+    void serverVersionChanged(Account* account, const QString& newVersion, const QString& oldVersion);
 
 protected Q_SLOTS:
     void slotHandleSslErrors(QNetworkReply*,QList<QSslError>);
     void slotCredentialsFetched();
+    void slotCredentialsAsked();
 
 private:
     Account(QObject *parent = 0);

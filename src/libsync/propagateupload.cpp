@@ -22,7 +22,9 @@
 #include "utility.h"
 #include "filesystem.h"
 #include "propagatorjobs.h"
-#include "transmissionchecksumvalidator.h"
+#include "checksums.h"
+#include "syncengine.h"
+#include "propagateremotedelete.h"
 
 #include <json.h>
 #include <QNetworkAccessManager>
@@ -30,10 +32,6 @@
 #include <QDir>
 #include <cmath>
 #include <cstring>
-
-#ifdef USE_NEON
-#include "propagator_legacy.h"
-#endif
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 4, 2)
 namespace {
@@ -57,20 +55,9 @@ static bool fileIsStillChanging(const SyncFileItem & item)
     const QDateTime modtime = Utility::qDateTimeFromTime_t(item._modtime);
     const qint64 msSinceMod = modtime.msecsTo(QDateTime::currentDateTime());
 
-    return msSinceMod < 2000
+    return msSinceMod < SyncEngine::minimumFileAgeForUpload
             // if the mtime is too much in the future we *do* upload the file
             && msSinceMod > -10000;
-}
-
-static qint64 chunkSize() {
-    static uint chunkSize;
-    if (!chunkSize) {
-        chunkSize = qgetenv("OWNCLOUD_CHUNK_SIZE").toUInt();
-        if (chunkSize == 0) {
-            chunkSize = 5*1024*1024; // default to 5 MiB
-        }
-    }
-    return chunkSize;
 }
 
 PUTFileJob::~PUTFileJob()
@@ -201,6 +188,29 @@ void PropagateUploadFileQNAM::start()
         return;
     }
 
+    _propagator->_activeJobList.append(this);
+
+    if (!_deleteExisting) {
+        return slotComputeContentChecksum();
+    }
+
+    auto job = new DeleteJob(_propagator->account(),
+                             _propagator->_remoteFolder + _item->_file,
+                             this);
+    _jobs.append(job);
+    connect(job, SIGNAL(finishedSignal()), SLOT(slotComputeContentChecksum()));
+    connect(job, SIGNAL(destroyed(QObject*)), SLOT(slotJobDestroyed(QObject*)));
+    job->start();
+}
+
+void PropagateUploadFileQNAM::slotComputeContentChecksum()
+{
+    if (_propagator->_abortRequested.fetchAndAddRelaxed(0)) {
+        return;
+    }
+
+    _propagator->_activeJobList.removeOne(this);
+
     const QString filePath = _propagator->getFilePath(_item->_file);
 
     // remember the modtime before checksumming to be able to detect a file
@@ -209,24 +219,77 @@ void PropagateUploadFileQNAM::start()
 
     _stopWatch.start();
 
-    // do whatever is needed to add a checksum to the http upload request.
-    // in any case, the validator will emit signal startUpload to let the flow
-    // continue in slotStartUpload here.
-    TransmissionChecksumValidator *validator = new TransmissionChecksumValidator(filePath, this);
-    connect(validator, SIGNAL(validated(QByteArray)), this, SLOT(slotStartUpload(QByteArray)));
-    validator->uploadValidation();
+    QByteArray checksumType = contentChecksumType();
+
+    // Maybe the discovery already computed the checksum?
+    if (_item->_contentChecksumType == checksumType
+            && !_item->_contentChecksum.isEmpty()) {
+        slotComputeTransmissionChecksum(checksumType, _item->_contentChecksum);
+        return;
+    }
+
+    // Compute the content checksum.
+    auto computeChecksum = new ComputeChecksum(this);
+    computeChecksum->setChecksumType(checksumType);
+
+    connect(computeChecksum, SIGNAL(done(QByteArray,QByteArray)),
+            SLOT(slotComputeTransmissionChecksum(QByteArray,QByteArray)));
+    computeChecksum->start(filePath);
 }
 
-void PropagateUploadFileQNAM::slotStartUpload(const QByteArray& checksum)
+void PropagateUploadFileQNAM::setDeleteExisting(bool enabled)
 {
+    _deleteExisting = enabled;
+}
+
+void PropagateUploadFileQNAM::slotComputeTransmissionChecksum(const QByteArray& contentChecksumType, const QByteArray& contentChecksum)
+{
+    _item->_contentChecksum = contentChecksum;
+    _item->_contentChecksumType = contentChecksumType;
+
+    _stopWatch.addLapTime(QLatin1String("ContentChecksum"));
+    _stopWatch.start();
+
+    // Reuse the content checksum as the transmission checksum if possible
+    const auto supportedTransmissionChecksums =
+            _propagator->account()->capabilities().supportedChecksumTypes();
+    if (supportedTransmissionChecksums.contains(contentChecksumType)) {
+        slotStartUpload(contentChecksumType, contentChecksum);
+        return;
+    }
+
+    // Compute the transmission checksum.
+    auto computeChecksum = new ComputeChecksum(this);
+    if (uploadChecksumEnabled()) {
+        computeChecksum->setChecksumType(_propagator->account()->capabilities().uploadChecksumType());
+    } else {
+        computeChecksum->setChecksumType(QByteArray());
+    }
+
+    connect(computeChecksum, SIGNAL(done(QByteArray,QByteArray)),
+            SLOT(slotStartUpload(QByteArray,QByteArray)));
+    const QString filePath = _propagator->getFilePath(_item->_file);
+    computeChecksum->start(filePath);
+}
+
+void PropagateUploadFileQNAM::slotStartUpload(const QByteArray& transmissionChecksumType, const QByteArray& transmissionChecksum)
+{
+    _transmissionChecksum = transmissionChecksum;
+    _transmissionChecksumType = transmissionChecksumType;
+
+    if (_item->_contentChecksum.isEmpty() && _item->_contentChecksumType.isEmpty())  {
+        // If the _contentChecksum was not set, reuse the transmission checksum as the content checksum.
+        _item->_contentChecksum = transmissionChecksum;
+        _item->_contentChecksumType = transmissionChecksumType;
+    }
+
     const QString fullFilePath = _propagator->getFilePath(_item->_file);
-    _item->_checksum = checksum;
 
     if (!FileSystem::fileExists(fullFilePath)) {
         done(SyncFileItem::SoftError, tr("File Removed"));
         return;
     }
-    _stopWatch.addLapTime(QLatin1String("Checksum"));
+    _stopWatch.addLapTime(QLatin1String("TransmissionChecksum"));
 
     time_t prevModtime = _item->_modtime; // the _item value was set in PropagateUploadFileQNAM::start()
     // but a potential checksum calculation could have taken some time during which the file could
@@ -413,8 +476,8 @@ void PropagateUploadFileQNAM::startNextChunk()
     if (! _jobs.isEmpty() &&  _currentChunk + _startChunk >= _chunkCount - 1) {
         // Don't do parallel upload of chunk if this might be the last chunk because the server cannot handle that
         // https://github.com/owncloud/core/issues/11106
-        // We return now and when the _jobs will be finished we will proceed the last chunk
-        // NOTE: Some other part of the code such as slotUploadProgress assume also that the last chunk
+        // We return now and when the _jobs are finished we will proceed with the last chunk
+        // NOTE: Some other parts of the code such as slotUploadProgress also assume that the last chunk
         // is sent last.
         return;
     }
@@ -433,15 +496,17 @@ void PropagateUploadFileQNAM::startNextChunk()
         // (albeit users are not supposed to mess up with it)
 
         // We use a special tag header so that the server may decide to store this file away in some admin stage area
-        // And not directly in the user's area (what would trigger redownloads etc).
+        // And not directly in the user's area (which would trigger redownloads etc).
         headers["OC-Tag"] = ".sys.admin#recall#";
     }
 
-    if (!_item->_etag.isEmpty() && _item->_etag != "empty_etag" &&
-            _item->_instruction != CSYNC_INSTRUCTION_NEW  // On new files never send a If-Match
+    if (!_item->_etag.isEmpty() && _item->_etag != "empty_etag"
+            && _item->_instruction != CSYNC_INSTRUCTION_NEW  // On new files never send a If-Match
+            && _item->_instruction != CSYNC_INSTRUCTION_TYPE_CHANGE
+            && !_deleteExisting
             ) {
-        // We add quotes because the owncloud server always add quotes around the etag, and
-        //  csync_owncloud.c's owncloud_file_id always strip the quotes.
+        // We add quotes because the owncloud server always adds quotes around the etag, and
+        //  csync_owncloud.c's owncloud_file_id always strips the quotes.
         headers["If-Match"] = '"' + _item->_etag + '"';
     }
 
@@ -450,9 +515,10 @@ void PropagateUploadFileQNAM::startNextChunk()
     UploadDevice *device = new UploadDevice(&_propagator->_bandwidthManager);
     qint64 chunkStart = 0;
     qint64 currentChunkSize = fileSize;
+    bool isFinalChunk = false;
     if (_chunkCount > 1) {
         int sendingChunk = (_currentChunk + _startChunk) % _chunkCount;
-        // XOR with chunk size to make sure everything goes well if chunk size change between runs
+        // XOR with chunk size to make sure everything goes well if chunk size changes between runs
         uint transid = _transferId ^ chunkSize();
         qDebug() << "Upload chunk" << sendingChunk << "of" << _chunkCount << "transferid(remote)=" << transid;
         path +=  QString("-chunking-%1-%2-%3").arg(transid).arg(_chunkCount).arg(sendingChunk);
@@ -463,18 +529,19 @@ void PropagateUploadFileQNAM::startNextChunk()
         currentChunkSize = chunkSize();
         if (sendingChunk == _chunkCount - 1) { // last chunk
             currentChunkSize = (fileSize % chunkSize());
-            if( currentChunkSize == 0 ) { // if the last chunk pretents to be 0, its actually the full chunk size.
+            if( currentChunkSize == 0 ) { // if the last chunk pretends to be 0, its actually the full chunk size.
                 currentChunkSize = chunkSize();
             }
-            if( !_item->_checksum.isEmpty() ) {
-                headers[checkSumHeaderC] = _item->_checksum;
-            }
+            isFinalChunk = true;
         }
     } else {
-        // checksum if its only one chunk
-        if( !_item->_checksum.isEmpty() ) {
-            headers[checkSumHeaderC] = _item->_checksum;
-        }
+        // if there's only one chunk, it's the final one
+        isFinalChunk = true;
+    }
+
+    if (isFinalChunk && !_transmissionChecksumType.isEmpty()) {
+        headers[checkSumHeaderC] = makeChecksumHeader(
+                _transmissionChecksumType, _transmissionChecksum);
     }
 
     if (! device->prepareAndOpen(_propagator->getFilePath(_item->_file), chunkStart, currentChunkSize)) {
@@ -493,7 +560,7 @@ void PropagateUploadFileQNAM::startNextChunk()
     connect(job, SIGNAL(uploadProgress(qint64,qint64)), device, SLOT(slotJobUploadProgress(qint64,qint64)));
     connect(job, SIGNAL(destroyed(QObject*)), this, SLOT(slotJobDestroyed(QObject*)));
     job->start();
-    _propagator->_activeJobs++;
+    _propagator->_activeJobList.append(this);
     _currentChunk++;
 
     bool parallelChunkUpload = true;
@@ -501,11 +568,7 @@ void PropagateUploadFileQNAM::startNextChunk()
     if (!env.isEmpty()) {
         parallelChunkUpload = env != "false" && env != "0";
     } else {
-        auto version = _propagator->account()->serverVersion();
-        auto components = version.split('.');
-        int versionNum = (components.value(0).toInt() << 16)
-                       + (components.value(1).toInt() << 8)
-                       + components.value(2).toInt();
+        int versionNum = _propagator->account()->serverVersionInt();
         if (versionNum < 0x080003) {
             // Disable parallel chunk upload severs older than 8.0.3 to avoid too many
             // internal sever errors (#2743, #2938)
@@ -519,7 +582,7 @@ void PropagateUploadFileQNAM::startNextChunk()
         parallelChunkUpload = false;
     }
 
-    if (parallelChunkUpload && (_propagator->_activeJobs < _propagator->maximumActiveJob())
+    if (parallelChunkUpload && (_propagator->_activeJobList.count() < _propagator->maximumActiveJob())
             && _currentChunk < _chunkCount ) {
         startNextChunk();
     }
@@ -540,10 +603,10 @@ void PropagateUploadFileQNAM::slotPutFinished()
              << job->reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute)
              << job->reply()->attribute(QNetworkRequest::HttpReasonPhraseAttribute);
 
-    _propagator->_activeJobs--;
+    _propagator->_activeJobList.removeOne(this);
 
     if (_finished) {
-        // We have send the finished signal already. We don't need to handle any remaining jobs
+        // We have sent the finished signal already. We don't need to handle any remaining jobs
         return;
     }
 
@@ -555,7 +618,7 @@ void PropagateUploadFileQNAM::slotPutFinished()
         // This works around a bug in QNAM wich might reuse a non-empty buffer for the next request.
         qDebug() << "Forcing job abort on HTTP connection reset with Qt < 5.4.2.";
         _propagator->_anotherSyncNeeded = true;
-        done(SyncFileItem::SoftError, tr("Forcing job abort on HTTP connection reset with Qt < 5.4.2."));
+        abortWithError(SyncFileItem::SoftError, tr("Forcing job abort on HTTP connection reset with Qt < 5.4.2."));
         return;
     }
 #endif
@@ -582,12 +645,14 @@ void PropagateUploadFileQNAM::slotPutFinished()
             _propagator->_anotherSyncNeeded = true;
         }
 
-        abortWithError(classifyError(err, _item->_httpErrorCode), errorString);
+        SyncFileItem::Status status = classifyError(err, _item->_httpErrorCode,
+                                                    &_propagator->_anotherSyncNeeded);
+        abortWithError(status, errorString);
         return;
     }
 
     _item->_httpErrorCode = job->reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    // The server needs some time to process the request and provide with a poll URL
+    // The server needs some time to process the request and provide us with a poll URL
     if (_item->_httpErrorCode == 202) {
         _finished = true;
         QString path =  QString::fromUtf8(job->reply()->rawHeader("OC-Finish-Poll"));
@@ -641,8 +706,14 @@ void PropagateUploadFileQNAM::slotPutFinished()
                 return;
             }
             _finished = true;
-            done(SyncFileItem::NormalError, tr("The server did not acknowledge the last chunk. (No e-tag were present)"));
+            done(SyncFileItem::NormalError, tr("The server did not acknowledge the last chunk. (No e-tag was present)"));
             return;
+        }
+
+        // Deletes an existing blacklist entry on successful chunk upload
+        if (_item->_hasBlacklistEntry) {
+            _propagator->_journal->wipeErrorBlacklistEntry(_item->_file);
+            _item->_hasBlacklistEntry = false;
         }
 
         SyncJournalDb::UploadInfo pi;
@@ -650,7 +721,9 @@ void PropagateUploadFileQNAM::slotPutFinished()
         auto currentChunk = job->_chunk;
         foreach (auto *job, _jobs) {
             // Take the minimum finished one
-            currentChunk = qMin(currentChunk, job->_chunk - 1);
+            if (auto putJob = qobject_cast<PUTFileJob*>(job)) {
+                currentChunk = qMin(currentChunk, putJob->_chunk - 1);
+            }
         }
         pi._chunk = (currentChunk + _startChunk + 1) % _chunkCount ; // next chunk to start with
         pi._transferid = _transferId;
@@ -678,22 +751,18 @@ void PropagateUploadFileQNAM::slotPutFinished()
 
     if (job->reply()->rawHeader("X-OC-MTime") != "accepted") {
         // X-OC-MTime is supported since owncloud 5.0.   But not when chunking.
-        // Normaly Owncloud 6 always put X-OC-MTime
-        qWarning() << "Server do not support X-OC-MTime" << job->reply()->rawHeader("X-OC-MTime");
-#ifdef USE_NEON
-        PropagatorJob *newJob = new UpdateMTimeAndETagJob(_propagator, _item);
-        QObject::connect(newJob, SIGNAL(itemCompleted(SyncFileItem, PropagatorJob)),
-                         this, SLOT(finalize(SyncFileItem)));
-        QMetaObject::invokeMethod(newJob, "start");
-        return;
-#else
+        // Normally Owncloud 6 always puts X-OC-MTime
+        qWarning() << "Server does not support X-OC-MTime" << job->reply()->rawHeader("X-OC-MTime");
         // Well, the mtime was not set
-#endif
+        done(SyncFileItem::SoftError, "Server does not support X-OC-MTime");
     }
 
     // performance logging
     _item->_requestDuration = _stopWatch.stop();
-    qDebug() << "*==* duration UPLOAD" << _item->_size << _stopWatch.durationOfLap(QLatin1String("Checksum")) << _item->_requestDuration;
+    qDebug() << "*==* duration UPLOAD" << _item->_size
+             << _stopWatch.durationOfLap(QLatin1String("ContentChecksum"))
+             << _stopWatch.durationOfLap(QLatin1String("TransmissionChecksum"))
+             << _item->_requestDuration;
 
     finalize(*_item);
 }
@@ -707,12 +776,16 @@ void PropagateUploadFileQNAM::finalize(const SyncFileItem &copy)
 
     _item->_requestDuration = _duration.elapsed();
 
-    _propagator->_journal->setFileRecord(SyncJournalFileRecord(*_item, _propagator->getFilePath(_item->_file)));
+    _finished = true;
+
+    if (!_propagator->_journal->setFileRecord(SyncJournalFileRecord(*_item, _propagator->getFilePath(_item->_file)))) {
+        done(SyncFileItem::FatalError, tr("Error writing metadata to the database"));
+        return;
+    }
     // Remove from the progress database:
     _propagator->_journal->setUploadInfo(_item->_file, SyncJournalDb::UploadInfo());
     _propagator->_journal->commit("upload file start");
 
-    _finished = true;
     done(SyncFileItem::Success);
 }
 
@@ -732,7 +805,7 @@ void PropagateUploadFileQNAM::slotUploadProgress(qint64 sent, qint64 total)
 
     // amount is the number of bytes already sent by all the other chunks that were sent
     // not including this one.
-    // FIXME: this assume all chunks have the same size, which is true only if the last chunk
+    // FIXME: this assumes all chunks have the same size, which is true only if the last chunk
     // has not been finished (which should not happen because the last chunk is sent sequentially)
     quint64 amount = progressChunk * chunkSize();
 
@@ -760,7 +833,7 @@ void PropagateUploadFileQNAM::startPollJob(const QString& path)
     info._modtime = _item->_modtime;
     _propagator->_journal->setPollInfo(info);
     _propagator->_journal->commit("add poll info");
-    _propagator->_activeJobs++;
+    _propagator->_activeJobList.append(this);
     job->start();
 }
 
@@ -769,7 +842,7 @@ void PropagateUploadFileQNAM::slotPollFinished()
     PollJob *job = qobject_cast<PollJob *>(sender());
     Q_ASSERT(job);
 
-    _propagator->_activeJobs--;
+    _propagator->_activeJobList.removeOne(this);
 
     if (job->_item->_status != SyncFileItem::Success) {
         _finished = true;

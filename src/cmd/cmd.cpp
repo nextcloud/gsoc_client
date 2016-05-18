@@ -56,8 +56,11 @@ struct CmdOptions {
     bool useNetrc;
     bool interactive;
     bool ignoreHiddenFiles;
+    bool nonShib;
     QString exclude;
     QString unsyncedfolders;
+    QString davPath;
+    int restartTimes;
 };
 
 // we can't use csync_set_userdata because the SyncEngine sets it already.
@@ -114,11 +117,11 @@ public:
           _sslTrusted(false)
     {}
 
-    QString queryPassword(bool *ok, const QString&) Q_DECL_OVERRIDE {
-        if (ok) {
-            *ok = true;
-        }
-        return ::queryPassword(user());
+    void askFromUser() Q_DECL_OVERRIDE {
+        _password = ::queryPassword(user());
+        _ready = true;
+        persist();
+        emit asked();
     }
 
     void setSSLTrusted( bool isTrusted ) {
@@ -150,22 +153,25 @@ void help()
     std::cout << "                         Proxy is http://server:port" << std::endl;
     std::cout << "  --trust                Trust the SSL certification." << std::endl;
     std::cout << "  --exclude [file]       Exclude list file" << std::endl;
-    std::cout << "  --unsyncedfolders [file]    File containing the list of unsynced folders (selective sync)" << std::endl;
+    std::cout << "  --unsyncedfolders [file]    File containing the list of unsynced remote folders (selective sync)" << std::endl;
     std::cout << "  --user, -u [name]      Use [name] as the login name" << std::endl;
     std::cout << "  --password, -p [pass]  Use [pass] as password" << std::endl;
     std::cout << "  -n                     Use netrc (5) for login" << std::endl;
     std::cout << "  --non-interactive      Do not block execution with interaction" << std::endl;
+    std::cout << "  --nonshib              Use Non Shibboleth WebDAV authentication" << std::endl;
+    std::cout << "  --davpath [path]       Custom themed dav path, overrides --nonshib" << std::endl;
+    std::cout << "  --max-sync-retries [n] Retries maximum n times (default to 3)" << std::endl;
     std::cout << "  -h                     Sync hidden files,do not ignore them" << std::endl;
     std::cout << "  --version, -v          Display version and exit" << std::endl;
     std::cout << "" << std::endl;
-    exit(1);
+    exit(0);
 
 }
 
 void showVersion() {
     const char *binaryName = APPLICATION_EXECUTABLE "cmd";
     std::cout << binaryName << " version " << qPrintable(Theme::instance()->version()) << std::endl;
-    exit(1);
+    exit(0);
 }
 
 void parseOptions( const QStringList& app_args, CmdOptions *options )
@@ -222,6 +228,12 @@ void parseOptions( const QStringList& app_args, CmdOptions *options )
                 options->exclude = it.next();
         } else if( option == "--unsyncedfolders" && !it.peekNext().startsWith("-") ) {
             options->unsyncedfolders = it.next();
+        } else if( option == "--nonshib" ) {
+            options->nonShib = true;
+        } else if( option == "--davpath" && !it.peekNext().startsWith("-") ) {
+            options->davPath = it.next();
+        } else if( option == "--max-sync-retries" && !it.peekNext().startsWith("-") ) {
+            options->restartTimes = it.next().toInt();
         } else {
             help();
         }
@@ -237,23 +249,23 @@ void parseOptions( const QStringList& app_args, CmdOptions *options )
  */
 void selectiveSyncFixup(OCC::SyncJournalDb *journal, const QStringList &newList)
 {
-    if (!journal->exists()) {
-        return;
-    }
-
     SqlDatabase db;
     if (!db.openOrCreateReadWrite(journal->databaseFilePath())) {
         return;
     }
 
-    auto oldBlackListSet = journal->getSelectiveSyncList(SyncJournalDb::SelectiveSyncBlackList).toSet();
-    auto blackListSet = newList.toSet();
-    auto changes = (oldBlackListSet - blackListSet) + (blackListSet - oldBlackListSet);
-    foreach(const auto &it, changes) {
-        journal->avoidReadFromDbOnNextSync(it);
-    }
+    bool ok;
 
-    journal->setSelectiveSyncList(SyncJournalDb::SelectiveSyncBlackList, newList);
+    auto oldBlackListSet = journal->getSelectiveSyncList(SyncJournalDb::SelectiveSyncBlackList, &ok).toSet();
+    if( ok ) {
+        auto blackListSet = newList.toSet();
+        auto changes = (oldBlackListSet - blackListSet) + (blackListSet - oldBlackListSet);
+        foreach(const auto &it, changes) {
+            journal->avoidReadFromDbOnNextSync(it);
+        }
+
+        journal->setSelectiveSyncList(SyncJournalDb::SelectiveSyncBlackList, newList);
+    }
 }
 
 
@@ -268,6 +280,8 @@ int main(int argc, char **argv) {
     options.useNetrc = false;
     options.interactive = true;
     options.ignoreHiddenFiles = true;
+    options.nonShib = false;
+    options.restartTimes = 3;
     ClientProxy clientProxy;
 
     parseOptions( app.arguments(), &options );
@@ -282,6 +296,15 @@ int main(int argc, char **argv) {
     if(!options.target_url.endsWith("/")) {
         options.target_url.append("/");
     }
+
+    if( options.nonShib ) {
+        account->setNonShib(true);
+    }
+
+    if(!options.davPath.isEmpty()) {
+        account->setDavPath( options.davPath );
+    }
+
     if( !options.target_url.contains( account->davPath() )) {
         options.target_url.append(account->davPath());
     }
@@ -356,37 +379,20 @@ int main(int argc, char **argv) {
     account->setCredentials(cred);
     account->setSslErrorHandler(sslErrorHandler);
 
+    // much lower age than the default since this utility is usually made to be run right after a change in the tests
+    SyncEngine::minimumFileAgeForUpload = 0;
+
+    int restartCount = 0;
 restart_sync:
-
-    CSYNC *_csync_ctx;
-
-    if( csync_create( &_csync_ctx, options.source_dir.toUtf8(),
-                      remUrl.constData()) < 0 ) {
-        qFatal("Unable to create csync-context!");
-        return EXIT_FAILURE;
-    }
 
     csync_set_log_level(options.silent ? 1 : 11);
 
     opts = &options;
-    cred->syncContextPreInit(_csync_ctx);
 
-    if( csync_init( _csync_ctx ) < 0 ) {
-        qFatal("Could not initialize csync!");
-        return EXIT_FAILURE;
-    }
-
-    // ignore hidden files or not
-    _csync_ctx->ignore_hidden_files = options.ignoreHiddenFiles;
-
-    csync_set_module_property(_csync_ctx, "csync_context", _csync_ctx);
     if( !options.proxy.isNull() ) {
         QString host;
         int port = 0;
         bool ok;
-
-        // Set as default and let overwrite later
-        csync_set_module_property(_csync_ctx, "proxy_type", (void*) "NoProxy");
 
         QStringList pList = options.proxy.split(':');
         if(pList.count() == 3) {
@@ -397,13 +403,6 @@ restart_sync:
 
             port = pList.at(2).toInt(&ok);
 
-            if( !host.isNull() ) {
-                csync_set_module_property(_csync_ctx, "proxy_type", (void*) "HttpProxy");
-                csync_set_module_property(_csync_ctx, "proxy_host", host.toUtf8().data());
-                if( ok && port ) {
-                    csync_set_module_property(_csync_ctx, "proxy_port", (void*) &port);
-                }
-            }
             QNetworkProxyFactory::setUseSystemConfiguration(false);
             QNetworkProxy::setApplicationProxy(QNetworkProxy(QNetworkProxy::HttpProxy, host, port));
         }
@@ -414,19 +413,6 @@ restart_sync:
             url.remove(0, 8);
             url = QString("http%1").arg(url);
         }
-        clientProxy.setCSyncProxy(QUrl(url), _csync_ctx);
-    }
-
-    // Exclude lists
-    QString systemExcludeListFn = ConfigFile::excludeFileFromSystem();
-    int loadedSystemExcludeList = false;
-    if (!systemExcludeListFn.isEmpty()) {
-        loadedSystemExcludeList = csync_add_exclude_list(_csync_ctx, systemExcludeListFn.toLocal8Bit());
-    }
-
-    int loadedUserExcludeList = false;
-    if (!options.exclude.isEmpty()) {
-        loadedUserExcludeList = csync_add_exclude_list(_csync_ctx, options.exclude.toLocal8Bit());
     }
 
     QStringList selectiveSyncList;
@@ -446,35 +432,39 @@ restart_sync:
         }
     }
 
-
-    if (loadedSystemExcludeList != 0 && loadedUserExcludeList != 0) {
-        // Always make sure at least one list has been loaded
-        qFatal("Cannot load system exclude list or list supplied via --exclude");
-        return EXIT_FAILURE;
-    }
-
-    cred->syncContextPreStart(_csync_ctx);
-
     Cmd cmd;
     SyncJournalDb db(options.source_dir);
     if (!selectiveSyncList.empty()) {
         selectiveSyncFixup(&db, selectiveSyncList);
     }
 
-    SyncEngine engine(account, _csync_ctx, options.source_dir, QUrl(options.target_url).path(), folder, &db);
-    QObject::connect(&engine, SIGNAL(finished()), &app, SLOT(quit()));
+    SyncEngine engine(account, options.source_dir, QUrl(options.target_url), folder, &db);
+    engine.setIgnoreHiddenFiles(options.ignoreHiddenFiles);
+    QObject::connect(&engine, SIGNAL(finished(bool)), &app, SLOT(quit()));
     QObject::connect(&engine, SIGNAL(transmissionProgress(ProgressInfo)), &cmd, SLOT(transmissionProgressSlot()));
+
+    // Exclude lists
+    engine.excludedFiles().addExcludeFilePath(ConfigFile::excludeFileFromSystem());
+    if( QFile::exists(options.exclude) )
+        engine.excludedFiles().addExcludeFilePath(options.exclude);
+    if (!engine.excludedFiles().reloadExcludes()) {
+        // Always make sure at least one list has been loaded
+        qFatal("Cannot load system exclude list or list supplied via --exclude");
+        return EXIT_FAILURE;
+    }
 
     // Have to be done async, else, an error before exec() does not terminate the event loop.
     QMetaObject::invokeMethod(&engine, "startSync", Qt::QueuedConnection);
 
     app.exec();
 
-    csync_destroy(_csync_ctx);
-
     if (engine.isAnotherSyncNeeded()) {
-        qDebug() << "Restarting Sync, because another sync is needed";
-        goto restart_sync;
+        if (restartCount < options.restartTimes) {
+            restartCount++;
+            qDebug() << "Restarting Sync, because another sync is needed" << restartCount;
+            goto restart_sync;
+        }
+        qWarning() << "Another sync is needed, but not done because restart count is exceeded" << restartCount;
     }
 
     return 0;

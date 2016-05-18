@@ -18,6 +18,7 @@
 #include <QString>
 #include <ctime>
 #include <QCryptographicHash>
+#include <QFileInfo>
 
 #include <owncloudlib.h>
 
@@ -46,6 +47,25 @@ bool fileEquals(const QString &fn1, const QString &fn2);
  */
 void OWNCLOUDSYNC_EXPORT setFileHidden(const QString& filename, bool hidden);
 
+/**
+ * @brief Marks the file as read-only.
+ *
+ * On linux this either revokes all 'w' permissions or restores permissions
+ * according to the umask.
+ */
+void OWNCLOUDSYNC_EXPORT setFileReadOnly(const QString& filename, bool readonly);
+
+/**
+ * @brief Marks the file as read-only.
+ *
+ * It's like setFileReadOnly(), but weaker: if readonly is false and the user
+ * already has write permissions, no change to the permissions is made.
+ *
+ * This means that it will preserve explicitly set rw-r--r-- permissions even
+ * when the umask is 0002. (setFileReadOnly() would adjust to rw-rw-r--)
+ */
+void OWNCLOUDSYNC_EXPORT setFileReadOnlyWeak(const QString& filename, bool readonly);
+
 /** convert a "normal" windows path into a path that can be 32k chars long. */
 QString OWNCLOUDSYNC_EXPORT longWinPath( const QString& inpath );
 
@@ -73,7 +93,7 @@ qint64 OWNCLOUDSYNC_EXPORT getSize(const QString& filename);
  * Use this over QFileInfo::exists() and QFile::exists() to avoid bugs with lnk
  * files, see above.
  */
-bool OWNCLOUDSYNC_EXPORT fileExists(const QString& filename);
+bool OWNCLOUDSYNC_EXPORT fileExists(const QString& filename,  const QFileInfo& = QFileInfo() );
 
 /**
  * @brief Rename the file \a originFileName to \a destinationFileName.
@@ -85,7 +105,7 @@ bool OWNCLOUDSYNC_EXPORT rename(const QString& originFileName,
                                 QString* errorString = NULL);
 
 /**
- * @brief Check if \a fileName chas changed given previous size and mtime
+ * @brief Check if \a fileName has changed given previous size and mtime
  *
  * Nonexisting files are covered through mtime: they have an mtime of -1.
  *
@@ -128,10 +148,18 @@ bool uncheckedRenameReplace(const QString &originFileName,
                             QString *errorString);
 
 /**
+ * Removes a file.
+ *
+ * Equivalent to QFile::remove(), except on Windows, where it will also
+ * successfully remove read-only files.
+ */
+bool OWNCLOUDSYNC_EXPORT remove(const QString &fileName, QString *errorString = 0);
+
+/**
  * Replacement for QFile::open(ReadOnly) followed by a seek().
  * This version sets a more permissive sharing mode on Windows.
  *
- * Warning: The resuting file may have an empty fileName and be unsuitable for use
+ * Warning: The resulting file may have an empty fileName and be unsuitable for use
  * with QFileInfo! Calling seek() on the QFile with >32bit signed values will fail!
  */
 bool openAndSeekFileSharedRead(QFile* file, QString* error, qint64 seek);
@@ -148,6 +176,16 @@ QByteArray OWNCLOUDSYNC_EXPORT calcSha1( const QString& fileName );
 #ifdef ZLIB_FOUND
 QByteArray OWNCLOUDSYNC_EXPORT calcAdler32( const QString& fileName );
 #endif
+
+/**
+ * Returns a file name based on \a fn that's suitable for a conflict.
+ */
+QString OWNCLOUDSYNC_EXPORT makeConflictFileName(const QString &fn, const QDateTime &dt);
+
+/**
+ * Returns true when a file is locked. (Windows only)
+ */
+bool OWNCLOUDSYNC_EXPORT isFileLocked(const QString& fileName);
 
 }
 

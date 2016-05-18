@@ -18,8 +18,6 @@
 
 namespace OCC {
 
-typedef QSharedPointer<AccountState> AccountStatePtr;
-
 /**
    @brief The AccountManager class
    @ingroup gui
@@ -36,13 +34,13 @@ public:
     void save(bool saveCredentials = true);
 
     /**
-     * Creates account objects from from a given settings file.
+     * Creates account objects from a given settings file.
      * return true if the account was restored
      */
     bool restore();
 
     /**
-     * Add this account in the list of saved account.
+     * Add this account in the list of saved accounts.
      * Typically called from the wizard
      */
     AccountState *addAccount(const AccountPtr &newAccount);
@@ -54,9 +52,14 @@ public:
 
     /**
      * Return a list of all accounts.
-     * (this is a list of QSharedPointer for internal reason, one should normaly not keep a copy of them)
+     * (this is a list of QSharedPointer for internal reasons, one should normally not keep a copy of them)
      */
     QList<AccountStatePtr> accounts() { return _accounts; }
+
+    /**
+     * Return the account state pointer for an account identified by its display name
+     */
+    AccountStatePtr account(const QString& name);
 
     /**
      * Delete the AccountState
@@ -71,15 +74,24 @@ public:
     static AccountPtr createAccount();
 
 private:
-    void save(const AccountPtr& account, QSettings& settings, bool saveCredentials = true);
-    AccountPtr load(QSettings& settings);
+    // saving and loading Account to settings
+    void saveAccountHelper(Account* account, QSettings& settings, bool saveCredentials = true);
+    AccountPtr loadAccountHelper(QSettings& settings);
+
     bool restoreFromLegacySettings();
 
     bool isAccountIdAvailable(const QString& id) const;
     QString generateFreeAccountId() const;
 
+    // Adds an account to the tracked list, emitting accountAdded()
+    void addAccountState(AccountState* accountState);
+
 public slots:
-    void wantsAccountSavedSlot(AccountPtr a);
+    /// Saves account data, not including the credentials
+    void saveAccount(Account* a);
+
+    /// Saves account state data, not including the account
+    void saveAccountState(AccountState* a);
 
 
 Q_SIGNALS:

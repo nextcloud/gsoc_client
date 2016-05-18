@@ -19,6 +19,7 @@
 
 namespace OCC {
 class IgnoreListEditor;
+class SyncLogDialog;
 
 namespace Ui {
 class GeneralSettings;
@@ -44,14 +45,13 @@ private slots:
     void slotUpdateInfo();
     void slotIgnoreFilesEditor();
     void slotOpenAccountWizard();
-    void slotAccountAddedOrRemoved();
-
 
 private:
     void loadMiscSettings();
 
     Ui::GeneralSettings *_ui;
     QPointer<IgnoreListEditor> _ignoreEditor;
+    QPointer<SyncLogDialog> _syncLogDialog;
 };
 
 

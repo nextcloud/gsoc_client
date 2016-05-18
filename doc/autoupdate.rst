@@ -11,8 +11,8 @@ the Updater will check for updates and notify you when a new version is
 available.
 
 .. note:: Because of various technical issues, desktop sync clients older than 
-   1.7 will not be allowed to connect and sync with the ownCloud 8.1 server. It is 
-   highly recommended to keep your client updated.
+   1.7 will not be allowed to connect and sync with the ownCloud 8.1+ server. It 
+   is highly recommended to keep your client updated.
 
 Basic Workflow
 --------------
@@ -30,9 +30,6 @@ ownCloud client.
 If an update is available, and has been successfully downloaded, the ownCloud
 client starts a silent update prior to its next launch and then restarts
 itself. Should the silent update fail, the client offers a manual download.
-
-When you upgrade from 1.7 you should restart Windows to ensure that all the new 
-features in 1.8 are enabled.
 
 .. note:: Administrative privileges are required to perform the update.
 
@@ -65,16 +62,22 @@ auto-update mechanism for different operating systems.
 Preventing Automatic Updates in Windows Environments
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can prevent automatic updates from occuring in Windows environments using
-one of two methods.  The first method allows users to override the automatic
-update check mechanism whereas the second method prevents any manual overrides.
+Users may disable automatic updates by adding this line to the [General] 
+section of their ``owncloud.cfg`` files::
+
+ skipUpdateCheck=true
+
+Windows administrators have more options for preventing automatic updates in 
+Windows environments by using one of two methods. The first method allows users 
+to override the automatic update check mechanism, whereas the second method 
+prevents any manual overrides.
 
 To prevent automatic updates, but allow manual overrides:
 
 1. Edit these Registry keys:
 
-    a. (32-bit) ``HKEY_LOCAL_MACHINE\Software\ownCloud\ownCloud``
-    b. (64-bit) ``HKEY_LOCAL_MACHINE\Software\Wow6432Node\ownCloud\ownCloud``
+    a. (32-bit-Windows) ``HKEY_LOCAL_MACHINE\Software\ownCloud\ownCloud``
+    b. (64-bit-Windows) ``HKEY_LOCAL_MACHINE\Software\Wow6432Node\ownCloud\ownCloud``
 
 2. Add the key ``skipUpdateCheck`` (of type DWORD).
 
@@ -84,16 +87,24 @@ To manually override this key, use the same value in ``HKEY_CURRENT_USER``.
 
 To prevent automatic updates and disallow manual overrides:
 
-.. note::This is the preferred method of controlling the updater behavior using 
+.. note:: This is the preferred method of controlling the updater behavior using 
    Group Policies.
 
 1. Edit this Registry key:
 
-	HKEY_LOCAL_MACHINE\Software\Policies\ownCloud\ownCloud
+    ``HKEY_LOCAL_MACHINE\Software\Policies\ownCloud\ownCloud``
 
 2. Add the key ``skipUpdateCheck`` (of type DWORD).
 
 3. Specify a value of ``1`` to the machine.
+
+.. note:: Enterprise branded clients 
+   (see `Building Branded ownCloud Clients 
+   <https://doc.owncloud.org/branded_clients/>`_) have different key names, 
+   which are set in ownBrander using the Application Vendor and Application 
+   Name fields. Your key names look like this::
+
+   ``HKEY_LOCAL_MACHINE\Software\Policies\myCompanyName\myAppName``
 
 
 Preventing Automatic Updates in Mac OS X Environments
@@ -125,8 +136,7 @@ Preventing Automatic Updates in Linux Environments
 
 Because the Linux client does not provide automatic updating functionality, there is no
 need to remove the automatic-update check.  However, if you want to disable it edit your desktop
-client configuration file, ``$HOME/.local/share/data/ownCloud/owncloud.cfg``. Add these lines:
+client configuration file, ``$HOME/.local/share/data/ownCloud/owncloud.cfg``. 
+Add this line to the [General] section::
 
-    [General]
     skipUpdateCheck=true
-

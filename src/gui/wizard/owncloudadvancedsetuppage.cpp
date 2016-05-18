@@ -108,7 +108,7 @@ void OwncloudAdvancedSetupPage::initializePage()
 
     auto acc = static_cast<OwncloudWizard *>(wizard())->account();
     auto quotaJob = new PropfindJob(acc, _remoteFolder, this);
-    quotaJob->setProperties(QList<QByteArray>() << "quota-used-bytes");
+    quotaJob->setProperties(QList<QByteArray>() << "http://owncloud.org/ns:size");
 
     connect(quotaJob, SIGNAL(result(QVariantMap)), SLOT(slotQuotaRetrieved(QVariantMap)));
     quotaJob->start();
@@ -253,7 +253,7 @@ void OwncloudAdvancedSetupPage::slotSelectFolder()
 
 void OwncloudAdvancedSetupPage::slotSelectiveSyncClicked()
 {
-    // Because clicking on it also changes it, restore it to the previous state in case the user cancel the dialog
+    // Because clicking on it also changes it, restore it to the previous state in case the user cancelled the dialog
     _ui.rSyncEverything->setChecked(_selectiveSyncBlacklist.isEmpty());
 
     AccountPtr acc = static_cast<OwncloudWizard *>(wizard())->account();
@@ -303,8 +303,9 @@ void OwncloudAdvancedSetupPage::slotSyncEverythingClicked()
 
 void OwncloudAdvancedSetupPage::slotQuotaRetrieved(const QVariantMap &result)
 {
-    _ui.lSyncEverythingSizeLabel->setText(tr("(%1)").arg(Utility::octetsToString(result["quota-used-bytes"].toDouble())));
+    _ui.lSyncEverythingSizeLabel->setText(tr("(%1)").arg(Utility::octetsToString(result["size"].toDouble())));
 
 }
 
 } // namespace OCC
+

@@ -22,8 +22,9 @@
 #include "configfile.h"
 #include "progressdispatcher.h"
 #include "owncloudgui.h"
-#include "protocolwidget.h"
+#include "activitywidget.h"
 #include "accountmanager.h"
+#include "protocolwidget.h"
 
 #include <QLabel>
 #include <QStandardItemModel>
@@ -43,8 +44,12 @@ namespace {
   const char TOOLBAR_CSS[] =
     "QToolBar { background: %1; margin: 0; padding: 0; border: none; border-bottom: 1px solid %2; spacing: 0; } "
     "QToolBar QToolButton { background: %1; border: none; border-bottom: 1px solid %2; margin: 0; padding: 5px; } "
+    "QToolBar QToolBarExtension { padding:0; } "
     "QToolBar QToolButton:checked { background: %3; color: %4; }";
+
+  static const float buttonSizeRatio = 1.618; // golden ratio
 }
+
 
 namespace OCC {
 
@@ -56,6 +61,8 @@ SettingsDialog::SettingsDialog(ownCloudGui *gui, QWidget *parent) :
     QDialog(parent)
     , _ui(new Ui::SettingsDialog), _gui(gui)
 {
+    ConfigFile cfg;
+
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     _ui->setupUi(this);
     _toolBar = new QToolBar;
@@ -77,25 +84,28 @@ SettingsDialog::SettingsDialog(ownCloudGui *gui, QWidget *parent) :
 
     // Note: all the actions have a '\n' because the account name is in two lines and
     // all buttons must have the same size in order to keep a good layout
-    _protocolAction = createColorAwareAction(QLatin1String(":/client/resources/activity.png"), tr("Activity"));
-    _actionGroup->addAction(_protocolAction);
-    addActionToToolBar(_protocolAction);
-    ProtocolWidget *protocolWidget = new ProtocolWidget;
-    _ui->stack->addWidget(protocolWidget);
+    _activityAction = createColorAwareAction(QLatin1String(":/client/resources/activity.png"), tr("Activity"));
+    _actionGroup->addAction(_activityAction);
+    _toolBar->addAction(_activityAction);
+    _activitySettings = new ActivitySettings;
+    _ui->stack->addWidget(_activitySettings);
+    connect( _activitySettings, SIGNAL(guiLog(QString,QString)), _gui,
+             SLOT(slotShowOptionalTrayMessage(QString,QString)) );
+    _activitySettings->setNotificationRefreshInterval( cfg.notificationRefreshInterval());
 
     QAction *generalAction = createColorAwareAction(QLatin1String(":/client/resources/settings.png"), tr("General"));
     _actionGroup->addAction(generalAction);
-    addActionToToolBar(generalAction);
+    _toolBar->addAction(generalAction);
     GeneralSettings *generalSettings = new GeneralSettings;
     _ui->stack->addWidget(generalSettings);
 
     QAction *networkAction = createColorAwareAction(QLatin1String(":/client/resources/network.png"), tr("Network"));
     _actionGroup->addAction(networkAction);
-    addActionToToolBar(networkAction);
+    _toolBar->addAction(networkAction);
     NetworkSettings *networkSettings = new NetworkSettings;
     _ui->stack->addWidget(networkSettings);
 
-    _actionGroupWidgets.insert(_protocolAction, protocolWidget);
+    _actionGroupWidgets.insert(_activityAction, _activitySettings);
     _actionGroupWidgets.insert(generalAction, generalSettings);
     _actionGroupWidgets.insert(networkAction, networkSettings);
 
@@ -111,6 +121,9 @@ SettingsDialog::SettingsDialog(ownCloudGui *gui, QWidget *parent) :
 
     QTimer::singleShot(1, this, SLOT(showFirstPage()));
 
+    QPushButton *closeButton = _ui->buttonBox->button(QDialogButtonBox::Close);
+    connect(closeButton, SIGNAL(clicked()), SLOT(accept()));
+
     QAction *showLogWindow = new QAction(this);
     showLogWindow->setShortcut(QKeySequence("F12"));
     connect(showLogWindow, SIGNAL(triggered()), gui, SLOT(slotToggleLogBrowser()));
@@ -118,7 +131,6 @@ SettingsDialog::SettingsDialog(ownCloudGui *gui, QWidget *parent) :
 
     customizeStyle();
 
-    ConfigFile cfg;
     cfg.restoreGeometry(this);
 }
 
@@ -164,41 +176,32 @@ void SettingsDialog::slotSwitchPage(QAction *action)
 
 void SettingsDialog::showFirstPage()
 {
-    Q_FOREACH(QAction *action, _toolBar->actions()) {
-        if (QWidgetAction *wa = qobject_cast<QWidgetAction*>(action)) {
-            if (QToolButton *qtb = qobject_cast<QToolButton*>(wa->defaultWidget())) {
-                if (QAction *a2 = qtb->defaultAction()) {
-                    a2->trigger();
-                    break;
-                }
-            }
-        }
+    QList<QAction*> actions = _toolBar->actions();
+    if (!actions.empty()) {
+        actions.first()->trigger();
     }
 }
 
 void SettingsDialog::showActivityPage()
 {
-    if (_protocolAction) {
-        slotSwitchPage(_protocolAction);
+    if (_activityAction) {
+        _activityAction->trigger();
     }
 }
 
 void SettingsDialog::accountAdded(AccountState *s)
 {
     auto height = _toolBar->sizeHint().height();
+
+    bool brandingSingleAccount = !Theme::instance()->multiAccount();
+
     auto accountAction = createColorAwareAction(QLatin1String(":/client/resources/account.png"),
-                s->shortDisplayNameForSettings(height * 1.618)); // Golden ratio
-    accountAction->setToolTip(s->account()->displayName());
-
-    QToolButton* accountButton = new QToolButton;
-    accountButton->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-    accountButton->setDefaultAction(accountAction);
-    accountButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-    accountButton->setMinimumWidth(height * 1.3);
-
-    QAction* toolbarAction = _toolBar->insertWidget(_toolBar->actions().at(0), accountButton);
-    _toolbarAccountActions.insert(accountAction, toolbarAction);
-
+                                                brandingSingleAccount ? tr("Account") : s->account()->displayName());
+    if (!brandingSingleAccount) {
+        accountAction->setToolTip(s->account()->displayName());
+        accountAction->setIconText(s->shortDisplayNameForSettings(height * buttonSizeRatio));
+    }
+    _toolBar->insertAction(_toolBar->actions().at(0), accountAction);
     auto accountSettings = new AccountSettings(s, this);
     _ui->stack->insertWidget(0 , accountSettings);
     _actionGroup->addAction(accountAction);
@@ -207,6 +210,8 @@ void SettingsDialog::accountAdded(AccountState *s)
     connect( accountSettings, SIGNAL(folderChanged()), _gui, SLOT(slotFoldersChanged()));
     connect( accountSettings, SIGNAL(openFolderAlias(const QString&)),
              _gui, SLOT(slotFolderOpenAction(QString)));
+
+    slotRefreshActivity(s);
 }
 
 void SettingsDialog::accountRemoved(AccountState *s)
@@ -217,20 +222,32 @@ void SettingsDialog::accountRemoved(AccountState *s)
             continue;
         }
         if (as->accountsState() == s) {
-            _toolBar->removeAction(_toolbarAccountActions.value(it.key()));
-            _toolbarAccountActions.remove(it.key());
+            _toolBar->removeAction(it.key());
 
-            delete it.key();
-            delete it.value();
+            if (_ui->stack->currentWidget() == it.value()) {
+                showFirstPage();
+            }
+
+            it.key()->deleteLater();
+            it.value()->deleteLater();
             _actionGroupWidgets.erase(it);
             break;
         }
+    }
+
+    _activitySettings->slotRemoveAccount(s);
+
+    // Hide when the last account is deleted. We want to enter the same
+    // state we'd be in the client was started up without an account
+    // configured.
+    if (AccountManager::instance()->accounts().isEmpty()) {
+        hide();
     }
 }
 
 void SettingsDialog::customizeStyle()
 {
-    QString highlightColor(palette().highlight().color().name());
+    QString  highlightColor(palette().highlight().color().name());
     QString altBase(palette().alternateBase().color().name());
     QString dark(palette().dark().color().name());
     QString background(palette().base().color().name());
@@ -251,7 +268,7 @@ QIcon SettingsDialog::createColorAwareIcon(const QString &name)
 {
     QColor  bg(palette().base().color());
     QImage img(name);
-    // account for different sensitivty of the human eye to certain colors
+    // account for different sensitivity of the human eye to certain colors
     double treshold = 1.0 - ( 0.299 * bg.red() + 0.587 * bg.green() + 0.114 * bg.blue())/255.0;
     if (treshold > 0.5) {
         img.invertPixels(QImage::InvertRgb);
@@ -260,23 +277,49 @@ QIcon SettingsDialog::createColorAwareIcon(const QString &name)
     return QIcon(QPixmap::fromImage(img));
 }
 
+class ToolButtonAction : public QWidgetAction
+{
+public:
+    explicit ToolButtonAction(const QIcon &icon, const QString &text, QObject* parent)
+            : QWidgetAction(parent)  {
+        setText(text);
+        setIcon(icon);
+    }
+
+
+    QWidget* createWidget(QWidget* parent) Q_DECL_OVERRIDE {
+
+        auto toolbar = qobject_cast<QToolBar*>(parent);
+        if (!toolbar) {
+            // this means we are in the extention menu, no special action here
+            return 0;
+        }
+
+        QToolButton* btn = new QToolButton(parent);
+        btn->setDefaultAction(this);
+        btn->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+        btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+//         btn->setMinimumWidth(qMax<int>(parent->sizeHint().height() * buttonSizeRatio,
+//                                        btn->sizeHint().width()));
+        return btn;
+    }
+};
+
 QAction *SettingsDialog::createColorAwareAction(const QString &iconPath, const QString &text)
 {
     // all buttons must have the same size in order to keep a good layout
     QIcon coloredIcon = createColorAwareIcon(iconPath);
-    QAction *action = new QAction(coloredIcon, text, this);
+    QAction *action = new ToolButtonAction(coloredIcon, text, this);
     action->setCheckable(true);
     action->setProperty("iconPath", iconPath);
     return action;
 }
 
-void SettingsDialog::addActionToToolBar(QAction *action) {
-    QToolButton* btn = new QToolButton;
-    btn->setDefaultAction(action);
-    btn->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-    btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-    _toolBar->addWidget(btn);
-    btn->setMinimumWidth(_toolBar->sizeHint().height() * 1.3);
+void SettingsDialog::slotRefreshActivity( AccountState* accountState )
+{
+    if (accountState) {
+        _activitySettings->slotRefresh(accountState);
+    }
 }
 
 } // namespace OCC

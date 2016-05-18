@@ -49,8 +49,7 @@ static void setup(void **state)
     rc = system("rm -rf /tmp/csync_test");
     assert_int_equal(rc, 0);
 
-    rc = csync_create(&csync, "/tmp/csync1", "/tmp/csync2");
-    assert_int_equal(rc, 0);
+    csync_create(&csync, "/tmp/csync1", "/tmp/csync2");
 
     csync->replica = LOCAL_REPLICA;
 
@@ -70,15 +69,6 @@ static void setup_dir(void **state) {
     assert_non_null(getcwd(wd_buffer, WD_BUFFER_SIZE));
 
     rc = chdir(CSYNC_TEST_DIR);
-    assert_int_equal(rc, 0);
-}
-
-static void setup_file(void **state) {
-    int rc;
-
-    setup_dir(state);
-
-    rc = system("echo \"This is a test\" > /tmp/csync_test/file.txt");
     assert_int_equal(rc, 0);
 }
 
@@ -164,46 +154,6 @@ static void check_csync_vio_readdir(void **state)
 }
 
 
-/*
- * Test for general functions (stat, chmod, chown, ...)
- */
-
-static void check_csync_vio_stat_dir(void **state)
-{
-    CSYNC *csync = *state;
-    csync_vio_file_stat_t *fs;
-    int rc;
-
-    fs = csync_vio_file_stat_new();
-    assert_non_null(fs);
-
-    rc = csync_vio_stat(csync, CSYNC_TEST_DIR, fs);
-    assert_int_equal(rc, 0);
-
-    assert_string_equal(fs->name, "csync_test");
-    assert_int_equal(fs->type, CSYNC_VIO_FILE_TYPE_DIRECTORY);
-
-    csync_vio_file_stat_destroy(fs);
-}
-
-static void check_csync_vio_stat_file(void **state)
-{
-    CSYNC *csync = *state;
-    csync_vio_file_stat_t *fs;
-    int rc;
-
-    fs = csync_vio_file_stat_new();
-    assert_non_null(fs);
-
-    rc = csync_vio_stat(csync, CSYNC_TEST_FILE, fs);
-    assert_int_equal(rc, 0);
-
-    assert_string_equal(fs->name, "file.txt");
-    assert_int_equal(fs->type, CSYNC_VIO_FILE_TYPE_REGULAR);
-
-    csync_vio_file_stat_destroy(fs);
-}
-
 int torture_run_tests(void)
 {
     const UnitTest tests[] = {
@@ -211,9 +161,6 @@ int torture_run_tests(void)
         unit_test_setup_teardown(check_csync_vio_opendir_perm, setup, teardown),
         unit_test(check_csync_vio_closedir_null),
         unit_test_setup_teardown(check_csync_vio_readdir, setup_dir, teardown),
-
-        unit_test_setup_teardown(check_csync_vio_stat_dir, setup_dir, teardown),
-        unit_test_setup_teardown(check_csync_vio_stat_file, setup_file, teardown),
     };
 
     return run_tests(tests);

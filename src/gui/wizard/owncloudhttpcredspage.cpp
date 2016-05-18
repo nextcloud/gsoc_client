@@ -42,6 +42,22 @@ OwncloudHttpCredsPage::OwncloudHttpCredsPage(QWidget* parent)
     registerField( QLatin1String("OCUser*"),   _ui.leUsername);
     registerField( QLatin1String("OCPasswd*"), _ui.lePassword);
 
+    Theme *theme = Theme::instance();
+    switch(theme->userIDType()) {
+    case Theme::UserIDUserName:
+        // default, handled in ui file
+        break;
+    case Theme::UserIDEmail:
+        _ui.usernameLabel->setText(tr("&Email"));
+        break;
+    case Theme::UserIDCustom:
+        _ui.usernameLabel->setText(theme->customUserID());
+        break;
+    default:
+        break;
+    }
+    _ui.leUsername->setPlaceholderText(theme->userIDHint());
+
     setTitle(WizardCommon::titleTemplate().arg(tr("Connect to %1").arg(Theme::instance()->appNameGUI())));
     setSubTitle(WizardCommon::subTitleTemplate().arg(tr("Enter user credentials")));
 
@@ -77,6 +93,25 @@ void OwncloudHttpCredsPage::initializePage()
         const QString user = httpCreds->fetchUser();
         if (!user.isEmpty()) {
             _ui.leUsername->setText(user);
+        }
+    } else {
+        QUrl url = ocWizard->account()->url();
+
+        // If the final url does not have a username, check the
+        // user specified url too. Sometimes redirects can lose
+        // the user:pw information.
+        if (url.userName().isEmpty()) {
+            url = ocWizard->ocUrl();
+        }
+
+        const QString user = url.userName();
+        const QString password = url.password();
+
+        if(!user.isEmpty()) {
+            _ui.leUsername->setText(user);
+        }
+        if(!password.isEmpty()) {
+            _ui.lePassword->setText(password);
         }
     }
     _ui.leUsername->setFocus();

@@ -38,13 +38,8 @@ namespace Utility
     OWNCLOUDSYNC_EXPORT QByteArray userAgentString();
     OWNCLOUDSYNC_EXPORT bool hasLaunchOnStartup(const QString &appName);
     OWNCLOUDSYNC_EXPORT void setLaunchOnStartup(const QString &appName, const QString& guiName, bool launch);
-    OWNCLOUDSYNC_EXPORT qint64 freeDiskSpace(const QString &path, bool *ok = 0);
+    OWNCLOUDSYNC_EXPORT qint64 freeDiskSpace(const QString &path);
     OWNCLOUDSYNC_EXPORT QString toCSyncScheme(const QString &urlStr);
-    /** Like QLocale::toString(double, 'f', prec), but drops trailing zeros after the decimal point */
-
-    OWNCLOUDSYNC_EXPORT bool doesSetContainPrefix(const QSet<QString> &l, const QString &p);
-
-
 
     /**
      * @brief compactFormatDouble - formats a double value human readable.
@@ -67,8 +62,15 @@ namespace Utility
      * @brief Convert milliseconds duration to human readable string.
      * @param quint64 msecs the milliseconds to convert to string.
      * @return an HMS representation of the milliseconds value.
+     *
+     * durationToDescriptiveString1 describes the duration in a single
+     * unit, like "5 minutes" or "2 days".
+     *
+     * durationToDescriptiveString2 uses two units where possible, so
+     * "5 minutes 43 seconds" or "1 month 3 days".
      */
-    OWNCLOUDSYNC_EXPORT QString durationToDescriptiveString(quint64 msecs);
+    OWNCLOUDSYNC_EXPORT QString durationToDescriptiveString1(quint64 msecs);
+    OWNCLOUDSYNC_EXPORT QString durationToDescriptiveString2(quint64 msecs);
 
     /**
      * @brief hasDarkSystray - determines whether the systray is dark or light.
@@ -82,7 +84,7 @@ namespace Utility
      */
     OWNCLOUDSYNC_EXPORT bool hasDarkSystray();
 
-    // convinience OS detection methods
+    // convenience OS detection methods
     OWNCLOUDSYNC_EXPORT bool isWindows();
     OWNCLOUDSYNC_EXPORT bool isMac();
     OWNCLOUDSYNC_EXPORT bool isUnix();
@@ -98,12 +100,24 @@ namespace Utility
     // if false, the two cases are two different files.
     OWNCLOUDSYNC_EXPORT bool fsCasePreserving();
 
-    // Call the given command with the switch --version and retrun the first line
+    // Call the given command with the switch --version and rerun the first line
     // of the output.
     // If command is empty, the function calls the running application which, on
     // Linux, might have changed while this one is running.
     // For Mac and Windows, it returns QString()
     OWNCLOUDSYNC_EXPORT QByteArray versionOfInstalledBinary(const QString& command = QString() );
+
+    OWNCLOUDSYNC_EXPORT QString fileNameForGuiUse(const QString& fName);
+
+    /**
+     * @brief timeAgoInWords - human readable time span
+     *
+     * Use this to get a string that describes the timespan between the first and
+     * the second timestamp in a human readable and understandable form.
+     *
+     * If the second parameter is ommitted, the current time is used.
+     */
+    OWNCLOUDSYNC_EXPORT QString timeAgoInWords(const QDateTime& dt, const QDateTime& from = QDateTime() );
 
     class OWNCLOUDSYNC_EXPORT StopWatch {
     private:
@@ -116,7 +130,7 @@ namespace Utility
         quint64 addLapTime( const QString& lapName );
         void reset();
 
-        // out helpers, return the masured times.
+        // out helpers, return the measured times.
         QDateTime startTime() const;
         QDateTime timeOfLap( const QString& lapName ) const;
         quint64 durationOfLap( const QString& lapName ) const;

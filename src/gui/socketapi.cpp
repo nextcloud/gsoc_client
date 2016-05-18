@@ -23,11 +23,14 @@
 #include "utility.h"
 #include "theme.h"
 #include "syncjournalfilerecord.h"
+#include "syncengine.h"
 #include "syncfileitem.h"
 #include "filesystem.h"
 #include "version.h"
 #include "account.h"
 #include "accountstate.h"
+#include "account.h"
+#include "capabilities.h"
 
 #include <QDebug>
 #include <QUrl>
@@ -38,6 +41,7 @@
 #include <QDir>
 #include <QApplication>
 #include <QLocalSocket>
+#include <QStringBuilder>
 
 #include <sqlite3.h>
 
@@ -52,21 +56,11 @@
 // The second number should be changed when there are new features.
 #define MIRALL_SOCKET_API_VERSION "1.0"
 
-extern "C" {
-
-enum csync_exclude_type_e {
-  CSYNC_NOT_EXCLUDED   = 0,
-  CSYNC_FILE_SILENTLY_EXCLUDED,
-  CSYNC_FILE_EXCLUDE_AND_REMOVE,
-  CSYNC_FILE_EXCLUDE_LIST,
-  CSYNC_FILE_EXCLUDE_INVALID_CHAR,
-  CSYNC_FILE_EXCLUDE_LONG_FILENAME,
-  CSYNC_FILE_EXCLUDE_HIDDEN
-};
-typedef enum csync_exclude_type_e CSYNC_EXCLUDE_TYPE;
-
-CSYNC_EXCLUDE_TYPE csync_excluded_no_ctx(c_strlist_t *excludes, const char *path, int filetype);
-int csync_exclude_load(const char *fname, c_strlist_t **list);
+static inline QString removeTrailingSlash(QString path)
+{
+    Q_ASSERT(path.endsWith(QLatin1Char('/')));
+    path.truncate(path.length()-1);
+    return path;
 }
 
 namespace OCC {
@@ -75,13 +69,13 @@ namespace OCC {
 
 SocketApi::SocketApi(QObject* parent)
     : QObject(parent)
-    , _excludes(0)
 {
     QString socketPath;
 
     if (Utility::isWindows()) {
         socketPath = QLatin1String("\\\\.\\pipe\\")
-        + QLatin1String("ownCloud");
+                + QLatin1String("ownCloud") + '\\'
+                + QString::fromLocal8Bit(qgetenv("USERNAME"));
         // TODO: once the windows extension supports multiple
         // client connections, switch back to the theme name
         // See issue #2388
@@ -128,10 +122,6 @@ SocketApi::SocketApi(QObject* parent)
 
     // folder watcher
     connect(FolderMan::instance(), SIGNAL(folderSyncStateChange(Folder*)), this, SLOT(slotUpdateFolderView(Folder*)));
-    connect(ProgressDispatcher::instance(), SIGNAL(itemCompleted(QString, const SyncFileItem &, const PropagatorJob &)),
-            SLOT(slotItemCompleted(QString, const SyncFileItem &)));
-    connect(ProgressDispatcher::instance(), SIGNAL(syncItemDiscovered(QString, const SyncFileItem &)),
-            this, SLOT(slotSyncItemDiscovered(QString, const SyncFileItem &)));
 }
 
 SocketApi::~SocketApi()
@@ -141,29 +131,6 @@ SocketApi::~SocketApi()
     // All remaining sockets will be destroyed with _localServer, their parent
     Q_ASSERT(_listeners.isEmpty() || _listeners.first()->parent() == &_localServer);
     _listeners.clear();
-    slotClearExcludesList();
-    c_strlist_destroy(_excludes);
-}
-
-void SocketApi::slotClearExcludesList()
-{
-    c_strlist_clear(_excludes);
-}
-
-void SocketApi::slotReadExcludes()
-{
-    ConfigFile cfgFile;
-    slotClearExcludesList();
-    QString excludeList = cfgFile.excludeFile( ConfigFile::SystemScope );
-    if( !excludeList.isEmpty() ) {
-        qDebug() << "==== added system ignore list to socketapi:" << excludeList.toUtf8();
-        csync_exclude_load(excludeList.toUtf8(), &_excludes);
-    }
-    excludeList = cfgFile.excludeFile( ConfigFile::UserScope );
-    if( !excludeList.isEmpty() ) {
-        qDebug() << "==== added user defined ignore list to csync:" << excludeList.toUtf8();
-        csync_exclude_load(excludeList.toUtf8(), &_excludes);
-    }
 }
 
 void SocketApi::slotNewConnection()
@@ -181,8 +148,10 @@ void SocketApi::slotNewConnection()
     _listeners.append(socket);
 
     foreach( Folder *f, FolderMan::instance()->map() ) {
-        QString message = buildRegisterPathMessage(f->path());
-        sendMessage(socket, message);
+        if (f->canSync()) {
+            QString message = buildRegisterPathMessage(removeTrailingSlash(f->path()));
+            sendMessage(socket, message);            
+        }
     }
 }
 
@@ -202,14 +171,15 @@ void SocketApi::slotReadSocket()
     Q_ASSERT(socket);
 
     while(socket->canReadLine()) {
-        QString line = QString::fromUtf8(socket->readLine()).trimmed();
-        QString command = line.split(":").first();
+        QString line = QString::fromUtf8(socket->readLine());
+        line.chop(1); // remove the '\n'
+        QString command = line.split(":").value(0);
         QString function = QString(QLatin1String("command_")).append(command);
 
         QString functionWithArguments = function + QLatin1String("(QString,QIODevice*)");
         int indexOfMethod = this->metaObject()->indexOfMethod(functionWithArguments.toAscii());
 
-        QString argument = line.remove(0, command.length()+1).trimmed();
+        QString argument = line.remove(0, command.length()+1);
         if(indexOfMethod != -1) {
             QMetaObject::invokeMethod(this, function.toAscii(), Q_ARG(QString, argument), Q_ARG(QIODevice*, socket));
         } else {
@@ -220,36 +190,31 @@ void SocketApi::slotReadSocket()
 
 void SocketApi::slotRegisterPath( const QString& alias )
 {
+    // Make sure not to register twice to each connected client
+    if (_registeredAliases.contains(alias))
+        return;
+
     Folder *f = FolderMan::instance()->folder(alias);
     if (f) {
-        QString message = buildRegisterPathMessage(f->path());
+        QString message = buildRegisterPathMessage(removeTrailingSlash(f->path()));
         foreach(QIODevice *socket, _listeners) {
             sendMessage(socket, message);
         }
     }
+
+    _registeredAliases.insert(alias);
 }
 
 void SocketApi::slotUnregisterPath( const QString& alias )
 {
-    Folder *f = FolderMan::instance()->folder(alias);
-    if (f) {
-        broadcastMessage(QLatin1String("UNREGISTER_PATH"), f->path(), QString::null, true );
+    if (!_registeredAliases.contains(alias))
+        return;
 
-        if( _dbQueries.contains(f)) {
-            auto h = _dbQueries[f];
-            if( h ) {
-                h->finish();
-            }
-            _dbQueries.remove(f);
-        }
-        if( _openDbs.contains(f) ) {
-            auto db = _openDbs[f];
-            if( db ) {
-                db->close();
-            }
-            _openDbs.remove(f);
-        }
-    }
+    Folder *f = FolderMan::instance()->folder(alias);
+    if (f)
+        broadcastMessage(QLatin1String("UNREGISTER_PATH"), removeTrailingSlash(f->path()), QString::null, true );
+
+    _registeredAliases.remove(alias);
 }
 
 void SocketApi::slotUpdateFolderView(Folder *f)
@@ -267,61 +232,21 @@ void SocketApi::slotUpdateFolderView(Folder *f)
                 f->syncResult().status() == SyncResult::Error   ||
                 f->syncResult().status() == SyncResult::SetupError ) {
 
-            broadcastMessage(QLatin1String("STATUS"), f->path() ,
-                             this->fileStatus(f, "", _excludes).toSocketAPIString());
+            QString rootPath = removeTrailingSlash(f->path());
+            broadcastMessage(QLatin1String("STATUS"), rootPath,
+                             f->syncEngine().syncFileStatusTracker().fileStatus("").toSocketAPIString());
 
-            broadcastMessage(QLatin1String("UPDATE_VIEW"), f->path() );
+            broadcastMessage(QLatin1String("UPDATE_VIEW"), rootPath);
         } else {
             qDebug() << "Not sending UPDATE_VIEW for" << f->alias() << "because status() is" << f->syncResult().status();
         }
     }
 }
 
-void SocketApi::slotItemCompleted(const QString &folder, const SyncFileItem &item)
+void SocketApi::slotFileStatusChanged(const QString& systemFileName, SyncFileStatus fileStatus)
 {
-    if (_listeners.isEmpty()) {
-        return;
-    }
-
-    Folder *f = FolderMan::instance()->folder(folder);
-    if (!f) {
-        return;
-    }
-
-    const QString path = f->path() + item.destination();
-
-    QString command = QLatin1String("OK");
-    if (Progress::isWarningKind(item._status)) {
-        command = QLatin1String("ERROR");
-    }
-    broadcastMessage(QLatin1String("STATUS"), path, command);
+    broadcastMessage(QLatin1String("STATUS"), systemFileName, fileStatus.toSocketAPIString());
 }
-
-void SocketApi::slotSyncItemDiscovered(const QString &folder, const SyncFileItem &item)
-{
-    if (_listeners.isEmpty()) {
-        return;
-    }
-
-    Folder *f = FolderMan::instance()->folder(folder);
-    if (!f) {
-        return;
-    }
-
-    QString path = f->path() + item.destination();
-
-    // the trailing slash for directories must be appended as the filenames coming in
-    // from the plugins have that too. Otherwise the according entry item is not found
-    // in the plugin.
-    if( item._type == SyncFileItem::Type::Directory ) {
-        path += QLatin1Char('/');
-    }
-
-    const QString command = QLatin1String("SYNC");
-    broadcastMessage(QLatin1String("STATUS"), path, command);
-}
-
-
 
 void SocketApi::sendMessage(QIODevice *socket, const QString& message, bool doWait)
 {
@@ -383,17 +308,19 @@ void SocketApi::command_RETRIEVE_FILE_STATUS(const QString& argument, QIODevice*
     Folder* syncFolder = FolderMan::instance()->folderForPath( argument );
     if (!syncFolder) {
         // this can happen in offline mode e.g.: nothing to worry about
-        DEBUG << "folder offline or not watched:" << argument;
         statusString = QLatin1String("NOP");
     } else {
-        const QString file = QDir::cleanPath(argument).mid(syncFolder->cleanPath().length()+1);
-        SyncFileStatus fileStatus = this->fileStatus(syncFolder, file, _excludes);
+        QString relativePath = QDir::cleanPath(argument).mid(syncFolder->cleanPath().length()+1);
+        if( relativePath.endsWith(QLatin1Char('/')) ) {
+            relativePath.truncate(relativePath.length()-1);
+            qWarning() << "Removed trailing slash for directory: " << relativePath << "Status pushes won't have one.";
+        }
+        SyncFileStatus fileStatus = syncFolder->syncEngine().syncFileStatusTracker().fileStatus(relativePath);
 
         statusString = fileStatus.toSocketAPIString();
     }
 
-    QString message = QLatin1String("STATUS:")+statusString+QLatin1Char(':')
-            +QDir::toNativeSeparators(argument);
+    const QString message = QLatin1String("STATUS:") % statusString % QLatin1Char(':') %  QDir::toNativeSeparators(argument);
     sendMessage(socket, message);
 }
 
@@ -406,6 +333,8 @@ void SocketApi::command_SHARE(const QString& localFile, QIODevice* socket)
 
     qDebug() << Q_FUNC_INFO << localFile;
 
+    auto theme = Theme::instance();
+
     Folder *shareFolder = FolderMan::instance()->folderForPath(localFile);
     if (!shareFolder) {
         const QString message = QLatin1String("SHARE:NOP:")+QDir::toNativeSeparators(localFile);
@@ -415,18 +344,33 @@ void SocketApi::command_SHARE(const QString& localFile, QIODevice* socket)
         const QString message = QLatin1String("SHARE:NOTCONNECTED:")+QDir::toNativeSeparators(localFile);
         // if the folder isn't connected, don't open the share dialog
         sendMessage(socket, message);
+    } else if (!theme->linkSharing() && (
+                 !theme->userGroupSharing() ||
+                 shareFolder->accountState()->account()->serverVersionInt() < ((8 << 16) + (2 << 8)))) {
+        const QString message = QLatin1String("SHARE:NOP:")+QDir::toNativeSeparators(localFile);
+        sendMessage(socket, message);
     } else {
-        const QString folderForPath = shareFolder->path();
-        const QString remotePath = shareFolder->remotePath() + localFile.right(localFile.count()-folderForPath.count()+1);
+        const QString localFileClean = QDir::cleanPath(localFile);
+        const QString file = localFileClean.mid(shareFolder->cleanPath().length()+1);
+        SyncFileStatus fileStatus = shareFolder->syncEngine().syncFileStatusTracker().fileStatus(file);
 
-        // Can't share root folder
-        if (QDir::cleanPath(remotePath) == "/") {
-           const QString message = QLatin1String("SHARE:CANNOTSHAREROOT:")+QDir::toNativeSeparators(localFile);
+        // Verify the file is on the server (to our knowledge of course)
+        if (fileStatus.tag() != SyncFileStatus::StatusUpToDate) {
+            const QString message = QLatin1String("SHARE:NOTSYNCED:")+QDir::toNativeSeparators(localFile);
             sendMessage(socket, message);
             return;
         }
 
-        SyncJournalFileRecord rec = dbFileRecord_capi(shareFolder, localFile);
+        const QString remotePath = QDir(shareFolder->remotePath()).filePath(file);
+
+        // Can't share root folder
+        if (remotePath == "/") {
+            const QString message = QLatin1String("SHARE:CANNOTSHAREROOT:")+QDir::toNativeSeparators(localFile);
+            sendMessage(socket, message);
+            return;
+        }
+
+        SyncJournalFileRecord rec = shareFolder->journalDb()->getFileRecord(localFileClean);
 
         bool allowReshare = true; // lets assume the good
         if( rec.isValid() ) {
@@ -438,13 +382,70 @@ void SocketApi::command_SHARE(const QString& localFile, QIODevice* socket)
         const QString message = QLatin1String("SHARE:OK:")+QDir::toNativeSeparators(localFile);
         sendMessage(socket, message);
 
-        emit shareCommandReceived(remotePath, localFile, allowReshare);
+        emit shareCommandReceived(remotePath, localFileClean, allowReshare);
     }
 }
 
 void SocketApi::command_VERSION(const QString&, QIODevice* socket)
 {
     sendMessage(socket, QLatin1String("VERSION:" MIRALL_VERSION_STRING ":" MIRALL_SOCKET_API_VERSION));
+}
+
+void SocketApi::command_SHARE_STATUS(const QString &localFile, QIODevice *socket)
+{
+    if (!socket) {
+        qDebug() << Q_FUNC_INFO << "No valid socket object.";
+        return;
+    }
+
+    qDebug() << Q_FUNC_INFO << localFile;
+
+    Folder *shareFolder = FolderMan::instance()->folderForPath(localFile);
+
+    if (!shareFolder) {
+        const QString message = QLatin1String("SHARE_STATUS:NOP:")+QDir::toNativeSeparators(localFile);
+        sendMessage(socket, message);
+    } else {
+        const QString file = QDir::cleanPath(localFile).mid(shareFolder->cleanPath().length()+1);
+        SyncFileStatus fileStatus = shareFolder->syncEngine().syncFileStatusTracker().fileStatus(file);
+
+        // Verify the file is on the server (to our knowledge of course)
+        if (fileStatus.tag() != SyncFileStatus::StatusUpToDate) {
+            const QString message = QLatin1String("SHARE_STATUS:NOTSYNCED:")+QDir::toNativeSeparators(localFile);
+            sendMessage(socket, message);
+            return;
+        }
+
+        const Capabilities capabilities = shareFolder->accountState()->account()->capabilities();
+
+        if (!capabilities.shareAPI()) {
+            const QString message = QLatin1String("SHARE_STATUS:DISABLED:")+QDir::toNativeSeparators(localFile);
+            sendMessage(socket, message);
+        } else {
+            auto theme = Theme::instance();
+            QString available;
+
+            if (theme->userGroupSharing()) {
+                available = "USER,GROUP";
+            }
+
+            if (theme->linkSharing() && capabilities.sharePublicLink()) {
+                if (available.isEmpty()) {
+                    available = "LINK";
+                } else {
+                    available += ",LINK";
+                }
+            }
+
+            if (available.isEmpty()) {
+                const QString message = QLatin1String("SHARE_STATUS:DISABLED") + ":" + QDir::toNativeSeparators(localFile);
+                sendMessage(socket, message);
+            } else {
+                const QString message = QLatin1String("SHARE_STATUS:") + available + ":" + QDir::toNativeSeparators(localFile);
+                sendMessage(socket, message);
+            }
+        }
+    }
 }
 
 void SocketApi::command_SHARE_MENU_TITLE(const QString &, QIODevice* socket)
@@ -460,234 +461,4 @@ QString SocketApi::buildRegisterPathMessage(const QString& path)
     return message;
 }
 
-SqlQuery* SocketApi::getSqlQuery( Folder *folder )
-{
-    if( !folder ) {
-        return 0;
-    }
-
-    if( _dbQueries.contains(folder) ) {
-        return _dbQueries[folder].data();
-    }
-
-    /* No valid sql query object yet for this folder */
-    int rc;
-    const QString sql("SELECT inode, mode, modtime, type, md5, fileid, remotePerm FROM "
-                      "metadata WHERE phash=?1");
-    QString dbFileName = folder->journalDb()->databaseFilePath();
-
-    QFileInfo fi(dbFileName);
-    if( fi.exists() ) {
-        auto db = QSharedPointer<SqlDatabase>::create();
-
-        if( db && db->openReadOnly(dbFileName) ) {
-            _openDbs.insert(folder, db);
-
-            QSharedPointer<SqlQuery> query(new SqlQuery(*db));
-            rc = query->prepare(sql);
-
-            if( rc != SQLITE_OK ) {
-                qDebug() << "Unable to prepare the query statement:" << rc;
-                return 0; // do not insert into hash
-            }
-            _dbQueries.insert( folder, query);
-            return query.data();
-        } else {
-            qDebug() << "Unable to open db" << dbFileName;
-        }
-    } else {
-        qDebug() << Q_FUNC_INFO << "Journal to query does not yet exist.";
-    }
-    return 0;
-}
-
-SyncJournalFileRecord SocketApi::dbFileRecord_capi( Folder *folder, QString fileName )
-{
-    if( !(folder && folder->journalDb()) ) {
-        return SyncJournalFileRecord();
-    }
-
-    if( fileName.startsWith( folder->path() )) {
-        fileName.remove(0, folder->path().length());
-    }
-
-    // remove trailing slash
-    if( fileName.endsWith( QLatin1Char('/') ) ) {
-        fileName.truncate(fileName.length()-1);
-    }
-    SqlQuery *query = getSqlQuery(folder);
-    SyncJournalFileRecord rec;
-
-    if( query ) {
-        qlonglong phash = SyncJournalDb::getPHash( fileName );
-        query->bindValue(1, phash);
-        // int column_count = sqlite3_column_count(stmt);
-
-        if (query->next()) {
-            rec._path    = fileName;
-            rec._inode   = query->int64Value(0);
-            rec._mode    = query->intValue(1);
-            rec._modtime = Utility::qDateTimeFromTime_t( query->int64Value(2));
-            rec._type    = query->intValue(3);
-            rec._etag    = query->baValue(4);
-            rec._fileId  = query->baValue(5);
-            rec._remotePerm = query->baValue(6);
-        }
-        query->reset();
-    }
-    return rec;
-}
-
-/**
- * Get status about a single file.
- */
-SyncFileStatus SocketApi::fileStatus(Folder *folder, const QString& systemFileName, c_strlist_t *excludes )
-{
-    QString file = folder->path();
-    QString fileName = systemFileName.normalized(QString::NormalizationForm_C);
-    QString fileNameSlash = fileName;
-
-    if( fileName != QLatin1String("/") && !fileName.isEmpty() ) {
-        file = folder->path() + fileName;
-    }
-
-    if( fileName.endsWith(QLatin1Char('/')) ) {
-        fileName.truncate(fileName.length()-1);
-        qDebug() << "Removed trailing slash: " << fileName;
-    } else {
-        fileNameSlash += QLatin1Char('/');
-    }
-
-    if( !FileSystem::fileExists(file) ) {
-        qDebug() << "OO File " << file << " is not existing";
-        return SyncFileStatus(SyncFileStatus::STATUS_STAT_ERROR);
-    }
-
-    // file is ignored?
-    // Qt considers .lnk files symlinks on Windows so we need to work
-    // around that here.
-    const QFileInfo fi(file);
-    if( fi.isSymLink()
-#ifdef Q_OS_WIN
-            && fi.suffix() != "lnk"
-#endif
-            ) {
-        return SyncFileStatus(SyncFileStatus::STATUS_IGNORE);
-    }
-
-    csync_ftw_type_e type = CSYNC_FTW_TYPE_FILE;
-    if( fi.isDir() ) {
-        type = CSYNC_FTW_TYPE_DIR;
-    }
-
-    // Is it excluded?
-    CSYNC_EXCLUDE_TYPE excl = csync_excluded_no_ctx(excludes, fileName.toUtf8(), type);
-    if( folder->ignoreHiddenFiles()
-            && (fi.isHidden()
-                || fi.fileName().startsWith(QLatin1Char('.'))) ) {
-        excl = CSYNC_FILE_EXCLUDE_HIDDEN;
-    }
-    if( excl != CSYNC_NOT_EXCLUDED ) {
-        return SyncFileStatus(SyncFileStatus::STATUS_IGNORE);
-    }
-
-    // Error if it is in the selective sync blacklistr
-    foreach(const auto &s, folder->journalDb()->getSelectiveSyncList(SyncJournalDb::SelectiveSyncBlackList)) {
-        if (fileNameSlash.startsWith(s)) {
-            return SyncFileStatus(SyncFileStatus::STATUS_ERROR);
-        }
-    }
-
-    SyncFileStatus status(SyncFileStatus::STATUS_NONE);
-    SyncJournalFileRecord rec = dbFileRecord_capi(folder, fileName );
-
-    if (folder->estimateState(fileName, type, &status)) {
-        qDebug() << Q_FUNC_INFO << "Folder estimated status for" << fileName << "to" << status.toSocketAPIString();
-    } else if (fileName == "") {
-        // sync folder itself
-        switch (folder->syncResult().status()) {
-        case SyncResult::Undefined:
-        case SyncResult::NotYetStarted:
-        case SyncResult::SyncPrepare:
-        case SyncResult::SyncRunning:
-            status.set(SyncFileStatus::STATUS_EVAL);
-            return status;
-
-        case SyncResult::Success:
-        case SyncResult::Problem:
-            status.set(SyncFileStatus::STATUS_SYNC);
-            return status;
-
-        case SyncResult::Error:
-        case SyncResult::SetupError:
-        case SyncResult::SyncAbortRequested:
-            status.set(SyncFileStatus::STATUS_ERROR);
-            return status;
-
-        case SyncResult::Paused:
-            status.set(SyncFileStatus::STATUS_IGNORE);
-            return status;
-        }
-    } else if (type == CSYNC_FTW_TYPE_DIR) {
-        if (rec.isValid()) {
-            status.set(SyncFileStatus::STATUS_SYNC);
-        } else {
-            qDebug() << Q_FUNC_INFO << "Could not determine state for folder" << fileName << "will set STATUS_NEW";
-            status.set(SyncFileStatus::STATUS_NEW);
-        }
-    } else if (type == CSYNC_FTW_TYPE_FILE) {
-        if (rec.isValid()) {
-            if( FileSystem::getModTime(fi.absoluteFilePath()) == Utility::qDateTimeToTime_t(rec._modtime) ) {
-                status.set(SyncFileStatus::STATUS_SYNC);
-            } else {
-                if (rec._remotePerm.isNull() || rec._remotePerm.contains("W") ) {
-                    status.set(SyncFileStatus::STATUS_EVAL);
-                } else {
-                    status.set(SyncFileStatus::STATUS_ERROR);
-                }
-            }
-        } else {
-            qDebug() << Q_FUNC_INFO << "Could not determine state for file" << fileName << "will set STATUS_NEW";
-            status.set(SyncFileStatus::STATUS_NEW);
-        }
-    }
-
-    if (rec.isValid()) {
-        if (rec._remotePerm.isNull()) {
-            // probably owncloud 6, that does not have permissions flag yet.
-            QString url = folder->remoteUrl().toString() + fileName;
-            if (url.contains( folder->accountState()->account()->davPath() + QLatin1String("Shared/") )) {
-                status.setSharedWithMe(true);
-            }
-        } else if (rec._remotePerm.contains("S")) {
-            status.setSharedWithMe(true);
-        }
-    }
-    if (status.tag() == SyncFileStatus::STATUS_NEW) {
-        // check the parent folder if it is shared and if it is allowed to create a file/dir within
-        QDir d( fi.path() );
-        auto parentPath = d.path();
-        auto dirRec = dbFileRecord_capi(folder, parentPath);
-        bool isDir = type == CSYNC_FTW_TYPE_DIR;
-        while( !d.isRoot() && !(d.exists() && dirRec.isValid()) ) {
-            d.cdUp(); // returns true if the dir exists.
-
-            parentPath = d.path();
-            // cut the folder path
-            dirRec = dbFileRecord_capi(folder, parentPath);
-
-            isDir = true;
-        }
-        if( dirRec.isValid() && !dirRec._remotePerm.isNull()) {
-            if( (isDir && !dirRec._remotePerm.contains("K"))
-                    || (!isDir && !dirRec._remotePerm.contains("C")) ) {
-                status.set(SyncFileStatus::STATUS_ERROR);
-            }
-        }
-    }
-    return status;
-}
-
-
 } // namespace OCC
-

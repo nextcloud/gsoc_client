@@ -19,6 +19,7 @@
 #include <QPointer>
 #include "utility.h"
 #include "connectionvalidator.h"
+#include "creds/abstractcredentials.h"
 #include <memory>
 
 class QSettings;
@@ -27,13 +28,14 @@ namespace OCC {
 
 class AccountState;
 class Account;
-class AbstractCredentials;
+
+typedef QExplicitlySharedDataPointer<AccountState> AccountStatePtr;
 
 /**
  * @brief Extra info about an ownCloud server account.
  * @ingroup gui
  */
-class AccountState : public QObject {
+class AccountState : public QObject, public QSharedData {
     Q_OBJECT
 public:
     enum State {
@@ -64,8 +66,20 @@ public:
     typedef ConnectionValidator::Status ConnectionStatus;
 
     /// Use the account as parent
-    AccountState(AccountPtr account);
+    explicit AccountState(AccountPtr account);
     ~AccountState();
+
+    /** Creates an account state from settings and an Account object.
+     *
+     * Use from AccountManager with a prepared QSettings object only.
+     */
+    static AccountState* loadFromSettings(AccountPtr account, QSettings& settings);
+
+    /** Writes account state information to settings.
+     *
+     * It does not write the Account data.
+     */
+    void writeToSettings(QSettings& settings);
 
     AccountPtr account() const;
 
@@ -77,7 +91,13 @@ public:
     static QString stateString(State state);
 
     bool isSignedOut() const;
-    void setSignedOut(bool signedOut);
+
+    /** A user-triggered sign out which disconnects, stops syncs
+     * for the account and forgets the password. */
+    void signOutByUi();
+
+    /// Move from SignedOut state to Disconnected (attempting to connect)
+    void signIn();
 
     bool isConnected() const;
     bool isConnectedOrTemporarilyUnavailable() const;
@@ -94,16 +114,26 @@ public:
      */
     QString shortDisplayNameForSettings(int width = 0) const;
 
+    /** Mark the timestamp when the last successful ETag check happened for
+     *  this account.
+     *  The checkConnectivity() method uses the timestamp to save a call to
+     *  the server to validate the connection if the last successful etag job
+     *  was not so long ago.
+     */
+    void tagLastSuccessfullETagRequest();
+
 private:
     void setState(State state);
 
 signals:
     void stateChanged(int state);
+    void isConnectedChanged();
 
 protected Q_SLOTS:
     void slotConnectionValidatorResult(ConnectionValidator::Status status, const QStringList& errors);
     void slotInvalidCredentials();
     void slotCredentialsFetched(AbstractCredentials* creds);
+    void slotCredentialsAsked(AbstractCredentials* creds);
 
 private:
     AccountPtr _account;
@@ -111,12 +141,13 @@ private:
     ConnectionStatus _connectionStatus;
     QStringList _connectionErrors;
     bool _waitingForNewCredentials;
+    QElapsedTimer _timeSinceLastETagCheck;
     QPointer<ConnectionValidator> _connectionValidator;
 };
 
 }
 
 Q_DECLARE_METATYPE(OCC::AccountState*)
-Q_DECLARE_METATYPE(QSharedPointer<OCC::AccountState>)
+Q_DECLARE_METATYPE(OCC::AccountStatePtr)
 
 #endif //ACCOUNTINFO_H

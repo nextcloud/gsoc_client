@@ -60,10 +60,6 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, void **ppv)
 	if (!SUCCEEDED(hResult)) { return hResult; }
 	if (IsEqualCLSID(guid, rclsid)) { return CreateFactory(riid, ppv, State_Error); }
 
-	hResult = CLSIDFromString(OVERLAY_GUID_ERROR_SHARED, (LPCLSID)&guid);
-	if (!SUCCEEDED(hResult)) { return hResult; }
-	if (IsEqualCLSID(guid, rclsid)) { return CreateFactory(riid, ppv, State_ErrorShared); }
-
 	hResult = CLSIDFromString(OVERLAY_GUID_OK, (LPCLSID)&guid);
 	if (!SUCCEEDED(hResult)) { return hResult; }
 	if (IsEqualCLSID(guid, rclsid)) { return CreateFactory(riid, ppv, State_OK); }
@@ -76,18 +72,10 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, void **ppv)
 	if (!SUCCEEDED(hResult)) { return hResult; }
 	if (IsEqualCLSID(guid, rclsid)) { return CreateFactory(riid, ppv, State_Sync); }
 
-	hResult = CLSIDFromString(OVERLAY_GUID_SYNC_SHARED, (LPCLSID)&guid);
-	if (!SUCCEEDED(hResult)) { return hResult; }
-	if (IsEqualCLSID(guid, rclsid)) { return CreateFactory(riid, ppv, State_SyncShared); }
-
 	hResult = CLSIDFromString(OVERLAY_GUID_WARNING, (LPCLSID)&guid);
 	if (!SUCCEEDED(hResult)) { return hResult; }
 	if (IsEqualCLSID(guid, rclsid)) { return CreateFactory(riid, ppv, State_Warning); }
 
-	hResult = CLSIDFromString(OVERLAY_GUID_WARNING_SHARED, (LPCLSID)&guid);
-	if (!SUCCEEDED(hResult)) { return hResult; }
-	if (IsEqualCLSID(guid, rclsid)) { return CreateFactory(riid, ppv, State_WarningShared); }
-	
 	return CLASS_E_CLASSNOTAVAILABLE;
 }
 
@@ -120,37 +108,6 @@ HRESULT RegisterCLSID(LPCOLESTR guidStr, PCWSTR overlayStr, PCWSTR szModule)
 	return hResult;
 }
 
-HRESULT _stdcall DllRegisterServer(void)
-{
-	HRESULT hResult = S_OK;
-
-	wchar_t szModule[MAX_PATH];
-
-	if (GetModuleFileName(instanceHandle, szModule, ARRAYSIZE(szModule)) == 0) {	
-		hResult = HRESULT_FROM_WIN32(GetLastError());
-		return hResult;
-	}
-
-	hResult = RegisterCLSID(OVERLAY_GUID_ERROR, OVERLAY_NAME_ERROR, szModule);
-	if (!SUCCEEDED(hResult)) {	return hResult;	}
-	hResult = RegisterCLSID(OVERLAY_GUID_ERROR_SHARED, OVERLAY_NAME_ERROR_SHARED, szModule);
-	if (!SUCCEEDED(hResult)) { return hResult; }
-	hResult = RegisterCLSID(OVERLAY_GUID_OK, OVERLAY_NAME_OK, szModule);
-	if (!SUCCEEDED(hResult)) { return hResult; }
-	hResult = RegisterCLSID(OVERLAY_GUID_OK_SHARED, OVERLAY_NAME_OK_SHARED, szModule);
-	if (!SUCCEEDED(hResult)) { return hResult; }
-	hResult = RegisterCLSID(OVERLAY_GUID_SYNC, OVERLAY_NAME_SYNC, szModule);
-	if (!SUCCEEDED(hResult)) { return hResult; }
-	hResult = RegisterCLSID(OVERLAY_GUID_SYNC_SHARED, OVERLAY_NAME_SYNC_SHARED,szModule);
-	if (!SUCCEEDED(hResult)) { return hResult; }
-	hResult = RegisterCLSID(OVERLAY_GUID_WARNING, OVERLAY_NAME_WARNING, szModule);
-	if (!SUCCEEDED(hResult)) { return hResult; }
-	hResult = RegisterCLSID(OVERLAY_GUID_WARNING_SHARED, OVERLAY_NAME_WARNING_SHARED, szModule);
-
-    return hResult;
-}
-
-
 HRESULT UnregisterCLSID(LPCOLESTR guidStr, PCWSTR overlayStr)
 {
 	HRESULT hResult = S_OK;
@@ -173,6 +130,37 @@ HRESULT UnregisterCLSID(LPCOLESTR guidStr, PCWSTR overlayStr)
 	return hResult;
 }
 
+HRESULT _stdcall DllRegisterServer(void)
+{
+	HRESULT hResult = S_OK;
+
+	wchar_t szModule[MAX_PATH];
+
+	if (GetModuleFileName(instanceHandle, szModule, ARRAYSIZE(szModule)) == 0) {
+		hResult = HRESULT_FROM_WIN32(GetLastError());
+		return hResult;
+	}
+
+	// Unregister any obsolete CLSID when we register here
+	// Those CLSID were removed in 2.1, but we need to make sure to prevent any previous version
+	// of the extension on the system from loading at the same time as a new version to avoid crashing explorer.
+	UnregisterCLSID(OVERLAY_GUID_ERROR_SHARED, OVERLAY_NAME_ERROR_SHARED);
+	UnregisterCLSID(OVERLAY_GUID_SYNC_SHARED, OVERLAY_NAME_SYNC_SHARED);
+	UnregisterCLSID(OVERLAY_GUID_WARNING_SHARED, OVERLAY_NAME_WARNING_SHARED);
+
+	hResult = RegisterCLSID(OVERLAY_GUID_ERROR, OVERLAY_NAME_ERROR, szModule);
+	if (!SUCCEEDED(hResult)) { return hResult; }
+	hResult = RegisterCLSID(OVERLAY_GUID_OK, OVERLAY_NAME_OK, szModule);
+	if (!SUCCEEDED(hResult)) { return hResult; }
+	hResult = RegisterCLSID(OVERLAY_GUID_OK_SHARED, OVERLAY_NAME_OK_SHARED, szModule);
+	if (!SUCCEEDED(hResult)) { return hResult; }
+	hResult = RegisterCLSID(OVERLAY_GUID_SYNC, OVERLAY_NAME_SYNC, szModule);
+	if (!SUCCEEDED(hResult)) { return hResult; }
+	hResult = RegisterCLSID(OVERLAY_GUID_WARNING, OVERLAY_NAME_WARNING, szModule);
+
+	return hResult;
+}
+
 STDAPI DllUnregisterServer(void)
 {
     HRESULT hResult = S_OK;
@@ -187,19 +175,13 @@ STDAPI DllUnregisterServer(void)
 
 	hResult = UnregisterCLSID(OVERLAY_GUID_ERROR, OVERLAY_NAME_ERROR);
 	if (!SUCCEEDED(hResult)) { return hResult; }
-	hResult = UnregisterCLSID(OVERLAY_GUID_ERROR_SHARED, OVERLAY_NAME_ERROR_SHARED);
-	if (!SUCCEEDED(hResult)) { return hResult; }
 	hResult = UnregisterCLSID(OVERLAY_GUID_OK, OVERLAY_NAME_OK);
 	if (!SUCCEEDED(hResult)) { return hResult; }
 	hResult = UnregisterCLSID(OVERLAY_GUID_OK_SHARED, OVERLAY_NAME_OK_SHARED);
 	if (!SUCCEEDED(hResult)) { return hResult; }
 	hResult = UnregisterCLSID(OVERLAY_GUID_SYNC, OVERLAY_NAME_SYNC);
 	if (!SUCCEEDED(hResult)) { return hResult; }
-	hResult = UnregisterCLSID(OVERLAY_GUID_SYNC_SHARED, OVERLAY_NAME_SYNC_SHARED);
-	if (!SUCCEEDED(hResult)) { return hResult; }
 	hResult = UnregisterCLSID(OVERLAY_GUID_WARNING, OVERLAY_NAME_WARNING);
-	if (!SUCCEEDED(hResult)) { return hResult; }
-	hResult = UnregisterCLSID(OVERLAY_GUID_WARNING_SHARED, OVERLAY_NAME_WARNING_SHARED);
 
     return hResult;
 }

@@ -56,7 +56,6 @@ AccountPtr Account::create()
 
 Account::~Account()
 {
-    qDebug() << "Account" << displayName() << "deleted";
     delete _credentials;
     delete _am;
 }
@@ -159,6 +158,8 @@ void Account::setCredentials(AbstractCredentials *cred)
             SIGNAL(proxyAuthenticationRequired(QNetworkProxy,QAuthenticator*)));
     connect(_credentials, SIGNAL(fetched()),
             SLOT(slotCredentialsFetched()));
+    connect(_credentials, SIGNAL(asked()),
+            SLOT(slotCredentialsAsked()));
 }
 
 QUrl Account::davUrl() const
@@ -179,7 +180,7 @@ void Account::clearCookieJar()
 
 /*! This shares our official cookie jar (containing all the tasty
     authentication cookies) with another QNAM while making sure
-    of not loosing its ownership. */
+    of not losing its ownership. */
 void Account::lendCookieJarTo(QNetworkAccessManager *guest)
 {
     auto jar = _am->cookieJar();
@@ -236,6 +237,15 @@ QNetworkReply *Account::getRequest(const QUrl &url)
     request.setSslConfiguration(this->getOrCreateSslConfig());
 #endif
     return _am->get(request);
+}
+
+QNetworkReply *Account::deleteRequest( const QUrl &url)
+{
+    QNetworkRequest request(url);
+#if QT_VERSION > QT_VERSION_CHECK(4, 8, 4)
+    request.setSslConfiguration(this->getOrCreateSslConfig());
+#endif
+    return _am->deleteResource(request);
 }
 
 QNetworkReply *Account::davRequest(const QByteArray &verb, const QString &relPath, QNetworkRequest req, QIODevice *data)
@@ -417,7 +427,7 @@ void Account::slotHandleSslErrors(QNetworkReply *reply , QList<QSslError> errors
     if (_sslErrorHandler->handleErrors(errors, reply->sslConfiguration(), &approvedCerts, sharedFromThis())) {
         QSslSocket::addDefaultCaCertificates(approvedCerts);
         addApprovedCerts(approvedCerts);
-        emit wantsAccountSaved(sharedFromThis());
+        emit wantsAccountSaved(this);
         // all ssl certs are known and accepted. We can ignore the problems right away.
 //         qDebug() << out << "Certs are known and trusted! This is not an actual error.";
 
@@ -441,16 +451,13 @@ void Account::slotCredentialsFetched()
     emit credentialsFetched(_credentials);
 }
 
+void Account::slotCredentialsAsked()
+{
+    emit credentialsAsked(_credentials);
+}
+
 void Account::handleInvalidCredentials()
 {
-    // invalidate & forget token/password
-    // but try to re-sign in.
-    if (_credentials->ready()) {
-        _credentials->invalidateAndFetch();
-    } else {
-        _credentials->fetch();
-    }
-
     emit invalidCredentials();
 }
 
@@ -474,14 +481,54 @@ void Account::setCapabilities(const QVariantMap &caps)
     _capabilities = Capabilities(caps);
 }
 
-QString Account::serverVersion()
+QString Account::serverVersion() const
 {
     return _serverVersion;
 }
 
+int Account::serverVersionInt() const
+{
+    // FIXME: Use Qt 5.5 QVersionNumber
+    auto components = serverVersion().split('.');
+    return  (components.value(0).toInt() << 16)
+                   + (components.value(1).toInt() << 8)
+            + components.value(2).toInt();
+}
+
+bool Account::serverVersionUnsupported() const
+{
+    if (serverVersionInt() == 0) {
+        // not detected yet, assume it is fine.
+        return false;
+    }
+    return serverVersionInt() < 0x070000;
+}
+
 void Account::setServerVersion(const QString& version)
 {
+    if (version == _serverVersion) {
+        return;
+    }
+
+    auto oldServerVersion = _serverVersion;
     _serverVersion = version;
+    emit serverVersionChanged(this, oldServerVersion, version);
 }
+
+bool Account::rootEtagChangesNotOnlySubFolderEtags()
+{
+    return (serverVersionInt() >= 0x080100);
+}
+
+void Account::setNonShib(bool nonShib)
+{
+    if( nonShib ) {
+        _davPath = Theme::instance()->webDavPathNonShib();
+    } else {
+        _davPath = Theme::instance()->webDavPath();
+    } 
+}
+
+
 
 } // namespace OCC

@@ -44,21 +44,21 @@ Q_OBJECT
 public:
     ShibbolethCredentials();
 
-    /* create a credentials for an already connected account */
+    /* create credentials for an already connected account */
     ShibbolethCredentials(const QNetworkCookie &cookie);
 
     void setAccount(Account* account) Q_DECL_OVERRIDE;
-    void syncContextPreInit(CSYNC* ctx) Q_DECL_OVERRIDE;
-    void syncContextPreStart(CSYNC* ctx) Q_DECL_OVERRIDE;
     bool changed(AbstractCredentials* credentials) const Q_DECL_OVERRIDE;
     QString authType() const Q_DECL_OVERRIDE;
     QString user() const Q_DECL_OVERRIDE;
     QNetworkAccessManager* getQNAM() const Q_DECL_OVERRIDE;
     bool ready() const Q_DECL_OVERRIDE;
-    void fetch() Q_DECL_OVERRIDE;
+    void fetchFromKeychain() Q_DECL_OVERRIDE;
+    void askFromUser() Q_DECL_OVERRIDE;
     bool stillValid(QNetworkReply *reply) Q_DECL_OVERRIDE;
     void persist() Q_DECL_OVERRIDE;
     void invalidateToken() Q_DECL_OVERRIDE;
+    void forgetSensitiveData() Q_DECL_OVERRIDE;
 
     void showLoginWindow();
 
@@ -66,15 +66,10 @@ public:
     static QNetworkCookie findShibCookie(Account *, QList<QNetworkCookie> cookies = QList<QNetworkCookie>());
     static QByteArray shibCookieName();
 
-public Q_SLOTS:
-    void invalidateAndFetch() Q_DECL_OVERRIDE;
-
 private Q_SLOTS:
     void onShibbolethCookieReceived(const QNetworkCookie&);
     void slotBrowserRejected();
-    void onFetched();
     void slotReadJobDone(QKeychain::Job*);
-    void slotInvalidateAndFetchInvalidateDone(QKeychain::Job*);
     void slotReplyFinished(QNetworkReply*);
     void slotUserFetched(const QString& user);
     void slotFetchUser();
@@ -82,7 +77,6 @@ private Q_SLOTS:
 
 Q_SIGNALS:
     void newCookie(const QNetworkCookie& cookie);
-    void invalidatedAndFetched(const QByteArray& cookieData);
 
 private:
     void storeShibCookie(const QNetworkCookie &cookie);
@@ -93,7 +87,6 @@ private:
 
     bool _ready;
     bool _stillValid;
-    bool _fetchJobInProgress;
     QPointer<ShibbolethWebView> _browser;
     QNetworkCookie _shibCookie;
     QString _user;

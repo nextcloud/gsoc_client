@@ -35,6 +35,8 @@
 #include "accountmanager.h"
 #include "creds/abstractcredentials.h"
 #include "updater/ocupdater.h"
+#include "excludedfiles.h"
+#include "owncloudsetupwizard.h"
 
 #include "config.h"
 
@@ -103,7 +105,7 @@ Application::Application(int &argc, char **argv) :
 {
     _startedAt.start();
 
-// TODO: Can't set this without breaking current config pathes
+// TODO: Can't set this without breaking current config paths
 //    setOrganizationName(QLatin1String(APPLICATION_VENDOR));
     setOrganizationDomain(QLatin1String(APPLICATION_REV_DOMAIN));
     setApplicationName( _theme->appNameGUI() );
@@ -111,6 +113,7 @@ Application::Application(int &argc, char **argv) :
 #if QT_VERSION > QT_VERSION_CHECK(5, 0, 0)
     setAttribute(Qt::AA_UseHighDpiPixmaps, true);
 #endif
+
     parseOptions(arguments());
     //no need to waste time;
     if ( _helpOnly || _versionOnly ) return;
@@ -135,6 +138,13 @@ Application::Application(int &argc, char **argv) :
     setupLogging();
     setupTranslations();
 
+    // Setup global excludes
+    ConfigFile cfg;
+    ExcludedFiles& excludes = ExcludedFiles::instance();
+    excludes.addExcludeFilePath( cfg.excludeFile(ConfigFile::SystemScope) );
+    excludes.addExcludeFilePath( cfg.excludeFile(ConfigFile::UserScope) );
+    excludes.reloadExcludes();
+
     _folderManager.reset(new FolderMan);
 
     connect(this, SIGNAL(messageReceived(QString, QObject*)), SLOT(slotParseMessage(QString, QObject*)));
@@ -145,7 +155,6 @@ Application::Application(int &argc, char **argv) :
 
     setQuitOnLastWindowClosed(false);
 
-    ConfigFile cfg;
     _theme->setSystrayUseMonoIcons(cfg.monoIcons());
     connect (_theme, SIGNAL(systrayUseMonoIconsChanged(bool)), SLOT(slotUseMonoIconsChanged(bool)));
 
@@ -156,6 +165,9 @@ Application::Application(int &argc, char **argv) :
     if( _showLogWindow ) {
         _gui->slotToggleLogBrowser(); // _showLogWindow is set in parseOptions.
     }
+
+    // Enable word wrapping of QInputDialog (#4197)
+    setStyleSheet("QInputDialog QLabel { qproperty-wordWrap:1; }");
 
     connect(AccountManager::instance(), SIGNAL(accountAdded(AccountState*)),
             SLOT(slotAccountStateAdded(AccountState*)));
@@ -170,10 +182,14 @@ Application::Application(int &argc, char **argv) :
 
     // startup procedure.
     connect(&_checkConnectionTimer, SIGNAL(timeout()), this, SLOT(slotCheckConnection()));
-    _checkConnectionTimer.setInterval(32 * 1000); // check for connection every 32 seconds.
+    _checkConnectionTimer.setInterval(ConnectionValidator::DefaultCallingIntervalMsec); // check for connection every 32 seconds.
     _checkConnectionTimer.start();
-    // Also check immediatly
+    // Also check immediately
     QTimer::singleShot( 0, this, SLOT( slotCheckConnection() ));
+
+    // Can't use onlineStateChanged because it is always true on modern systems because of many interfaces
+    connect(&_networkConfigurationManager, SIGNAL(configurationChanged(QNetworkConfiguration)),
+                this, SLOT(slotSystemOnlineConfigurationChanged(QNetworkConfiguration)));
 
     // Update checks
     UpdaterScheduler *updaterScheduler = new UpdaterScheduler(this);
@@ -203,10 +219,21 @@ void Application::slotAccountStateRemoved(AccountState *accountState)
     if (_gui) {
         disconnect(accountState, SIGNAL(stateChanged(int)),
                    _gui, SLOT(slotAccountStateChanged()));
+        disconnect(accountState->account().data(), SIGNAL(serverVersionChanged(Account*,QString,QString)),
+                   _gui, SLOT(slotTrayMessageIfServerUnsupported(Account*)));
     }
     if (_folderManager) {
         disconnect(accountState, SIGNAL(stateChanged(int)),
                    _folderManager.data(), SLOT(slotAccountStateChanged()));
+        disconnect(accountState->account().data(), SIGNAL(serverVersionChanged(Account*,QString,QString)),
+                   _folderManager.data(), SLOT(slotServerVersionChanged(Account*)));
+    }
+
+    // if there is no more account, show the wizard.
+    if( AccountManager::instance()->accounts().isEmpty() ) {
+        // allow to add a new account if there is non any more. Always think
+        // about single account theming!
+        OwncloudSetupWizard::runWizard(this, SLOT(slotownCloudWizardDone(int)));
     }
 }
 
@@ -214,8 +241,14 @@ void Application::slotAccountStateAdded(AccountState *accountState)
 {
     connect(accountState, SIGNAL(stateChanged(int)),
             _gui, SLOT(slotAccountStateChanged()));
+    connect(accountState->account().data(), SIGNAL(serverVersionChanged(Account*,QString,QString)),
+            _gui, SLOT(slotTrayMessageIfServerUnsupported(Account*)));
     connect(accountState, SIGNAL(stateChanged(int)),
             _folderManager.data(), SLOT(slotAccountStateChanged()));
+    connect(accountState->account().data(), SIGNAL(serverVersionChanged(Account*,QString,QString)),
+            _folderManager.data(), SLOT(slotServerVersionChanged(Account*)));
+
+    _gui->slotTrayMessageIfServerUnsupported(accountState->account().data());
 }
 
 void Application::slotCleanup()
@@ -225,6 +258,17 @@ void Application::slotCleanup()
 
     _gui->slotShutdown();
     _gui->deleteLater();
+}
+
+// FIXME: This is not ideal yet since a ConnectionValidator might already be running and is in
+// progress of timing out in some seconds.
+// Maybe we need 2 validators, one triggered by timer, one by network configuration changes?
+void Application::slotSystemOnlineConfigurationChanged(QNetworkConfiguration cnf)
+{
+    if (cnf.state() & QNetworkConfiguration::Active) {
+        //qDebug() << "Trying fast reconnect";
+        QMetaObject::invokeMethod(this, "slotCheckConnection", Qt::QueuedConnection);
+    }
 }
 
 void Application::slotCheckConnection()
@@ -256,23 +300,39 @@ void Application::slotCrash()
 
 void Application::slotownCloudWizardDone( int res )
 {
+    AccountManager *accountMan = AccountManager::instance();
     FolderMan *folderMan = FolderMan::instance();
+
+    // During the wizard, scheduling of new syncs is disabled
+    folderMan->setSyncEnabled(true);
+
     if( res == QDialog::Accepted ) {
-        int cnt = folderMan->setupFolders();
-        qDebug() << "Set up " << cnt << " folders.";
-        // We have some sort of configuration. Enable autostart
-        Utility::setLaunchOnStartup(_theme->appName(), _theme->appNameGUI(), true);
-        if (cnt == 0) {
-            // The folder configuration was skipped
-            _gui->slotShowSettings();
+        // Open the settings page for the new account if no folders
+        // were configured. Using the last account for this check is
+        // not exactly correct, but good enough.
+        if (!accountMan->accounts().isEmpty()) {
+            AccountStatePtr newAccount = accountMan->accounts().last();
+            bool hasFolder = false;
+            foreach (Folder* folder, folderMan->map()) {
+                if (folder->accountState() == newAccount.data()) {
+                    hasFolder = true;
+                    break;
+                }
+            }
+
+            if (!hasFolder) {
+                _gui->slotShowSettings();
+            }
         }
-    }
-    folderMan->setSyncEnabled( true );
-    if( res == QDialog::Accepted ) {
+
+        // Check connectivity of the newly created account
         _checkConnectionTimer.start();
         slotCheckConnection();
-    }
 
+        // The very first time an account is configured: enabled autostart
+        // TODO: Doing this every time the account wizard finishes will annoy users.
+        Utility::setLaunchOnStartup(_theme->appName(), _theme->appNameGUI(), true);
+    }
 }
 
 void Application::setupLogging()
@@ -306,7 +366,7 @@ void Application::slotParseMessage(const QString &msg, QObject*)
         setupLogging();
     } else if (msg.startsWith(QLatin1String("MSG_SHOWSETTINGS"))) {
         qDebug() << "Running for" << _startedAt.elapsed()/1000.0 << "sec";
-        if (isSessionRestored() && _startedAt.elapsed() < 10*1000) {
+        if (_startedAt.elapsed() < 10*1000) {
             // This call is mirrored with the one in int main()
             qWarning() << "Ignoring MSG_SHOWSETTINGS, possibly double-invocation of client via session restore and auto start";
             return;
@@ -420,6 +480,7 @@ void Application::showVersion()
     stream << _theme->appName().toLatin1().constData()
            << QLatin1String(" version ")
            << _theme->version().toLatin1().constData() << endl;
+    stream << "Using Qt " << qVersion() << endl;
 
     displayHelpText(helpText);
 }
@@ -444,7 +505,7 @@ void Application::setHelp()
 
 QString substLang(const QString &lang)
 {
-    // Map the more apropriate script codes
+    // Map the more appropriate script codes
     // to country codes as used by Qt and
     // transifex translation conventions.
 
@@ -486,7 +547,7 @@ void Application::setupTranslations()
             // Permissive approach: Qt and keychain translations
             // may be missing, but Qt translations must be there in order
             // for us to accept the language. Otherwise, we try with the next.
-            // "en" is an exeption as it is the default language and may not
+            // "en" is an exception as it is the default language and may not
             // have a translation file provided.
             qDebug() << Q_FUNC_INFO << "Using" << lang << "translation";
             setProperty("ui_lang", lang);
@@ -495,7 +556,9 @@ void Application::setupTranslations()
             const QString qtBaseTrFile = QLatin1String("qtbase_") + lang;
             if (!qtTranslator->load(qtTrFile, qtTrPath)) {
                 if (!qtTranslator->load(qtTrFile, trPath)) {
-                    qtTranslator->load(qtBaseTrFile, trPath);
+                    if (!qtTranslator->load(qtBaseTrFile, qtTrPath)) {
+                        qtTranslator->load(qtBaseTrFile, trPath);
+                    }
                 }
             }
             const QString qtkeychainTrFile = QLatin1String("qtkeychain_") + lang;
@@ -513,6 +576,10 @@ void Application::setupTranslations()
         if (property("ui_lang").isNull())
             setProperty("ui_lang", "C");
     }
+// Work around Qt 5 < 5.5.0 regression, see https://bugreports.qt.io/browse/QTBUG-43447
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0) && QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
+    setLayoutDirection(QApplication::tr("QT_LAYOUT_DIRECTION") == QLatin1String("RTL") ? Qt::RightToLeft : Qt::LeftToRight);
+#endif
 }
 
 bool Application::giveHelp()

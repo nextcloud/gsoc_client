@@ -46,11 +46,16 @@ RequestEtagJob::RequestEtagJob(AccountPtr account, const QString &path, QObject 
 void RequestEtagJob::start()
 {
     QNetworkRequest req;
-    // Let's always request all entries inside a directory. There are/were bugs in the server
-    // where a root or root-folder ETag is not updated when its contents change. We work around
-    // this by concatenating the ETags of the root and its contents.
-    req.setRawHeader("Depth", "1");
-    // See https://github.com/owncloud/core/issues/5255 and others
+    if (_account && _account->rootEtagChangesNotOnlySubFolderEtags()) {
+        // Fixed from 8.1 https://github.com/owncloud/client/issues/3730
+        req.setRawHeader("Depth", "0");
+    } else {
+        // Let's always request all entries inside a directory. There are/were bugs in the server
+        // where a root or root-folder ETag is not updated when its contents change. We work around
+        // this by concatenating the ETags of the root and its contents.
+        req.setRawHeader("Depth", "1");
+        // See https://github.com/owncloud/core/issues/5255 and others
+    }
 
     QByteArray xml("<?xml version=\"1.0\" ?>\n"
                    "<d:propfind xmlns:d=\"DAV:\">\n"
@@ -203,7 +208,7 @@ bool LsColXMLParser::parse( const QByteArray& xml, QHash<QString, qint64> *sizes
             QString propertyContent = readContentsAsString(reader);
             if (name == QLatin1String("resourcetype") && propertyContent.contains("collection")) {
                 folders.append(currentHref);
-            } else if (name == QLatin1String("quota-used-bytes")) {
+            } else if (name == QLatin1String("size")) {
                 bool ok = false;
                 auto s = propertyContent.toLongLong(&ok);
                 if (ok && sizes) {
@@ -311,7 +316,7 @@ void LsColJob::start()
 
 // TODO: Instead of doing all in this slot, we should iteratively parse in readyRead(). This
 // would allow us to be more asynchronous in processing while data is coming from the network,
-// not in all in one big blobb at the end.
+// not all in one big blob at the end.
 bool LsColJob::finished()
 {
     QString contentType = reply()->header(QNetworkRequest::ContentTypeHeader).toString();
@@ -432,7 +437,7 @@ bool CheckServerJob::finished()
 
     mergeSslConfigurationForSslButton(reply()->sslConfiguration(), account());
 
-    // The serverInstalls to /owncloud. Let's try that if the file wasn't found
+    // The server installs to /owncloud. Let's try that if the file wasn't found
     // at the original location
     if ((reply()->error() == QNetworkReply::ContentNotFoundError) && (!_subdirFallback)) {
         _subdirFallback = true;
@@ -485,6 +490,10 @@ void PropfindJob::start()
         qWarning() << "Propfind with no properties!";
     }
     QNetworkRequest req;
+    // Always have a higher priority than the propagator because we use this from the UI
+    // and really want this to be done first (no matter what internal scheduling QNAM uses).
+    // Also possibly useful for avoiding false timeouts.
+    req.setPriority(QNetworkRequest::HighPriority);
     req.setRawHeader("Depth", "0");
     QByteArray propStr;
     foreach (const QByteArray &prop, properties) {
@@ -549,9 +558,89 @@ bool PropfindJob::finished()
                 }
             }
         }
-        emit result(items);
+        if (reader.hasError()) {
+            qDebug() << "PROPFIND request XML parser error: " << reader.errorString();
+            emit finishedWithError(reply());
+        } else {
+            emit result(items);
+        }
     } else {
         qDebug() << "PROPFIND request *not* successful, http result code is" << http_result_code
+                 << (http_result_code == 302 ? reply()->header(QNetworkRequest::LocationHeader).toString()  : QLatin1String(""));
+        emit finishedWithError(reply());
+    }
+    return true;
+}
+
+/*********************************************************************************************/
+
+ProppatchJob::ProppatchJob(AccountPtr account, const QString &path, QObject *parent)
+    : AbstractNetworkJob(account, path, parent)
+{
+
+}
+
+void ProppatchJob::start()
+{
+    if (_properties.isEmpty()) {
+        qWarning() << "Proppatch with no properties!";
+    }
+    QNetworkRequest req;
+
+    QByteArray propStr;
+    QMapIterator<QByteArray, QByteArray> it(_properties);
+    while (it.hasNext()) {
+        it.next();
+        QByteArray keyName = it.key();
+        QByteArray keyNs;
+        if (keyName.contains(':')) {
+            int colIdx = keyName.lastIndexOf(":");
+            keyNs = keyName.left(colIdx);
+            keyName = keyName.mid(colIdx+1);
+        }
+
+        propStr += "    <" + keyName;
+        if (!keyNs.isEmpty()) {
+            propStr += " xmlns=\"" + keyNs + "\" ";
+        }
+        propStr += ">";
+        propStr += it.value();
+        propStr += "</" + keyName + ">\n";
+    }
+    QByteArray xml = "<?xml version=\"1.0\" ?>\n"
+                     "<d:propertyupdate xmlns:d=\"DAV:\">\n"
+                     "  <d:set><d:prop>\n"
+                     + propStr +
+                     "  </d:prop></d:set>\n"
+                     "</d:propertyupdate>\n";
+
+    QBuffer *buf = new QBuffer(this);
+    buf->setData(xml);
+    buf->open(QIODevice::ReadOnly);
+    setReply(davRequest("PROPPATCH", path(), req, buf));
+    buf->setParent(reply());
+    setupConnections(reply());
+    AbstractNetworkJob::start();
+}
+
+void ProppatchJob::setProperties(QMap<QByteArray, QByteArray> properties)
+{
+    _properties = properties;
+}
+
+QMap<QByteArray, QByteArray> ProppatchJob::properties() const
+{
+    return _properties;
+}
+
+bool ProppatchJob::finished()
+{
+    int http_result_code = reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+
+    if (http_result_code == 207) {
+        emit success();
+    } else {
+        qDebug() << "PROPPATCH request *not* successful, http result code is" << http_result_code
                  << (http_result_code == 302 ? reply()->header(QNetworkRequest::LocationHeader).toString()  : QLatin1String(""));
         emit finishedWithError();
     }
@@ -583,12 +672,19 @@ bool EntityExistsJob::finished()
 JsonApiJob::JsonApiJob(const AccountPtr &account, const QString& path, QObject* parent): AbstractNetworkJob(account, path, parent)
 { }
 
+void JsonApiJob::addQueryParams(QList< QPair<QString,QString> > params)
+{
+    _additionalParams = params;
+}
+
 void JsonApiJob::start()
 {
     QNetworkRequest req;
     req.setRawHeader("OCS-APIREQUEST", "true");
     QUrl url = Account::concatUrlPath(account()->url(), path());
-    url.setQueryItems(QList<QPair<QString, QString> >() << qMakePair(QString::fromLatin1("format"), QString::fromLatin1("json")));
+    QList<QPair<QString, QString> > params = _additionalParams;
+    params << qMakePair(QString::fromLatin1("format"), QString::fromLatin1("json"));
+    url.setQueryItems(params);
     setReply(davRequest("GET", url, req));
     setupConnections(reply());
     AbstractNetworkJob::start();
@@ -596,23 +692,40 @@ void JsonApiJob::start()
 
 bool JsonApiJob::finished()
 {
+    int statusCode = 0;
+
     if (reply()->error() != QNetworkReply::NoError) {
         qWarning() << "Network error: " << path() << reply()->errorString() << reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute);
-        emit jsonRecieved(QVariantMap());
+        emit jsonReceived(QVariantMap(), statusCode);
         return true;
     }
 
-    bool success = false;
     QString jsonStr = QString::fromUtf8(reply()->readAll());
+    if( jsonStr.contains( "<?xml version=\"1.0\"?>") ) {
+        QRegExp rex("<statuscode>(\\d+)</statuscode>");
+        if( jsonStr.contains(rex) ) {
+            // this is a error message coming back from ocs.
+            statusCode = rex.cap(1).toInt();
+        }
+
+    } else {
+        QRegExp rex("\"statuscode\":(\\d+),");
+        // example: "{"ocs":{"meta":{"status":"ok","statuscode":100,"message":null},"data":{"version":{"major":8,"minor":"... (504)
+        if( jsonStr.contains(rex) ) {
+            statusCode = rex.cap(1).toInt();
+        }
+    }
+
+    bool success = false;
     QVariantMap json = QtJson::parse(jsonStr, success).toMap();
     // empty or invalid response
     if (!success || json.isEmpty()) {
         qWarning() << "invalid JSON!" << jsonStr;
-        emit jsonRecieved(QVariantMap());
+        emit jsonReceived(QVariantMap(), statusCode);
         return true;
     }
 
-    emit jsonRecieved(json);
+    emit jsonReceived(json, statusCode);
     return true;
 }
 

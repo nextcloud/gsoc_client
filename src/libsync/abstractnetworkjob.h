@@ -57,6 +57,8 @@ public:
     QByteArray responseTimestamp();
     quint64 duration();
 
+    qint64 timeoutMsec() { return _timer.interval(); }
+
 public slots:
     void setTimeout(qint64 msec);
     void resetTimeout();
@@ -75,13 +77,14 @@ protected:
     QNetworkReply* getRequest(const QUrl &url);
     QNetworkReply* headRequest(const QString &relPath);
     QNetworkReply* headRequest(const QUrl &url);
+    QNetworkReply* deleteRequest(const QUrl &url);
 
     int maxRedirects() const { return 10; }
     virtual bool finished() = 0;
     QByteArray    _responseTimestamp;
     QElapsedTimer _durationTimer;
     quint64       _duration;
-    bool          _timedout;  // set to true when the timeout slot is recieved
+    bool          _timedout;  // set to true when the timeout slot is received
 
     // Automatically follows redirects. Note that this only works for
     // GET requests that don't set up any HTTP body or other flags.
@@ -91,11 +94,12 @@ private slots:
     void slotFinished();
     virtual void slotTimeout();
 
+protected:
+    AccountPtr _account;
 private:
     QNetworkReply* addTimer(QNetworkReply *reply);
     bool _ignoreCredentialFailure;
     QPointer<QNetworkReply> _reply; // (QPointer because the NetworkManager may be destroyed before the jobs at exit)
-    AccountPtr _account;
     QString _path;
     QTimer _timer;
     int _redirectCount;

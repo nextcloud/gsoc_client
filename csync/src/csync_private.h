@@ -77,9 +77,6 @@ enum csync_replica_e {
 
 typedef struct csync_file_stat_s csync_file_stat_t;
 
-struct csync_owncloud_ctx_s; // csync_owncloud.c
-
-
 /**
  * @brief csync public structure
  */
@@ -99,6 +96,11 @@ struct csync_s {
       csync_vio_readdir_hook remote_readdir_hook;
       csync_vio_closedir_hook remote_closedir_hook;
       void *vio_userdata;
+
+      /* hook for comparing checksums of files during discovery */
+      csync_checksum_hook checksum_hook;
+      void *checksum_userdata;
+
   } callbacks;
   c_strlist_t *excludes;
 
@@ -169,9 +171,6 @@ struct csync_s {
   bool db_is_empty;
 
   bool ignore_hidden_files;
-
-  struct csync_owncloud_ctx_s *owncloud_context;
-
 };
 
 
@@ -185,18 +184,21 @@ struct csync_file_stat_s {
   size_t pathlen;   /* u64 */
   uint64_t inode;   /* u64 */
   mode_t mode;      /* u32 */
-  int type;         /* u32 */
-  int child_modified;/*bool*/
-  int should_update_metadata; /*bool: specify that the etag, or the remote perm or fileid has
+  unsigned int type                   : 4;
+  unsigned int child_modified         : 1;
+  unsigned int should_update_metadata : 1; /*specify that the etag, or the remote perm or fileid has
                                 changed and need to be updated on the db even for INSTRUCTION_NONE */
-  int has_ignored_files; /*bool: specify that a directory, or child directory contains ignored files */
+  unsigned int has_ignored_files      : 1; /* specify that a directory, or child directory contains ignored files */
 
   char *destpath;   /* for renames */
   const char *etag;
-  char file_id[FILE_ID_BUF_SIZE+1];  /* the ownCloud file id is fixed width of 21 byte. */
+  char file_id[FILE_ID_BUF_SIZE+1];  /* the ownCloud file id is fixed width in ownCloud. */
   char *directDownloadUrl;
   char *directDownloadCookies;
   char remotePerm[REMOTE_PERM_BUF_SIZE+1];
+
+  const char *checksum;
+  uint32_t checksumTypeId;
 
   CSYNC_STATUS error_status;
 

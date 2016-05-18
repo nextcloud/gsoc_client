@@ -17,7 +17,7 @@
 
 namespace OCC {
 SyncFileStatus::SyncFileStatus()
-    :_tag(STATUS_NONE), _sharedWithMe(false)
+    :_tag(StatusNone), _sharedWithMe(false)
 {
 }
 
@@ -50,35 +50,29 @@ bool SyncFileStatus::sharedWithMe()
 QString SyncFileStatus::toSocketAPIString() const
 {
     QString statusString;
+    bool canBeShared = true;
 
     switch(_tag)
     {
-    case STATUS_NONE:
-        statusString = QLatin1String("NONE");
+    case StatusNone:
+        statusString = QLatin1String("NOP");
+        canBeShared = false;
         break;
-    case STATUS_EVAL:
+    case StatusSync:
         statusString = QLatin1String("SYNC");
         break;
-    case STATUS_NEW:
-        statusString = QLatin1String("NEW");
-        break;
-    case STATUS_IGNORE:
+    case StatusWarning:
+        // The protocol says IGNORE, but all implementations show a yellow warning sign.
         statusString = QLatin1String("IGNORE");
         break;
-    case STATUS_SYNC:
-    case STATUS_UPDATED:
+    case StatusUpToDate:
         statusString = QLatin1String("OK");
         break;
-    case STATUS_STAT_ERROR:
-    case STATUS_ERROR:
+    case StatusError:
         statusString = QLatin1String("ERROR");
         break;
-    default:
-        qWarning() << "This status should not be here:" << _tag;
-        Q_ASSERT(false);
-        statusString = QLatin1String("NONE");
     }
-    if(_sharedWithMe) {
+    if(canBeShared && _sharedWithMe) {
         statusString += QLatin1String("+SWM");
     }
 

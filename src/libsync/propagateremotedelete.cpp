@@ -64,7 +64,7 @@ void PropagateRemoteDelete::start()
                          _propagator->_remoteFolder + _item->_file,
                          this);
     connect(_job, SIGNAL(finishedSignal()), this, SLOT(slotDeleteJobFinished()));
-    _propagator->_activeJobs ++;
+    _propagator->_activeJobList.append(this);
     _job->start();
 }
 
@@ -76,7 +76,7 @@ void PropagateRemoteDelete::abort()
 
 void PropagateRemoteDelete::slotDeleteJobFinished()
 {
-    _propagator->_activeJobs--;
+    _propagator->_activeJobList.removeOne(this);
 
     Q_ASSERT(_job);
 
@@ -95,7 +95,8 @@ void PropagateRemoteDelete::slotDeleteJobFinished()
             return;
         }
 
-        SyncFileItem::Status status = classifyError(err, _item->_httpErrorCode);
+        SyncFileItem::Status status = classifyError(err, _item->_httpErrorCode,
+                                                    &_propagator->_anotherSyncNeeded);
         done(status, _job->errorString());
         return;
     }
@@ -108,7 +109,7 @@ void PropagateRemoteDelete::slotDeleteJobFinished()
     // is ok. This will happen for files that are in the DB but not on
     // the server or the local file system.
     if (httpStatus != 204 && httpStatus != 404) {
-        // Normaly we expect "204 No Content"
+        // Normally we expect "204 No Content"
         // If it is not the case, it might be because of a proxy or gateway intercepting the request, so we must
         // throw an error.
         done(SyncFileItem::NormalError, tr("Wrong HTTP code returned by server. Expected 204, but received \"%1 %2\".")

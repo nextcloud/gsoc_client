@@ -30,12 +30,18 @@
 #include "bandwidthmanager.h"
 #include "accountfwd.h"
 
-struct hbf_transfer_s;
-struct ne_session_s;
-struct ne_decompress_s;
-typedef struct ne_prop_result_set_s ne_prop_result_set;
-
 namespace OCC {
+
+/** Free disk space threshold below which syncs will abort and not even start.
+ */
+qint64 criticalFreeSpaceLimit();
+
+/** The client will not intentionally reduce the available free disk space below
+ *  this limit.
+ *
+ * Uploads will still run and downloads that are small enough will continue too.
+ */
+qint64 freeSpaceLimit();
 
 class SyncJournalDb;
 class OwncloudPropagator;
@@ -44,7 +50,7 @@ class OwncloudPropagator;
  * @brief the base class of propagator jobs
  *
  * This can either be a job, or a container for jobs.
- * If it is a composite jobs, it then inherits from PropagateDirectory
+ * If it is a composite job, it then inherits from PropagateDirectory
  *
  * @ingroup libsync
  */
@@ -67,16 +73,32 @@ public:
 
         /** Jobs can be run in parallel to this job */
         FullParallelism,
-        /** This job do not support parallelism, and no other job shall
-            be started until this one has finished */
+
+        /** No other job shall be started until this one has finished.
+            So this job is guaranteed to finish before any jobs below it
+            are executed. */
         WaitForFinished,
 
-        /** This job support paralelism with other jobs in the same directory, but it should
-             not be paralelized with jobs in other directories  (typically a move operation) */
+        /** A job with this parallelism will allow later jobs to start and
+            run in parallel as long as they aren't PropagateDirectory jobs.
+            When the first directory job is encountered, no further jobs
+            will be started until this one is finished. */
         WaitForFinishedInParentDirectory
     };
 
     virtual JobParallelism parallelism() { return FullParallelism; }
+
+    /**
+     * For "small" jobs
+     */
+    virtual bool isLikelyFinishedQuickly() { return false; }
+
+    /** The space that the running jobs need to complete but don't actually use yet.
+     *
+     * Note that this does *not* include the disk space that's already
+     * in use by running jobs for things like a download-in-progress.
+     */
+    virtual qint64 committedDiskSpace() const { return 0; }
 
 public slots:
     virtual void abort() {}
@@ -109,7 +131,6 @@ signals:
 
 /*
  * Abstract class to propagate a single item
- * (Only used for neon job)
  */
 class PropagateItemJob : public PropagatorJob {
     Q_OBJECT
@@ -203,6 +224,8 @@ public:
 
     void finalize();
 
+    qint64 committedDiskSpace() const Q_DECL_OVERRIDE;
+
 private slots:
     bool possiblyRunNextJob(PropagatorJob *next) {
         if (next->_state == NotYetStarted) {
@@ -240,35 +263,26 @@ class OwncloudPropagator : public QObject {
 
     PropagateItemJob *createJob(const SyncFileItemPtr& item);
     QScopedPointer<PropagateDirectory> _rootJob;
-    bool useLegacyJobs();
 
 public:
-    /* 'const' because they are accessed by the thread */
-
-    QThread* _neonThread;
-    ne_session_s * const _session;
-
     const QString _localDir; // absolute path to the local directory. ends with '/'
     const QString _remoteDir; // path to the root of the remote. ends with '/'  (include WebDAV path)
     const QString _remoteFolder; // folder. (same as remoteDir but without the WebDAV path)
 
     SyncJournalDb * const _journal;
-    bool _finishedEmited; // used to ensure that finished is only emit once
+    bool _finishedEmited; // used to ensure that finished is only emitted once
 
 
 public:
-    OwncloudPropagator(AccountPtr account, ne_session_s *session, const QString &localDir,
+    OwncloudPropagator(AccountPtr account, const QString &localDir,
                        const QString &remoteDir, const QString &remoteFolder,
-                       SyncJournalDb *progressDb, QThread *neonThread)
-            : _neonThread(neonThread)
-            , _session(session)
-            , _localDir((localDir.endsWith(QChar('/'))) ? localDir : localDir+'/' )
+                       SyncJournalDb *progressDb)
+            : _localDir((localDir.endsWith(QChar('/'))) ? localDir : localDir+'/' )
             , _remoteDir((remoteDir.endsWith(QChar('/'))) ? remoteDir : remoteDir+'/' )
             , _remoteFolder((remoteFolder.endsWith(QChar('/'))) ? remoteFolder : remoteFolder+'/' )
             , _journal(progressDb)
             , _finishedEmited(false)
             , _bandwidthManager(this)
-            , _activeJobs(0)
             , _anotherSyncNeeded(false)
             , _account(account)
     { }
@@ -283,14 +297,15 @@ public:
 
     QAtomicInt _abortRequested; // boolean set by the main thread to abort.
 
-    /* The number of currently active jobs */
-    int _activeJobs;
+    /* The list of currently active jobs */
+    QList<PropagateItemJob*> _activeJobList;
 
     /** We detected that another sync is required after this one */
     bool _anotherSyncNeeded;
 
-    /* The maximum number of active job in parallel  */
+    /* The maximum number of active jobs in parallel  */
     int maximumActiveJob();
+    int hardMaximumActiveJob();
 
     bool isInSharedDirectory(const QString& file);
     bool localFileNameClash(const QString& relfile);
@@ -307,6 +322,9 @@ public:
     // timeout in seconds
     static int httpTimeout();
 
+    /** returns the size of chunks in bytes  */
+    static quint64 chunkSize();
+
     /** Records that a file was touched by a job.
      *
      * Thread-safe.
@@ -321,10 +339,23 @@ public:
 
     AccountPtr account() const;
 
+    enum DiskSpaceResult
+    {
+        DiskSpaceOk,
+        DiskSpaceFailure,
+        DiskSpaceCritical
+    };
+
+    /** Checks whether there's enough disk space available to complete
+     *  all jobs that are currently running.
+     */
+    DiskSpaceResult diskSpaceCheck() const;
+
+
 
 private slots:
 
-    /** Emit the finished signal and make sure it is only emit once */
+    /** Emit the finished signal and make sure it is only emitted once */
     void emitFinished() {
         if (!_finishedEmited)
             emit finished();
@@ -337,11 +368,9 @@ signals:
     void itemCompleted(const SyncFileItem &, const PropagatorJob &);
     void progress(const SyncFileItem&, quint64 bytes);
     void finished();
-    /**
-     * Called when we detect that the total number of bytes changes (because a download or upload
-     * turns out to be bigger or smaller than what was initially computed in the update phase
-     */
-    void adjustTotalTransmissionSize( qint64 adjust );
+
+    /** Emitted when propagation has problems with a locked file. */
+    void seenLockedFile(const QString &fileName);
 
 private:
 
@@ -350,6 +379,11 @@ private:
     /** Stores the time since a job touched a file. */
     QHash<QString, QElapsedTimer> _touchedFiles;
     mutable QMutex _touchedFilesMutex;
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    // access to signals which are protected in Qt4
+    friend class PropagateDownloadFileQNAM;
+#endif
 };
 
 

@@ -26,13 +26,13 @@ class FolderStatusDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
 public:
+    QIcon m_moreIcon;
+    FolderStatusDelegate();
 
     enum datarole { FolderAliasRole = Qt::UserRole + 100,
                     HeaderRole,
                     FolderPathRole,
                     FolderSecondPathRole,
-                    FolderRemotePath,
-                    FolderStatus,
                     FolderErrorMsg,
                     FolderSyncPaused,
                     FolderStatusIconRole,
@@ -41,7 +41,6 @@ public:
                     SyncProgressOverallPercent,
                     SyncProgressOverallString,
                     SyncProgressItemString,
-                    AddProgressSpace,
                     WarningCount,
                     SyncRunning,
 
@@ -56,7 +55,8 @@ public:
     /**
      * return the position of the option button within the item
      */
-    static QRect optionsButtonRect(const QRect &within);
+    static QRect optionsButtonRect(QRect within, Qt::LayoutDirection direction);
+    static int rootFolderHeightWithoutErrors(const QFontMetrics &fm, const QFontMetrics &aliasFm);
 private:
     static QString addFolderText();
 };

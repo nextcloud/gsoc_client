@@ -42,7 +42,7 @@ namespace OCC {
 /**
  * Code inspired from Qt5's QDir::removeRecursively
  * The code will update the database in case of error.
- * If everything goes well (no error, returns true), the caller is responsible of removing the entries
+ * If everything goes well (no error, returns true), the caller is responsible for removing the entries
  * in the database.  But in case of error, we need to remove the entries from the database of the files
  * that were deleted.
  *
@@ -66,12 +66,12 @@ bool PropagateLocalRemove::removeRecursively(const QString& path)
         if (isDir) {
             ok = removeRecursively(path + QLatin1Char('/') + di.fileName()); // recursive
         } else {
-            QFile f(di.filePath());
-            ok = f.remove();
+            QString removeError;
+            ok = FileSystem::remove(di.filePath(), &removeError);
             if (!ok) {
                 _error += PropagateLocalRemove::tr("Error removing '%1': %2;").
-                    arg(QDir::toNativeSeparators(f.fileName()), f.errorString()) + " ";
-                qDebug() << "Error removing " << f.fileName() << ':' << f.errorString();
+                    arg(QDir::toNativeSeparators(di.filePath()), removeError) + " ";
+                qDebug() << "Error removing " << di.filePath() << ':' << removeError;
             }
         }
         if (success && !ok) {
@@ -95,7 +95,7 @@ bool PropagateLocalRemove::removeRecursively(const QString& path)
     if (success) {
         success = QDir().rmdir(absolute);
         if (!success) {
-            _error += PropagateLocalRemove::tr("Could not remove folder '%1';")
+            _error += PropagateLocalRemove::tr("Could not remove folder '%1'")
                 .arg(QDir::toNativeSeparators(absolute)) + " ";
             qDebug() << "Error removing folder" << absolute;
         }
@@ -109,6 +109,9 @@ void PropagateLocalRemove::start()
         return;
 
     QString filename = _propagator->_localDir +  _item->_file;
+
+    qDebug() << filename;
+
     if( _propagator->localFileNameClash(_item->_file)) {
         done(SyncFileItem::NormalError, tr("Could not remove %1 because of a local file name clash")
              .arg(QDir::toNativeSeparators(filename)));
@@ -121,9 +124,10 @@ void PropagateLocalRemove::start()
             return;
         }
     } else {
-        QFile file(filename);
-        if (FileSystem::fileExists(filename) && !file.remove()) {
-            done(SyncFileItem::NormalError, file.errorString());
+        QString removeError;
+        if (FileSystem::fileExists(filename)
+                && !FileSystem::remove(filename, &removeError)) {
+            done(SyncFileItem::NormalError, removeError);
             return;
         }
     }
@@ -138,8 +142,22 @@ void PropagateLocalMkdir::start()
     if (_propagator->_abortRequested.fetchAndAddRelaxed(0))
         return;
 
-    QDir newDir(_propagator->_localDir + _item->_file);
+    QDir newDir(_propagator->getFilePath(_item->_file));
     QString newDirStr = QDir::toNativeSeparators(newDir.path());
+
+    // When turning something that used to be a file into a directory
+    // we need to delete the file first.
+    QFileInfo fi(newDirStr);
+    if (_deleteExistingFile && fi.exists() && fi.isFile()) {
+        QString removeError;
+        if (!FileSystem::remove(newDirStr, &removeError)) {
+            done( SyncFileItem::NormalError,
+                  tr("could not delete file %1, error: %2")
+                  .arg(newDirStr, removeError));
+            return;
+        }
+    }
+
     if( Utility::fsCasePreserving() && _propagator->localFileNameClash(_item->_file ) ) {
         qDebug() << "WARN: new folder to create locally already exists!";
         done( SyncFileItem::NormalError, tr("Attention, possible case sensitivity clash with %1").arg(newDirStr) );
@@ -159,10 +177,18 @@ void PropagateLocalMkdir::start()
     // before the correct etag is stored.
     SyncJournalFileRecord record(*_item, newDirStr);
     record._etag = "_invalid_";
-    _propagator->_journal->setFileRecord(record);
+    if (!_propagator->_journal->setFileRecord(record)) {
+        done(SyncFileItem::FatalError, tr("Error writing metadata to the database"));
+        return;
+    }
     _propagator->_journal->commit("localMkdir");
 
     done(SyncFileItem::Success);
+}
+
+void PropagateLocalMkdir::setDeleteExistingFile(bool enabled)
+{
+    _deleteExistingFile = enabled;
 }
 
 void PropagateLocalRename::start()
@@ -200,6 +226,8 @@ void PropagateLocalRename::start()
         }
     }
 
+    SyncJournalFileRecord oldRecord =
+            _propagator->_journal->getFileRecord(_item->_originalFile);
     _propagator->_journal->deleteFileRecord(_item->_originalFile);
 
     // store the rename file name in the item.
@@ -207,9 +235,16 @@ void PropagateLocalRename::start()
 
     SyncJournalFileRecord record(*_item, targetFile);
     record._path = _item->_renameTarget;
+    if (oldRecord.isValid()) {
+        record._contentChecksum = oldRecord._contentChecksum;
+        record._contentChecksumType = oldRecord._contentChecksumType;
+    }
 
-    if (!_item->_isDirectory) { // Directory are saved at the end
-        _propagator->_journal->setFileRecord(record);
+    if (!_item->_isDirectory) { // Directories are saved at the end
+        if (!_propagator->_journal->setFileRecord(record)) {
+            done(SyncFileItem::FatalError, tr("Error writing metadata to the database"));
+            return;
+        }
     }
     _propagator->_journal->commit("localRename");
 

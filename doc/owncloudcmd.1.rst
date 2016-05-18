@@ -50,6 +50,24 @@ OPTIONS
 ``--httpproxy  http://[user@pass:]<server>:<port>``
       Uses ``server`` as HTTP proxy.
 
+``--nonshib``
+      Uses Non Shibboleth WebDAV Authentication
+
+``--davpath [path]``
+      Overrides the WebDAV Path with ``path``
+
+``--exclude [file]``
+      Exclude list file
+
+``--unsyncedfolders [file]``
+      File containing the list of unsynced folders (selective sync)
+
+``--max-sync-retries [n]``
+      Retries maximum n times (defaults to 3)
+
+``-h``
+      Sync hidden files,do not ignore them
+
 Example
 =======
 To synchronize the ownCloud directory ``Music`` to the local directory ``media/music``

@@ -51,9 +51,13 @@ OwncloudSetupPage::OwncloudSetupPage(QWidget *parent)
     setTitle(WizardCommon::titleTemplate().arg(tr("Connect to %1").arg(theme->appNameGUI())));
     setSubTitle(WizardCommon::subTitleTemplate().arg(tr("Setup %1 server").arg(theme->appNameGUI())));
 
-    if (!theme->overrideServerUrl().isEmpty()) {
+    if (theme->overrideServerUrl().isEmpty()) {
+        _ui.leUrl->setPostfix(theme->wizardUrlPostfix());
+        _ui.leUrl->setPlaceholderText(theme->wizardUrlHint());
+    } else {
         _ui.leUrl->setEnabled(false);
     }
+
 
     registerField( QLatin1String("OCUrl*"), _ui.leUrl );
 
@@ -134,12 +138,12 @@ void OwncloudSetupPage::slotUrlChanged(const QString& url)
 
 void OwncloudSetupPage::slotUrlEditFinished()
 {
-    QString url = _ui.leUrl->text();
+    QString url = _ui.leUrl->fullText();
     if (QUrl(url).isRelative()) {
         // no scheme defined, set one
         url.prepend("https://");
     }
-    _ui.leUrl->setText(url);
+    _ui.leUrl->setFullText(url);
 }
 
 bool OwncloudSetupPage::isComplete() const
@@ -208,7 +212,7 @@ int OwncloudSetupPage::nextId() const
 
 QString OwncloudSetupPage::url() const
 {
-    QString url = _ui.leUrl->text().simplified();
+    QString url = _ui.leUrl->fullText().simplified();
     return url;
 }
 
@@ -244,7 +248,7 @@ void OwncloudSetupPage::setErrorString( const QString& err, bool retryHTTPonly )
         _ui.errorLabel->setVisible(false);
     } else {
         if (retryHTTPonly) {
-            QUrl url(_ui.leUrl->text());
+            QUrl url(_ui.leUrl->fullText());
             if (url.scheme() == "https") {
                 // Ask the user how to proceed when connecting to a https:// URL fails.
                 // It is possible that the server is secured with client-side TLS certificates,
@@ -258,7 +262,7 @@ void OwncloudSetupPage::setErrorString( const QString& err, bool retryHTTPonly )
                 case OwncloudConnectionMethodDialog::No_TLS:
                     {
                         url.setScheme("http");
-                        _ui.leUrl->setText(url.toString());
+                        _ui.leUrl->setFullText(url.toString());
                         // skip ahead to next page, since the user would expect us to retry automatically
                         wizard()->next();
                     }

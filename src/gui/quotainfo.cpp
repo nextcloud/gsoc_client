@@ -15,7 +15,9 @@
 #include "account.h"
 #include "accountstate.h"
 #include "networkjobs.h"
+#include "folderman.h"
 #include "creds/abstractcredentials.h"
+#include <theme.h>
 
 #include <QTimer>
 #include <QDebug>
@@ -79,6 +81,11 @@ bool QuotaInfo::canGetQuota() const
         && account->credentials()->ready();
 }
 
+QString QuotaInfo::quotaBaseFolder() const
+{
+    return Theme::instance()->quotaBaseFolder();
+}
+
 void QuotaInfo::slotCheckQuota()
 {
     if (! canGetQuota()) {
@@ -91,7 +98,7 @@ void QuotaInfo::slotCheckQuota()
     }
 
     AccountPtr account = _accountState->account();
-    _job = new PropfindJob(account, "/", this);
+    _job = new PropfindJob(account, quotaBaseFolder(), this);
     _job->setProperties(QList<QByteArray>() << "quota-available-bytes" << "quota-used-bytes");
     connect(_job, SIGNAL(result(QVariantMap)), SLOT(slotUpdateLastQuota(QVariantMap)));
     connect(_job, SIGNAL(networkError(QNetworkReply*)), SLOT(slotRequestFailed()));
@@ -100,11 +107,12 @@ void QuotaInfo::slotCheckQuota()
 
 void QuotaInfo::slotUpdateLastQuota(const QVariantMap &result)
 {
-    // The server can return frational bytes (#1374)
+    // The server can return fractional bytes (#1374)
     // <d:quota-available-bytes>1374532061.2</d:quota-available-bytes>
-    quint64 avail = result["quota-available-bytes"].toDouble();
+    qint64 avail = result["quota-available-bytes"].toDouble();
     _lastQuotaUsedBytes = result["quota-used-bytes"].toDouble();
-    _lastQuotaTotalBytes = _lastQuotaUsedBytes + avail;
+    // negative value of the available quota have special meaning (#3940)
+    _lastQuotaTotalBytes = avail >= 0 ? _lastQuotaUsedBytes + avail : avail;
     emit quotaUpdated(_lastQuotaTotalBytes, _lastQuotaUsedBytes);
     _jobRestartTimer.start(defaultIntervalT);
     _lastQuotaRecieved = QDateTime::currentDateTime();

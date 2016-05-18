@@ -43,7 +43,7 @@ class GETFileJob : public AbstractNetworkJob {
     time_t _lastModified;
 public:
 
-    // DOES NOT take owncership of the device.
+    // DOES NOT take ownership of the device.
     explicit GETFileJob(AccountPtr account, const QString& path, QFile *device,
                         const QMap<QByteArray, QByteArray> &headers, const QByteArray &expectedEtagForResume,
                         quint64 resumeStart, QObject* parent = 0);
@@ -110,19 +110,43 @@ class PropagateDownloadFileQNAM : public PropagateItemJob {
     Q_OBJECT
 public:
     PropagateDownloadFileQNAM(OwncloudPropagator* propagator,const SyncFileItemPtr& item)
-        : PropagateItemJob(propagator, item) {}
+        : PropagateItemJob(propagator, item), _resumeStart(0), _downloadProgress(0), _deleteExisting(false) {}
     void start() Q_DECL_OVERRIDE;
+    qint64 committedDiskSpace() const Q_DECL_OVERRIDE;
+
+    // We think it might finish quickly because it is a small file.
+    bool isLikelyFinishedQuickly() Q_DECL_OVERRIDE { return _item->_size < 100*1024; }
+
+    /**
+     * Whether an existing folder with the same name may be deleted before
+     * the download.
+     *
+     * If it's a non-empty folder, it'll be renamed to a conflict-style name
+     * to preserve any non-synced content that may be inside.
+     *
+     * Default: false.
+     */
+    void setDeleteExistingFolder(bool enabled);
 
 private slots:
     void slotGetFinished();
     void abort() Q_DECL_OVERRIDE;
+    void transmissionChecksumValidated(const QByteArray& checksumType, const QByteArray& checksum);
+    void contentChecksumComputed(const QByteArray& checksumType, const QByteArray& checksum);
     void downloadFinished();
     void slotDownloadProgress(qint64,qint64);
     void slotChecksumFail( const QString& errMsg );
 
 private:
+    void deleteExistingFolder();
+
+    quint64 _resumeStart;
+    qint64 _downloadProgress;
     QPointer<GETFileJob> _job;
     QFile _tmpFile;
+    bool _deleteExisting;
+
+    QElapsedTimer _stopwatch;
 };
 
 }

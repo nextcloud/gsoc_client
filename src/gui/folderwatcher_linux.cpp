@@ -58,7 +58,7 @@ bool FolderWatcherPrivate::findFoldersBelow( const QDir& dir, QStringList& fullL
     } else {
         QStringList nameFilter;
         nameFilter << QLatin1String("*");
-        QDir::Filters filter = QDir::Dirs | QDir::NoDotAndDotDot|QDir::NoSymLinks;
+        QDir::Filters filter = QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks | QDir::Hidden;
         const QStringList pathes = dir.entryList(nameFilter, filter);
 
         QStringList::const_iterator constIterator;
@@ -79,8 +79,7 @@ void FolderWatcherPrivate::inotifyRegisterPath(const QString& path)
         int wd = inotify_add_watch(_fd, path.toUtf8().constData(),
                                    IN_CLOSE_WRITE | IN_ATTRIB | IN_MOVE |
                                    IN_CREATE |IN_DELETE | IN_DELETE_SELF |
-                                   IN_MOVE_SELF |IN_UNMOUNT |IN_ONLYDIR |
-                                   IN_DONT_FOLLOW );
+                                   IN_MOVE_SELF |IN_UNMOUNT |IN_ONLYDIR);
         if( wd > -1 ) {
             _watches.insert(wd, path);
          }

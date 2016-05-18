@@ -1,6 +1,10 @@
 include_directories(${CMAKE_BINARY_DIR}/csync ${CMAKE_BINARY_DIR}/csync/src ${CMAKE_BINARY_DIR}/src)
-include_directories(${CMAKE_SOURCE_DIR}/csync/src/ ${CMAKE_SOURCE_DIR}/csync/src/httpbf/src)
+include_directories(${CMAKE_SOURCE_DIR}/csync/src/)
 include_directories(${CMAKE_SOURCE_DIR}/csync/src/std ${CMAKE_SOURCE_DIR}/src)
+include_directories(${CMAKE_SOURCE_DIR}/src/3rdparty/qtokenizer)
+
+include(QtVersionAbstraction)
+setup_qt()
 
 include(owncloud_add_test.cmake)
 
@@ -26,8 +30,6 @@ if( UNIX AND NOT APPLE )
     owncloud_add_test(InotifyWatcher "${FolderWatcher_SRC}")
 endif(UNIX AND NOT APPLE)
 
-configure_file(oc_bin.h.in oc_bin.h)
-
 owncloud_add_test(CSyncSqlite "")
 owncloud_add_test(NetrcParser ../src/cmd/netrcparser.cpp)
 owncloud_add_test(OwnSql "")
@@ -37,24 +39,16 @@ owncloud_add_test(ConcatUrl "")
 
 owncloud_add_test(XmlParse "")
 owncloud_add_test(FileSystem "")
-owncloud_add_test(TransChecksumValidator "")
+owncloud_add_test(ChecksumValidator "")
 
+owncloud_add_test(ExcludedFiles "")
 
 SET(FolderMan_SRC ../src/gui/folderman.cpp)
 list(APPEND FolderMan_SRC ../src/gui/folder.cpp )
 list(APPEND FolderMan_SRC ../src/gui/socketapi.cpp )
 list(APPEND FolderMan_SRC ../src/gui/accountstate.cpp )
-#list(APPEND FolderMan_SRC ../src/gui/accountmanager.cpp )
-#list(APPEND FolderMan_SRC ../src/gui/proxyauthhandler.cpp )
-#list(APPEND FolderMan_SRC ../src/gui/proxyauthdialog.cpp )
-#list(APPEND FolderMan_SRC ../src/gui/creds/shibbolethcredentials.cpp )
-#list(APPEND FolderMan_SRC ../src/gui/creds/credentialsfactory.cpp )
-#list(APPEND FolderMan_SRC ../src/gui/creds/shibboleth/shibbolethuserjob.cpp )
-#list(APPEND FolderMan_SRC ../src/gui/creds/shibboleth/shibbolethrefresher.cpp )
-#list(APPEND FolderMan_SRC ../src/gui/creds/shibboleth/shibbolethwebview.cpp )
-#list(APPEND FolderMan_SRC ../src/gui/creds/httpcredentialsgui.cpp )
-#list(APPEND FolderMan_SRC ../src/gui/sslerrordialog.cpp )
 list(APPEND FolderMan_SRC ../src/gui/syncrunfilelog.cpp )
+list(APPEND FolderMan_SRC ../src/gui/lockwatcher.cpp )
 list(APPEND FolderMan_SRC ${FolderWatcher_SRC})
 list(APPEND FolderMan_SRC stub.cpp )
 #include_directories(${QTKEYCHAIN_INCLUDE_DIR})

@@ -124,14 +124,14 @@ QIcon Theme::themeIcon( const QString& name, bool sysTray ) const
         flavor = QLatin1String("colored");
     }
 
-    if( QIcon::hasThemeIcon( name )) {
-        // use from theme
-        return QIcon::fromTheme( name );
-    }
-
     QString key = name + "," + flavor;
     QIcon & cached = _iconCache[key];
     if (cached.isNull()) {
+        if(QIcon::hasThemeIcon(name)) {
+            // use from theme
+            return cached = QIcon::fromTheme(name);
+        }
+
         QList<int> sizes;
         sizes <<16 << 22 << 32 << 48 << 64 << 128 << 256;
         foreach (int size, sizes) {
@@ -195,15 +195,15 @@ Theme::Theme() :
 
 }
 
-// if this option return true, the client only supports one folder to sync.
-// The Add-Button is removed accoringly.
+// If this option returns true, the client only supports one folder to sync.
+// The Add-Button is removed accordingly.
 bool Theme::singleSyncFolder() const {
     return false;
 }
 
-bool Theme::singleAccount() const
+bool Theme::multiAccount() const
 {
-    return false;
+    return true;
 }
 
 QString Theme::defaultServerFolder() const
@@ -215,6 +215,12 @@ QString Theme::overrideServerUrl() const
 {
     return QString::null;
 }
+
+QString Theme::forceConfigAuthType() const
+{
+    return QString();
+}
+
 
 QString Theme::defaultClientFolder() const
 {
@@ -246,11 +252,6 @@ bool Theme::systrayUseMonoIcons() const
 QString Theme::updateCheckUrl() const
 {
     return QLatin1String("https://updates.owncloud.com/client/");
-}
-
-QString Theme::transmissionChecksum() const
-{
-    return QString::null; // No transmission by default.
 }
 
 qint64 Theme::newBigFolderSizeLimit() const
@@ -412,5 +413,54 @@ QString Theme::webDavPath() const
     return QLatin1String("remote.php/webdav/");
 }
 
-} // end namespace client
+QString Theme::webDavPathNonShib() const
+{
+    return QLatin1String("remote.php/nonshib-webdav/");
+}
 
+bool Theme::linkSharing() const
+{
+    return true;
+}
+
+bool Theme::userGroupSharing() const
+{
+    return true;
+}
+
+bool Theme::forceSystemNetworkProxy() const
+{
+    return false;
+}
+
+Theme::UserIDType Theme::userIDType() const
+{
+    return UserIDType::UserIDUserName;
+}
+
+QString Theme::customUserID() const
+{
+    return QString();
+}
+
+QString Theme::userIDHint() const
+{
+    return QString();
+}
+
+
+QString Theme::wizardUrlPostfix() const
+{
+    return QString();
+}
+
+QString Theme::wizardUrlHint() const
+{
+    return QString();
+}
+
+QString Theme::quotaBaseFolder() const
+{
+    return QLatin1String("/");
+}
+} // end namespace client

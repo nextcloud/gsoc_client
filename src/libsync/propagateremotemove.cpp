@@ -69,13 +69,13 @@ void PropagateRemoteMove::start()
     QString targetFile(_propagator->getFilePath(_item->_renameTarget));
 
     if (_item->_file == _item->_renameTarget) {
-        // The parents has been renamed already so there is nothing more to do.
+        // The parent has been renamed already so there is nothing more to do.
         finalize();
         return;
     }
     if (_item->_file == QLatin1String("Shared") ) {
         // Before owncloud 7, there was no permissions system. At the time all the shared files were
-        // in a directory called "Shared" and were not supposed to be moved, otherwise bad things happens
+        // in a directory called "Shared" and were not supposed to be moved, otherwise bad things happened
 
         QString versionString = _propagator->account()->serverVersion();
         if (versionString.contains('.') && versionString.split('.')[0].toInt() < 7) {
@@ -97,7 +97,7 @@ void PropagateRemoteMove::start()
                         _propagator->_remoteDir + _item->_renameTarget,
                         this);
     connect(_job, SIGNAL(finishedSignal()), this, SLOT(slotMoveJobFinished()));
-    _propagator->_activeJobs++;
+    _propagator->_activeJobList.append(this);
     _job->start();
 
 }
@@ -110,7 +110,7 @@ void PropagateRemoteMove::abort()
 
 void PropagateRemoteMove::slotMoveJobFinished()
 {
-    _propagator->_activeJobs--;
+    _propagator->_activeJobList.removeOne(this);
 
     Q_ASSERT(_job);
 
@@ -128,7 +128,8 @@ void PropagateRemoteMove::slotMoveJobFinished()
             return;
         }
 
-        SyncFileItem::Status status = classifyError(err, _item->_httpErrorCode);
+        SyncFileItem::Status status = classifyError(err, _item->_httpErrorCode,
+                                                    &_propagator->_anotherSyncNeeded);
         done(status, _job->errorString());
         return;
     }
@@ -137,7 +138,7 @@ void PropagateRemoteMove::slotMoveJobFinished()
     _item->_responseTimeStamp = _job->responseTimestamp();
 
     if (_item->_httpErrorCode != 201 ) {
-        // Normaly we expect "201 Created"
+        // Normally we expect "201 Created"
         // If it is not the case, it might be because of a proxy or gateway intercepting the request, so we must
         // throw an error.
         done(SyncFileItem::NormalError, tr("Wrong HTTP code returned by server. Expected 201, but received \"%1 %2\".")
@@ -151,11 +152,29 @@ void PropagateRemoteMove::slotMoveJobFinished()
 
 void PropagateRemoteMove::finalize()
 {
+    SyncJournalFileRecord oldRecord =
+            _propagator->_journal->getFileRecord(_item->_originalFile);
+    // if reading from db failed still continue hoping that deleteFileRecord
+    // reopens the db successfully.
+    // The db is only queried to transfer the content checksum from the old
+    // to the new record. It is not a problem to skip it here.
     _propagator->_journal->deleteFileRecord(_item->_originalFile);
+
     SyncJournalFileRecord record(*_item, _propagator->getFilePath(_item->_renameTarget));
     record._path = _item->_renameTarget;
+    if (oldRecord.isValid()) {
+        record._contentChecksum = oldRecord._contentChecksum;
+        record._contentChecksumType = oldRecord._contentChecksumType;
+        if (record._fileSize != oldRecord._fileSize) {
+            qDebug() << "Warning: file sizes differ on server vs csync_journal: " << record._fileSize << oldRecord._fileSize;
+            record._fileSize = oldRecord._fileSize; // server might have claimed different size, we take the old one from the DB
+        }
+    }
 
-    _propagator->_journal->setFileRecord(record);
+    if (!_propagator->_journal->setFileRecord(record)) {
+        done(SyncFileItem::FatalError, tr("Error writing metadata to the database"));
+        return;
+    }
     _propagator->_journal->commit("Remote Rename");
     done(SyncFileItem::Success);
 }

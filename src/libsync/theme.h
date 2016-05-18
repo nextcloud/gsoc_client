@@ -111,10 +111,11 @@ public:
      * Characteristics: bool if more than one sync folder is allowed
      */
     virtual bool singleSyncFolder() const;
+
     /**
-     * When true, there can only be one account.
+     * When true, client works with multiple accounts.
      */
-    virtual bool singleAccount() const;
+    virtual bool multiAccount() const;
 
     /**
     * URL to help file
@@ -127,6 +128,13 @@ public:
      * The respective UI controls will be disabled
      */
     virtual QString overrideServerUrl() const;
+
+    /**
+     * This is only usefull when previous version had a different overrideServerUrl
+     * with a different auth type in that case You should then specify "http" or "shibboleth".
+     * Normaly this should be left empty.
+     */
+    virtual QString forceConfigAuthType() const;
 
     /**
      * The default folder name without path on the server at setup time.
@@ -203,14 +211,6 @@ public:
      * to nothing selected
      */
     virtual bool wizardSelectiveSyncDefaultNothing() const;
-    /**
-     * @brief Add an additional checksum header to PUT requests and compare them
-     * if they come with GET requests.
-     * This value sets the checksum type (SHA1, MD5 or Adler32) or is left empty
-     * if no checksumming is wanted. In that case it can still be overwritten in
-     * the client config file.
-     */
-    virtual QString transmissionChecksum() const;
 
     /**
      * Default option for the newBigFolderSizeLimit.
@@ -226,6 +226,81 @@ public:
      * it has a trailing slash, for example "remote.php/webdav/".
      */
     virtual QString webDavPath() const;
+    virtual QString webDavPathNonShib() const;
+
+    /**
+     * @brief Sharing options
+     *
+     * Allow link sharing and or user/group sharing
+     */
+    virtual bool linkSharing() const;
+    virtual bool userGroupSharing() const;
+
+    /**
+     * If this returns true, the user cannot configure the proxy in the network settings.
+     * The proxy settings will be disabled in the configuration dialog.
+     * Default returns false.
+     */
+    virtual bool forceSystemNetworkProxy() const;
+
+    /**
+     * @brief How to handle the userID
+     *
+     * @value UserIDUserName Wizard asks for user name as ID
+     * @value UserIDEmail Wizard asks for an email as ID
+     * @value UserIDCustom Specify string in \ref customUserID
+     */
+    enum UserIDType { UserIDUserName = 0, UserIDEmail, UserIDCustom };
+
+    /** @brief What to display as the userID (e.g. in the wizards)
+     *
+     *  @return UserIDType::UserIDUserName, unless reimplemented
+     */
+    virtual UserIDType userIDType() const;
+
+    /**
+     * @brief Allows to customize the type of user ID (e.g. user name, email)
+     *
+     * @note This string cannot be translated, but is still useful for
+     *       referencing brand name IDs (e.g. "ACME ID", when using ACME.)
+     *
+     * @return An empty string, unless reimplemented
+     */
+    virtual QString customUserID() const;
+
+    /**
+     * @brief Demo string to be displayed when no text has been
+     *        entered for the user id (e.g. mylogin@company.com)
+     *
+     * @return An empty string, unless reimplemented
+     */
+    virtual QString userIDHint() const;
+
+    /**
+     * @brief Postfix that will be enforced in a URL. e.g.
+     *        ".myhosting.com".
+     *
+     * @return An empty string, unless reimplemented
+     */
+    virtual QString wizardUrlPostfix() const;
+
+    /**
+     * @brief String that will be shown as long as no text has been entered by the user.
+     *
+     * @return An empty string, unless reimplemented
+     */
+    virtual QString wizardUrlHint() const;
+
+    /**
+     * @brief the server folder that should be queried for the quota information
+     *
+     * This can be configured to show the quota infromation for a different
+     * folder than the root. This is the folder on which the client will do
+     * PROPFIND calls to get "quota-available-bytes" and "quota-used-bytes"
+     *
+     * Defaults: "/"
+     */
+    virtual QString quotaBaseFolder() const;
 
 protected:
 #ifndef TOKEN_AUTH_ONLY

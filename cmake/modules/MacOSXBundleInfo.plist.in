@@ -17,7 +17,7 @@
         <key>CFBundleInfoDictionaryVersion</key>
         <string>6.0</string>
         <key>CFBundleLongVersionString</key>
-        <string>@APPLICATION_NAME@ @MIRALL_VERSION_STRING@</string>
+        <string>@APPLICATION_NAME_XML_ESCAPED@ @MIRALL_VERSION_STRING@</string>
         <key>CFBundlePackageType</key>
         <string>APPL</string>
         <key>CFBundleSignature</key>
@@ -27,7 +27,7 @@
         <key>CFBundleShortVersionString</key>
         <string>@MIRALL_VERSION_STRING@</string>
         <key>NSHumanReadableCopyright</key>
-        <string>(C) 2014-2015 @APPLICATION_VENDOR@</string>
+        <string>(C) 2014-2016 @APPLICATION_VENDOR@</string>
         <key>SUShowReleaseNotes</key>
         <false/>
         <key>LSMinimumBundleVersion</key>

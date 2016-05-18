@@ -16,6 +16,7 @@
 #include "ignorelisteditor.h"
 #include "folderman.h"
 #include "ui_ignorelisteditor.h"
+#include "excludedfiles.h"
 
 #include <QFile>
 #include <QDir>
@@ -109,6 +110,7 @@ void IgnoreListEditor::slotUpdateLocalIgnoreList()
         QMessageBox::warning(this, tr("Could not open file"),
                              tr("Cannot write changes to '%1'.").arg(ignoreFile));
     }
+    ignores.close(); //close the file before reloading stuff.
 
     FolderMan * folderMan = FolderMan::instance();
 
@@ -126,6 +128,8 @@ void IgnoreListEditor::slotUpdateLocalIgnoreList()
         folder->journalDb()->forceRemoteDiscoveryNextSync();
         folderMan->slotScheduleSync(folder);
     }
+
+    ExcludedFiles::instance().reloadExcludes();
 }
 
 void IgnoreListEditor::slotAddPattern()

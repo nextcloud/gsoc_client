@@ -41,28 +41,38 @@ public:
      */
     virtual void setAccount(Account* account);
 
-    virtual void syncContextPreInit(CSYNC* ctx) = 0;
-    virtual void syncContextPreStart(CSYNC* ctx) = 0;
     virtual bool changed(AbstractCredentials* credentials) const = 0;
     virtual QString authType() const = 0;
     virtual QString user() const = 0;
     virtual QNetworkAccessManager* getQNAM() const = 0;
     virtual bool ready() const = 0;
-    virtual void fetch() = 0;
+    virtual void fetchFromKeychain() = 0;
+    virtual void askFromUser() = 0;
     virtual bool stillValid(QNetworkReply *reply) = 0;
     virtual void persist() = 0;
-    /** Invalidates auth token, or password for basic auth */
-    virtual void invalidateToken() = 0;
-    virtual void invalidateAndFetch() {
-        invalidateToken();
-        fetch();
-    }
 
+    /** Invalidates token used to authorize requests, it will no longer be used.
+     *
+     * For http auth, this would be the session cookie.
+     *
+     * Note that sensitive data (like the password used to acquire the
+     * session cookie) may be retained. See forgetSensitiveData().
+     */
+    virtual void invalidateToken() = 0;
+
+    /** Clears out all sensitive data; used for fully signing out users.
+     *
+     * This should always imply invalidateToken() but may go beyond it.
+     *
+     * For http auth, this would clear the session cookie and password.
+     */
+    virtual void forgetSensitiveData() = 0;
 
     static QString keychainKey(const QString &url, const QString &user);
 
 Q_SIGNALS:
     void fetched();
+    void asked();
 
 protected:
     Account* _account;

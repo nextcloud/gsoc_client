@@ -21,12 +21,18 @@ set(client_UI
     ignorelisteditor.ui
     networksettings.ui
     protocolwidget.ui
+    activitywidget.ui
+    synclogdialog.ui
     settingsdialog.ui
     sharedialog.ui
+    sharelinkwidget.ui
+    shareusergroupwidget.ui
+    sharewidget.ui
     sslerrordialog.ui
     owncloudsetuppage.ui
     addcertificatedialog.ui
     proxyauthdialog.ui
+    notificationwidget.ui
     wizard/owncloudadvancedsetuppage.ui
     wizard/owncloudconnectionmethoddialog.ui
     wizard/owncloudhttpcredspage.ui
@@ -48,32 +54,50 @@ set(client_SRCS
     folderwizard.cpp
     generalsettings.cpp
     ignorelisteditor.cpp
+    lockwatcher.cpp
     logbrowser.cpp
     networksettings.cpp
+    ocsjob.cpp
+    ocssharejob.cpp
+    ocsshareejob.cpp
     openfilemanager.cpp
     owncloudgui.cpp
     owncloudsetupwizard.cpp
     protocolwidget.cpp
+    activitydata.cpp
+    activitylistmodel.cpp
+    activitywidget.cpp
+    activityitemdelegate.cpp
     selectivesyncdialog.cpp
     settingsdialog.cpp
+    share.cpp
     sharedialog.cpp
+    sharelinkwidget.cpp
+    shareusergroupwidget.cpp
+    sharee.cpp
     socketapi.cpp
     sslbutton.cpp
     sslerrordialog.cpp
     syncrunfilelog.cpp
     systray.cpp
+    thumbnailjob.cpp
     quotainfo.cpp
     accountstate.cpp
     addcertificatedialog.cpp
     authenticationdialog.cpp
     proxyauthhandler.cpp
     proxyauthdialog.cpp
+    synclogdialog.cpp
+    tooltipupdater.cpp
+    notificationwidget.cpp
+    notificationconfirmjob.cpp
+    servernotificationhandler.cpp
     creds/credentialsfactory.cpp
     creds/httpcredentialsgui.cpp
     creds/shibbolethcredentials.cpp
     creds/shibboleth/shibbolethwebview.cpp
-    creds/shibboleth/shibbolethrefresher.cpp
     creds/shibboleth/shibbolethuserjob.cpp
+    wizard/postfixlineedit.cpp
     wizard/abstractcredswizardpage.cpp
     wizard/owncloudadvancedsetuppage.cpp
     wizard/owncloudconnectionmethoddialog.cpp
@@ -98,6 +122,7 @@ IF( APPLE )
     list(APPEND client_SRCS settingsdialogmac.cpp)
     list(APPEND client_SRCS socketapisocket_mac.mm)
     list(APPEND client_SRCS systray.mm)
+    list(APPEND client_SRCS clipboard.mm)
 
     if(SPARKLE_FOUND)
        # Define this, we need to check in updater.cpp
@@ -117,7 +142,6 @@ list(APPEND client_SRCS folderwatcher_mac.cpp)
 ENDIF()
 
 set(3rdparty_SRC
-    ../3rdparty/fancylineedit/fancylineedit.cpp
     ../3rdparty/QProgressIndicator/QProgressIndicator.cpp
     ../3rdparty/qtlockedfile/qtlockedfile.cpp
     ../3rdparty/qtsingleapplication/qtlocalpeer.cpp
@@ -141,7 +165,6 @@ else()
 endif()
 
 set(3rdparty_INC
-    ${CMAKE_SOURCE_DIR}/src/3rdparty/fancylineedit
     ${CMAKE_SOURCE_DIR}/src/3rdparty/qjson
     ${CMAKE_SOURCE_DIR}/src/3rdparty/QProgressIndicator
     ${CMAKE_SOURCE_DIR}/src/3rdparty/qtlockedfile
@@ -221,7 +244,7 @@ if(NOT BUILD_OWNCLOUD_OSX_BUNDLE)
         endforeach( _file )
     endif(NOT WIN32)
 
-    install(FILES ${client_I18N} DESTINATION ${DATADIR}/${APPLICATION_EXECUTABLE}/i18n)
+    install(FILES ${client_I18N} DESTINATION ${SHAREDIR}/${APPLICATION_EXECUTABLE}/i18n)
 
     # we may not add MACOSX_BUNDLE here, if not building one
 
@@ -292,7 +315,7 @@ install(TARGETS ${APPLICATION_EXECUTABLE}
 if(BUILD_OWNCLOUD_OSX_BUNDLE AND NOT BUILD_LIBRARIES_ONLY)
    get_target_property (QT_QMAKE_EXECUTABLE Qt5::qmake IMPORTED_LOCATION)
    install(CODE "
-    message(STATUS \"Deploying (Qt) dependencies and fixing library pathes...\")
+    message(STATUS \"Deploying (Qt) dependencies and fixing library paths...\")
     execute_process(COMMAND \"${CMAKE_SOURCE_DIR}/admin/osx/macdeployqt.py\" ${CMAKE_INSTALL_PREFIX}/${OWNCLOUD_OSX_BUNDLE} ${QT_QMAKE_EXECUTABLE})
     " COMPONENT RUNTIME)
 endif()

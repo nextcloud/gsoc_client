@@ -44,9 +44,9 @@ AbstractNetworkJob::AbstractNetworkJob(AccountPtr account, const QString &path, 
     : QObject(parent)
     , _timedout(false)
     , _followRedirects(false)
+    , _account(account)
     , _ignoreCredentialFailure(false)
     , _reply(0)
-    , _account(account)
     , _path(path)
     , _redirectCount(0)
 {
@@ -76,7 +76,7 @@ void AbstractNetworkJob::setReply(QNetworkReply *reply)
 
 void AbstractNetworkJob::setTimeout(qint64 msec)
 {
-    qDebug() << Q_FUNC_INFO << msec;
+    //qDebug() << Q_FUNC_INFO << msec;
 
     _timer.start(msec);
 }
@@ -146,6 +146,11 @@ QNetworkReply *AbstractNetworkJob::headRequest(const QString &relPath)
 QNetworkReply *AbstractNetworkJob::headRequest(const QUrl &url)
 {
     return addTimer(_account->headRequest(url));
+}
+
+QNetworkReply *AbstractNetworkJob::deleteRequest(const QUrl &url)
+{
+    return addTimer(_account->deleteRequest(url));
 }
 
 void AbstractNetworkJob::slotFinished()
@@ -225,7 +230,8 @@ void AbstractNetworkJob::start()
     const QUrl url = account()->url();
     const QString displayUrl = QString( "%1://%2%3").arg(url.scheme()).arg(url.host()).arg(url.path());
 
-    qDebug() << "!!!" << metaObject()->className() << "created for" << displayUrl << "+" << path();
+    QString parentMetaObjectName = parent() ? parent()->metaObject()->className() : "";
+    qDebug() << "!!!" << metaObject()->className() << "created for" << displayUrl << "+" << path() << parentMetaObjectName;
 }
 
 void AbstractNetworkJob::slotTimeout()
@@ -263,13 +269,21 @@ QString extractErrorMessage(const QByteArray& errorResponse)
         return QString::null;
     }
 
-    while (!reader.atEnd() && reader.error() == QXmlStreamReader::NoError) {
+    QString exception;
+    while (!reader.atEnd() && !reader.hasError()) {
         reader.readNextStartElement();
         if (reader.name() == QLatin1String("message")) {
-            return reader.readElementText();
+            QString message = reader.readElementText();
+            if (!message.isEmpty()) {
+                return message;
+            }
+        } else if (reader.name() == QLatin1String("exception")) {
+            exception = reader.readElementText();
         }
+
     }
-    return QString::null;
+    // Fallback, if message could not be found
+    return exception;
 }
 
 QString errorMessage(const QString& baseError, const QByteArray& body)

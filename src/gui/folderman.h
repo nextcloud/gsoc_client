@@ -19,7 +19,6 @@
 #include <QObject>
 #include <QQueue>
 #include <QList>
-#include <QPointer>
 
 #include "folder.h"
 #include "folderwatcher.h"
@@ -33,6 +32,7 @@ namespace OCC {
 class Application;
 class SyncResult;
 class SocketApi;
+class LockWatcher;
 
 /**
  * @brief The FolderMan class
@@ -56,6 +56,13 @@ public:
 
     /** Returns the folder which the file or directory stored in path is in */
     Folder* folderForPath(const QString& path);
+
+    /**
+      * returns a list of local files that exist on the local harddisk for an
+      * incoming relative server path. The method checks with all existing sync
+      * folders.
+      */
+    QStringList findFileInLocalFolders( const QString& relPath, const AccountPtr acc );
 
     /** Returns the folder by alias or NULL if no folder with the alias exists. */
     Folder *folder( const QString& );
@@ -92,7 +99,7 @@ public:
 
     /**
      * Check if @a path is a valid path for a new folder considering the already sync'ed items.
-     * Make sure that this folder, or any subfolder is not sync'ed alrady.
+     * Make sure that this folder, or any subfolder is not sync'ed already.
      *
      * \a forNewDirectory is internal and is used for recursion.
      *
@@ -123,7 +130,7 @@ signals:
     /**
       * signal to indicate a folder has changed its sync state.
       *
-      * Attention: The folder may be zero. Do a general update of the state than.
+      * Attention: The folder may be zero. Do a general update of the state then.
       */
     void folderSyncStateChange(Folder*);
 
@@ -132,11 +139,12 @@ signals:
      */
     void scheduleQueueChanged();
 
-    void folderListLoaded(const Folder::Map &);
+    void folderListChanged(const Folder::Map &);
 
 public slots:
     void slotRemoveFolder( Folder* );
-    void slotSetFolderPaused(Folder *, bool paused);
+    void slotFolderSyncPaused(Folder *, bool paused);
+    void slotFolderCanSyncChanged();
 
     void slotFolderSyncStarted();
     void slotFolderSyncFinished( const SyncResult& );
@@ -162,7 +170,7 @@ public slots:
 
     // slot to add a folder to the syncing queue
     void slotScheduleSync(Folder*);
-    // slot to scheule an ETag job
+    // slot to schedule an ETag job
     void slotScheduleETagJob ( const QString &alias, RequestEtagJob *job);
     void slotEtagJobDestroyed (QObject*);
     void slotRunOneEtagJob();
@@ -178,6 +186,13 @@ public slots:
      */
     void slotScheduleAppRestart();
 
+    /**
+     * Triggers a sync run once the lock on the given file is removed.
+     *
+     * Automatically detemines the folder that's responsible for the file.
+     */
+    void slotSyncOnceFileUnlocks(const QString& path);
+
 private slots:
     // slot to take the next folder from queue and start syncing.
     void slotStartScheduledFolderSync();
@@ -189,11 +204,19 @@ private slots:
     // FolderMan::folderSyncStateChange(Folder*) signal.
     void slotForwardFolderSyncStateChange();
 
+    void slotServerVersionChanged(Account* account);
+
+    /**
+     * Schedules the folder for synchronization that contains
+     * the file with the given path.
+     */
+    void slotScheduleFolderOwningFile(const QString& path);
+
 private:
     /** Adds a new folder, does not add it to the account settings and
      *  does not set an account on the new folder.
       */
-    Folder* addFolderInternal(const FolderDefinition& folderDefinition);
+    Folder* addFolderInternal(FolderDefinition folderDefinition, AccountState* accountState);
 
     /* unloads a folder object, does not delete it */
     void unloadFolder( Folder * );
@@ -219,7 +242,8 @@ private:
     QPointer<RequestEtagJob>        _currentEtagJob; // alias of Folder running the current RequestEtagJob
 
     QMap<QString, FolderWatcher*> _folderWatchers;
-    QPointer<SocketApi> _socketApi;
+    QScopedPointer<LockWatcher> _lockWatcher;
+    QScopedPointer<SocketApi> _socketApi;
 
     /** The aliases of folders that shall be synced. */
     QQueue<Folder*> _scheduleQueue;

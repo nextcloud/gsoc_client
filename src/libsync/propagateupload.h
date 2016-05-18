@@ -124,7 +124,7 @@ private slots:
 };
 
 /**
- * @brief This job implements the assynchronous PUT
+ * @brief This job implements the asynchronous PUT
  *
  * If the server replies to a PUT with a OC-Finish-Poll url, we will query this url until the server
  * replies with an etag. https://github.com/owncloud/core/issues/12097
@@ -171,22 +171,38 @@ private:
     /**
      * This is the next chunk that we need to send. Starting from 0 even if _startChunk != 0
      * (In other words,  _startChunk + _currentChunk is really the number of the chunk we need to send next)
-     * (In other words, _currentChunk is the number of chunk that we already sent or start sending)
+     * (In other words, _currentChunk is the number of the chunk that we already sent or started sending)
      */
     int _currentChunk;
     int _chunkCount; /// Total number of chunks for this file
     int _transferId; /// transfer id (part of the url)
     QElapsedTimer _duration;
-    QVector<PUTFileJob*> _jobs; /// network jobs that are currently in transit
+    QVector<AbstractNetworkJob*> _jobs; /// network jobs that are currently in transit
     bool _finished; // Tells that all the jobs have been finished
 
     // measure the performance of checksum calc and upload
     Utility::StopWatch _stopWatch;
 
+    QByteArray _transmissionChecksum;
+    QByteArray _transmissionChecksumType;
+
+    bool _deleteExisting;
+
+    quint64 chunkSize() const { return _propagator->chunkSize(); }
+
 public:
     PropagateUploadFileQNAM(OwncloudPropagator* propagator,const SyncFileItemPtr& item)
-        : PropagateItemJob(propagator, item), _startChunk(0), _currentChunk(0), _chunkCount(0), _transferId(0), _finished(false) {}
+        : PropagateItemJob(propagator, item), _startChunk(0), _currentChunk(0), _chunkCount(0), _transferId(0), _finished(false), _deleteExisting(false) {}
     void start() Q_DECL_OVERRIDE;
+
+    /**
+     * Whether an existing entity with the same name may be deleted before
+     * the upload.
+     *
+     * Default: false.
+     */
+    void setDeleteExisting(bool enabled);
+
 private slots:
     void slotPutFinished();
     void slotPollFinished();
@@ -195,7 +211,9 @@ private slots:
     void startNextChunk();
     void finalize(const SyncFileItem&);
     void slotJobDestroyed(QObject *job);
-    void slotStartUpload(const QByteArray &checksum);
+    void slotStartUpload(const QByteArray& transmissionChecksumType, const QByteArray& transmissionChecksum);
+    void slotComputeTransmissionChecksum(const QByteArray& contentChecksumType, const QByteArray& contentChecksum);
+    void slotComputeContentChecksum();
 
 private:
     void startPollJob(const QString& path);

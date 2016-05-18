@@ -65,6 +65,11 @@ public:
 
     ~SqlQuery();
     QString error() const;
+    int  errorId() const;
+
+    /// Checks whether the value at the given column index is NULL
+    bool nullValue(int index);
+
 
     QString stringValue(int index);
     int intValue(int index);
@@ -79,7 +84,7 @@ public:
     void bindValue(int pos, const QVariant& value);
     QString lastQuery() const;
     int numRowsAffected();
-    void reset();
+    void reset_and_clear_bindings();
     void finish();
 
 private:

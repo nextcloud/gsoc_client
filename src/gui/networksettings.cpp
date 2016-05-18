@@ -86,6 +86,11 @@ QSize NetworkSettings::sizeHint() const {
 
 void NetworkSettings::loadProxySettings()
 {
+    if (Theme::instance()->forceSystemNetworkProxy()) {
+        _ui->systemProxyRadioButton->setChecked(true);
+        _ui->proxyGroupBox->setEnabled(false);
+        return;
+    }
     // load current proxy settings
     OCC::ConfigFile cfgFile;
     int type = cfgFile.proxyType();
@@ -119,6 +124,27 @@ void NetworkSettings::loadBWLimitSettings()
 {
     ConfigFile cfgFile;
 
+#if QT_VERSION < QT_VERSION_CHECK(5,3,3)
+    // QNAM bandwidth limiting only works with versions of Qt greater or equal to 5.3.3
+    // (It needs Qt commits 097b641 and b99fa32)
+
+    const char *v = qVersion(); // "x.y.z";
+    if (QLatin1String(v) < QLatin1String("5.3.3")) {
+        QString tooltip = tr("Qt >= 5.4 is required in order to use the bandwidth limit");
+        _ui->downloadBox->setEnabled(false);
+        _ui->uploadBox->setEnabled(false);
+        _ui->downloadBox->setToolTip(tooltip);
+        _ui->uploadBox->setToolTip(tooltip);
+        _ui->noDownloadLimitRadioButton->setChecked(true);
+        _ui->noUploadLimitRadioButton->setChecked(true);
+        if (cfgFile.useUploadLimit() != 0 || cfgFile.useDownloadLimit() != 0) {
+            // Update from old mirall that was using neon propagator jobs.
+            saveBWLimitSettings();
+        }
+        return;
+    }
+
+#endif
     int useDownloadLimit = cfgFile.useDownloadLimit();
     if ( useDownloadLimit >= 1 ) {
         _ui->downloadLimitRadioButton->setChecked(true);

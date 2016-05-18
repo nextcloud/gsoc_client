@@ -129,7 +129,7 @@ void OwncloudSetupWizard::slotDetermineAuthType(const QString &urlString)
     // Reset the proxy which might had been determined previously in ConnectionValidator::checkServerAndAuth()
     // when there was a previous account.
     account->networkAccessManager()->setProxy(QNetworkProxy(QNetworkProxy::DefaultProxy));
-    // Set fake credentials beforfe we check what credential it actually is.
+    // Set fake credentials before we check what credential it actually is.
     account->setCredentials(CredentialsFactory::create("dummy"));
     CheckServerJob *job = new CheckServerJob(_ocWizard->account(), this);
     job->setIgnoreCredentialFailure(true);
@@ -439,7 +439,7 @@ bool OwncloudSetupWizard::ensureStartFromScratch(const QString &localFolder) {
     return renameOk;
 }
 
-// Method executed when the user ends has finished the basic setup.
+// Method executed when the user end has finished the basic setup.
 void OwncloudSetupWizard::slotAssistantFinished( int result )
 {
     FolderMan *folderMan = FolderMan::instance();
@@ -459,13 +459,6 @@ void OwncloudSetupWizard::slotAssistantFinished( int result )
         if (!startFromScratch || ensureStartFromScratch(localFolder)) {
             qDebug() << "Adding folder definition for" << localFolder << _remoteFolder;
             FolderDefinition folderDefinition;
-            auto alias = Theme::instance()->appName();
-            int count = 0;
-            folderDefinition.alias = alias;
-            while (folderMan->folder(folderDefinition.alias)) {
-                // There is already a folder configured with this name and folder names need to be unique
-                folderDefinition.alias = alias + QString::number(++count);
-            }
             folderDefinition.localPath = localFolder;
             folderDefinition.targetPath = _remoteFolder;
             folderDefinition.ignoreHiddenFiles = folderMan->ignoreHiddenFiles();

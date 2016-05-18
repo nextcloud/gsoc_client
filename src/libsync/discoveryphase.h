@@ -29,8 +29,8 @@ namespace OCC {
 class Account;
 
 /**
- * The Discovery Phase was once called "update" phase in csync therms.
- * Its goal is to look at the files in one of the remote and check comared to the db
+ * The Discovery Phase was once called "update" phase in csync terms.
+ * Its goal is to look at the files in one of the remote and check compared to the db
  * if the files are new, or changed.
  */
 
@@ -80,23 +80,25 @@ struct DiscoveryDirectoryResult {
 class DiscoverySingleDirectoryJob : public QObject {
     Q_OBJECT
 public:
-    explicit DiscoverySingleDirectoryJob(AccountPtr account, const QString &path, QObject *parent = 0);
+    explicit DiscoverySingleDirectoryJob(const AccountPtr &account, const QString &path, QObject *parent = 0);
     void start();
     void abort();
     // This is not actually a network job, it is just a job
 signals:
     void firstDirectoryPermissions(const QString &);
     void etagConcatenation(const QString &);
+    void etag(const QString &);
     void finishedWithResult(const QList<FileStatPointer> &);
-    void finishedWithError(int csyncErrnoCode, QString msg);
+    void finishedWithError(int csyncErrnoCode, const QString &msg);
 private slots:
-    void directoryListingIteratedSlot(QString,QMap<QString,QString>);
+    void directoryListingIteratedSlot(QString, const QMap<QString,QString>&);
     void lsJobFinishedWithoutErrorSlot();
     void lsJobFinishedWithErrorSlot(QNetworkReply*);
 private:
     QList<FileStatPointer> _results;
     QString _subPath;
     QString _etagConcatenation;
+    QString _firstEtag;
     AccountPtr _account;
     bool _ignoredFirst;
     QPointer<LsColJob> _lsColJob;
@@ -123,18 +125,19 @@ public:
 
 public slots:
     // From DiscoveryJob:
-    void doOpendirSlot(QString url, DiscoveryDirectoryResult* );
+    void doOpendirSlot(const QString &url, DiscoveryDirectoryResult* );
     void doGetSizeSlot(const QString &path ,qint64 *result);
 
     // From Job:
     void singleDirectoryJobResultSlot(const QList<FileStatPointer> &);
-    void singleDirectoryJobFinishedWithErrorSlot(int csyncErrnoCode, QString msg);
-    void singleDirectoryJobFirstDirectoryPermissionsSlot(QString);
+    void singleDirectoryJobFinishedWithErrorSlot(int csyncErrnoCode, const QString &msg);
+    void singleDirectoryJobFirstDirectoryPermissionsSlot(const QString&);
 
     void slotGetSizeFinishedWithError();
     void slotGetSizeResult(const QVariantMap&);
 signals:
-    void etagConcatenation(QString);
+    void etag(const QString &);
+    void etagConcatenation(const QString &);
 public:
     void setupHooks(DiscoveryJob* discoveryJob, const QString &pathPrefix);
 };

@@ -15,6 +15,8 @@
 #include "accountmanager.h"
 #include "account.h"
 #include "creds/abstractcredentials.h"
+#include "logger.h"
+#include "configfile.h"
 
 #include <QDebug>
 #include <QSettings>
@@ -35,11 +37,23 @@ AccountState::AccountState(AccountPtr account)
             SLOT(slotInvalidCredentials()));
     connect(account.data(), SIGNAL(credentialsFetched(AbstractCredentials*)),
             SLOT(slotCredentialsFetched(AbstractCredentials*)));
+    connect(account.data(), SIGNAL(credentialsAsked(AbstractCredentials*)),
+            SLOT(slotCredentialsAsked(AbstractCredentials*)));
+    _timeSinceLastETagCheck.invalidate();
 }
 
 AccountState::~AccountState()
 {
-    qDebug() << "Account state for account" << account()->displayName() << "deleted";
+}
+
+AccountState *AccountState::loadFromSettings(AccountPtr account, QSettings& /*settings*/)
+{
+    auto accountState = new AccountState(account);
+    return accountState;
+}
+
+void AccountState::writeToSettings(QSettings& /*settings*/)
+{
 }
 
 AccountPtr AccountState::account() const
@@ -81,6 +95,9 @@ void AccountState::setState(State state)
         } else if (oldState == SignedOut && _state == Disconnected) {
             checkConnectivity();
         }
+        if (oldState == Connected || _state == Connected) {
+            emit isConnectedChanged();
+        }
     }
 
     // might not have changed but the underlying _connectionErrors might have
@@ -112,11 +129,15 @@ bool AccountState::isSignedOut() const
     return _state == SignedOut;
 }
 
-void AccountState::setSignedOut(bool signedOut)
+void AccountState::signOutByUi()
 {
-    if (signedOut) {
-        setState(SignedOut);
-    } else if (_state == SignedOut) {
+    account()->credentials()->forgetSensitiveData();
+    setState(SignedOut);
+}
+
+void AccountState::signIn()
+{
+    if (_state == SignedOut) {
         setState(Disconnected);
     }
 }
@@ -131,6 +152,11 @@ bool AccountState::isConnectedOrTemporarilyUnavailable() const
     return isConnected() || _state == ServiceUnavailable;
 }
 
+void AccountState::tagLastSuccessfullETagRequest()
+{
+    _timeSinceLastETagCheck.restart();
+}
+
 void AccountState::checkConnectivity()
 {
     if (isSignedOut() || _waitingForNewCredentials) {
@@ -138,9 +164,21 @@ void AccountState::checkConnectivity()
     }
 
     if (_connectionValidator) {
-        qDebug() << "ConnectionValidator already running, ignoring";
+        qDebug() << "ConnectionValidator already running, ignoring" << account()->displayName();
         return;
     }
+
+    // IF the account is connected the connection check can be skipped
+    // if the last successful etag check job is not so long ago.
+    ConfigFile cfg;
+    int polltime = cfg.remotePollInterval();
+
+    if (isConnected() && _timeSinceLastETagCheck.isValid()
+            && _timeSinceLastETagCheck.elapsed() < polltime) {
+        //qDebug() << account()->displayName() << "The last ETag check succeeded within the last " << polltime/1000 << " secs. No connection check needed!";
+        return;
+    }
+
     ConnectionValidator * conValidator = new ConnectionValidator(account());
     _connectionValidator = conValidator;
     connect(conValidator, SIGNAL(connectionResult(ConnectionValidator::Status,QStringList)),
@@ -202,8 +240,8 @@ void AccountState::slotConnectionValidatorResult(ConnectionValidator::Status sta
         // much more likely, so keep trying to connect.
         setState(NetworkError);
         break;
-    case ConnectionValidator::CredentialsWrong:
-        account()->handleInvalidCredentials();
+    case ConnectionValidator::CredentialsMissingOrWrong:
+        slotInvalidCredentials();
         break;
     case ConnectionValidator::UserCanceledCredentials:
         setState(SignedOut);
@@ -219,15 +257,35 @@ void AccountState::slotConnectionValidatorResult(ConnectionValidator::Status sta
 
 void AccountState::slotInvalidCredentials()
 {
-    if (isSignedOut()) {
+    if (isSignedOut() || _waitingForNewCredentials)
         return;
-    }
+
+    if (account()->credentials()->ready())
+        account()->credentials()->invalidateToken();
+    account()->credentials()->fetchFromKeychain();
 
     setState(ConfigurationError);
     _waitingForNewCredentials = true;
 }
 
 void AccountState::slotCredentialsFetched(AbstractCredentials* credentials)
+{
+    if (!credentials->ready()) {
+        // No exiting credentials found in the keychain
+        credentials->askFromUser();
+        return;
+    }
+
+    _waitingForNewCredentials = false;
+
+    // When new credentials become available we always want to restart the
+    // connection validation, even if it's currently running.
+    delete _connectionValidator;
+
+    checkConnectivity();
+}
+
+void AccountState::slotCredentialsAsked(AbstractCredentials* credentials)
 {
     _waitingForNewCredentials = false;
 
@@ -239,9 +297,7 @@ void AccountState::slotCredentialsFetched(AbstractCredentials* credentials)
 
     // When new credentials become available we always want to restart the
     // connection validation, even if it's currently running.
-    if (_connectionValidator) {
-        delete _connectionValidator;
-    }
+    delete _connectionValidator;
 
     checkConnectivity();
 }

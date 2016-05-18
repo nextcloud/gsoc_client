@@ -8,75 +8,74 @@ The ownCloud Desktop Client remains in the background and is visible as an icon
 in the system tray (Windows, KDE), status bar (Mac OS X), or notification area 
 (Linux).
 
-.. image:: images/icon.png
+.. figure:: images/icon.png
    :alt: Status icon, little cloud with green circle and white checkmark 
 
-The status indicator uses overlay icons to indicate the current status of your 
+The status indicator uses icons to indicate the current status of your 
 synchronization. The green circle with the white checkmark tells you that your 
 synchronization is current and you are connected to your ownCloud server.
 
-.. image:: images/icon-syncing.png
+.. figure:: images/icon-syncing.png
    :alt: Status icon, little cloud with blue circle and white semi-circles
 
 The blue icon with the white semi-circles means synchronization is in progress.
 
-.. image:: images/icon-paused.png
+.. figure:: images/icon-paused.png
    :alt: Status icon, little cloud with yellow circle and vertical parallel 
     lines
 
-The yellow overlay icon with the parallel lines tells you your synchronization 
+The yellow icon with the parallel lines tells you your synchronization 
 has been paused. (Most likely by you.)
 
-.. image:: images/icon-offline.png
+.. figure:: images/icon-offline.png
    :alt: Status icon, little gray cloud with gray circle and three horizontal 
     white dots
 
 The gray icon with three white dots means your sync client has lost its 
 connection with your ownCloud server.
 
-.. image:: images/icon-information.png
+.. figure:: images/icon-information.png
    :alt: Status icon, little cloud with letter "i" in white circle
 
 When you see a white circle with the letter "i" that is the informational icon, 
 so you should click it to see what it has to tell you.
 
-.. image:: images/icon-error.png
+.. figure:: images/icon-error.png
    :alt: Status icon, little cloud with red circle and white x
 
 The red circle with the white "x" indicates a configuration error, such as an 
 incorrect login or server URL.
 
-Using the Right-Click Menu
---------------------------
+Systray Icon
+------------
 
-A right-click on the icon opens a menu for quick access to multiple operations.
+A right-click on the systray icon opens a menu for quick access to multiple 
+operations.
 
-.. image:: images/menu.png
+.. figure:: images/menu.png
    :alt: the right-click sync client menu
 
-The Desktop Client menu provides the following options:
+This menu provides the following options:
 
-* Open ownCloud in browser
-* Open folder [your local sync folder]
-* Up to date
-* Recent changes
+* Quick access to your accounts
+* Sync status
+* Recent Changes, showing latest activities
 * Settings
-* Help
-* Log out
-* Quit ownCloud
+* Help menu
+* Pause synchronizations
+* An option to log in or log out of all of your accounts at once
+* Quit ownCloud, logging out and closing the client
 
-Using the Account Settings Window
----------------------------------
+A left-click on your systray icon opens the desktop client to the account 
+settings window.
+
+.. figure:: images/client6.png
+   :alt: Account settings window
+
+Configuring ownCloud Account Settings
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. index:: account settings, user, password, Server URL
-
-Click **Settings** in the right-click menu to see a summary of your ownCloud 
-account settings, or left-click your systray icon. This shows which ownCloud 
-account you are connected to (or accounts, if you have more than one) your 
-quota status, and a window for managing your synchronization settings.
-
-.. image:: images/client6.png
-   :alt: Account settings window
 
 At the top of the window are tabs for each configured sync account, and three 
 others for Activity, General and Network settings. On your account tabs you 
@@ -84,59 +83,148 @@ have the following features:
 
 * Connection status, showing which ownCloud server you are connected to, and 
   your ownCloud username.
-* A **Remove Account** button, which deletes your account but does not delete 
-  your data files.
+* An **Account** button, which contains a dropdown menu with **Add New**, 
+  **Log Out**, and **Remove**.
 * Used and available space on the server.
 * Current synchronization status.
 * **Add Folder Sync Connection** button, which is active only when you have 
   removed synchronization on an account (see **Remove Sync** below).
 
-The little button with three dots that sits to the right of the sync status bar 
-offers three additional options:
+The little button with three dots (the overflow menu) that sits to the right of 
+the sync status bar offers four additional options:
 
 * Open Folder
-* Pause Sync
-* Remove Sync
+* Choose What to Sync (This appears only when your file tree is collapsed, and 
+  expands the file tree)
+* Pause Sync / Resume Sync
+* Remove folder sync connection
 
-**Pause Sync** pauses sync operations without making any changes to your account.
+**Open Folder** opens your local ownCloud sync folder.
 
-**Remove Sync** suspends synchronization without removing the account, and it 
-removes your folder sync selection. When you're ready to resume synchronization 
-click the **Add Folder Sync Connection** button, and re-select the folders you 
-want to sync.
+**Pause Sync** pauses sync operations without making any changes to your 
+account. It will continue to update file and folder lists, without 
+downloading or updating files. To stop all sync activity use **Remove 
+Folder Sync Connection**.
 
-.. image:: images/client-7.png
+.. figure:: images/client-7.png
    :alt: Extra options for sync operations
+   
+.. note:: ownCloud does not preserve the mtime (modification time) of 
+   directories, though it does update the mtimes on files. See  
+   `Wrong folder date when syncing 
+   <https://github.com/owncloud/core/issues/7009>`_ for discussion of this.  
+   
+Adding New Accounts
+^^^^^^^^^^^^^^^^^^^
 
-The Activity window contains the log of your recent activities, including files 
-downloaded and deleted, and which local folders your files went into.
+You may configure multiple ownCloud accounts in your desktop sync client. Simply 
+click the **Account** > **Add New** button on any account tab to add a new 
+account, and then follow the account creation wizard. The new account will 
+appear as a new tab in the settings dialog, where you can adjust its settings at 
+any time. Use **Account** > **Remove** to delete accounts. 
+
+File Manager Overlay Icons
+--------------------------
+
+The ownCloud sync client provides overlay icons, in addition to the normal file 
+type icons, for your system file manager (Explorer on Windows, Finder on Mac and 
+Nautilus on Linux) to indicate the sync status of your ownCloud files.
+
+The overlay icons are similar to the systray icons introduced above. They 
+behave differently on files and directories according to sync status 
+and errors. 
+
+The overlay icon of an individual file indicates its current sync state. If the
+file is in sync with the server version, it displays a green checkmark.
+
+If the file is ignored from syncing, for example because it is on your 
+exclude list, or because it is a symbolic link, it displays a warning icon.
+
+If there is a sync error, or the file is blacklisted, it displays an 
+eye-catching red X.
+
+If the file is waiting to be synced, or is currently syncing, the overlay 
+icon displays a blue cycling icon.
+
+When the client is offline, no icons are shown to reflect that the 
+folder is currently out of sync and no changes are synced to the server. 
+
+The overlay icon of a synced directory indicates the status of the files in the 
+directory. If there are any sync errors, the directory is marked with a warning 
+icon.
+
+If a directory includes ignored files that are marked with warning icons 
+that does not change the status of the parent directories.
+
+Sharing From Your Desktop
+-------------------------
+
+The ownCloud desktop sync client integrates with your file manager: Finder on 
+Mac OS X, Explorer on Windows, and Nautilus on Linux. (Linux users must install 
+the ``owncloud-client-nautilus`` plugin.) You can create share links, and share 
+with internal ownCloud users the same way as in your ownCloud Web interface.
+
+.. figure:: images/mac-share.png
+   :alt: Sync client integration in Windows Explorer.
+   
+Right-click your systray icon, hover over the account you want to use, and 
+left-click "Open folder [folder name] to quickly enter your local ownCloud 
+folder. Right-click the file or folder you want to share to expose the share 
+dialog, and click **Share with ownCloud**.
+
+.. figure:: images/share-1.png
+   :alt: Sharing from Windows Explorer.
+   
+The share dialog has all the same options as your ownCloud Web interface.
+
+.. figure:: images/share-2.png
+   :alt: Share dialog in Windows Explorer.
+
+Use **Share with ownCloud** to see who you have shared with, and to modify 
+their permissions, or to delete the share.   
+   
+Activity Window
+---------------
+
+The Activity window contains the log of your recent activities, organized over 
+three tabs: **Server Activities**, which includes new shares and files 
+downloaded and deleted, **Sync Protocol**, which displays local activities such 
+as which local folders your files went into, and **Not Synced** shows errors 
+such as files not synced. 
+
+.. figure:: images/client-8.png
+   :alt: Activity windows logs all server and client activities.
+   
+Server Notifications
+--------------------
+
+Starting with version 2.2.0, the client will display notifications from your 
+ownCloud server that require manual interaction by you. For example, when a 
+user on a remote ownCloud creates a new Federated share for you, you can accept 
+it from your desktop client.
+
+The desktop client automatically checks for available notifications 
+automatically on a regular basis. Notifications are displayed in the Server 
+Activity tab, and if you have **Show Desktop Notifications** enabled (General 
+tab) you'll also see a systray notification.
+
+.. figure:: images/client12.png
+   :alt: Activity window with notification.
+
+This also displays notifications sent to users by the ownCloud admin via the 
+Announcements app.
+
+General Window
+--------------
 
 The General window has configuration options such as **Launch on System 
 Startup**, **Use Monochrome Icons**, and **Show Desktop Notifications**. This 
 is where you will find the **Edit Ignored Files** button, to launch the ignored 
-files editor, and two new features: **Ask confirmation before downloading 
-folders larger than [folder size]**, and **Add an Account**. 
+files editor, and **Ask confirmation before downloading 
+folders larger than [folder size]**.
 
-Multi-Account Support
----------------------
-
-You may now configure multiple ownCloud accounts in your desktop sync client. 
-Simply click the **Add an Account** button on the General tab, and follow the 
-account creation wizard. The new account will appear as a new tab in the settings dialog, where you can adjust its settings at any time.
-
-Editing Ignored Files
----------------------
-
-The Ignored Files Editor can be opened by clicking on the button in the General tab of the settings dialog. The settings apply to all configured accounts. The :guilabel:`Ignored Files Editor` provides a list of  files that are ignored 
-(that is, not synchronized) by the client and server during synchronizations. 
-You may add additional files or directories that you want to exclude from the 
-synchronization process. In addition to using standard characters, the Ignored 
-Files Editor enables you to use wild cards (for example, using an asterisk ‘*’ 
-to indicate multiple characters or a question mark ‘?’ to indicate a single 
-character). 
-
-For additional information see `Using the Ignored Files 
-Editor`_
+.. figure:: images/client-9.png
+   :alt: General window contains configuration options.
 
 Using the Network Window
 ------------------------
@@ -144,10 +232,9 @@ Using the Network Window
 .. index:: proxy settings, SOCKS, bandwith, throttling, limiting
 
 The Network settings window enables you to define network proxy settings, and 
-also to limit download and upload bandwidth. New to version 2.0 is the option 
-for automatic bandwidth limits.
+also to limit download and upload bandwidth.
 
-.. image:: images/settings_network.png
+.. figure:: images/settings_network.png
 
 .. _ignoredFilesEditor-label:
 
@@ -158,14 +245,16 @@ Using the Ignored Files Editor
 
 You might have some local files or directories that you do not want to backup 
 and store on the server. To identify and exclude these files or directories, you
-can use the *Ignored Files Editor*.
+can use the *Ignored Files Editor* (General tab.)
 
-.. image:: images/ignored_files_editor.png
+.. figure:: images/ignored_files_editor.png
 
-For your convenience, the editor is pre-populated with a default list of typical 
+For your convenience, the editor is pre-populated with a default list of 
+typical 
 ignore patterns. These patterns are contained in a system file (typically 
 ``sync-exclude.lst``) located in the ownCloud Client application directory. You 
-cannot modify these pre-populated patterns directly from the editor. However, if 
+cannot modify these pre-populated patterns directly from the editor. However, 
+if 
 necessary, you can hover over any pattern in the list to show the path and 
 filename associated with that pattern, locate the file, and edit the 
 ``sync-exclude.lst`` file.
@@ -184,7 +273,8 @@ components of the path being checked.
 
 .. note:: Custom entries are currently not validated for syntactical
    correctness by the editor, so you will not see any warnings for bad
-   syntax. If your synchronization does not work as you expected, check your syntax.
+   syntax. If your synchronization does not work as you expected, check your 
+   syntax.
 
 Each pattern string in the list is preceded by a checkbox. When the check box
 contains a check mark, in addition to ignoring the file or directory component
@@ -197,8 +287,8 @@ this list:
 - The ownCloud Client always excludes files containing characters that cannot
   be synchronized to other file systems.
 
-- Files are removed that cause individual errors three times during a synchronization. 
-  However, the client provides the option of retrying a synchronization three additional 
-  times on files that produce errors.
+- Files are removed that cause individual errors three times during a 
+  synchronization. However, the client provides the option of retrying a 
+  synchronization three additional times on files that produce errors.
 
 For more detailed information see :ref:`ignored-files-label`.

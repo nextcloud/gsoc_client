@@ -26,29 +26,38 @@
 #include <QPainter>
 #include <QApplication>
 
+inline static QFont makeAliasFont(const QFont &normalFont)
+{
+    QFont aliasFont = normalFont;
+    aliasFont.setBold(true);
+    aliasFont.setPointSize(normalFont.pointSize()+2);
+    return aliasFont;
+}
+
 namespace OCC {
+
+FolderStatusDelegate::FolderStatusDelegate() : QStyledItemDelegate() {
+    m_moreIcon = QIcon(QLatin1String(":/client/resources/more.png"));
+}
 
 QString FolderStatusDelegate::addFolderText()
 {
     return tr("Add Folder Sync Connection");
 }
 
-//alocate each item size in listview.
+// allocate each item size in listview.
 QSize FolderStatusDelegate::sizeHint(const QStyleOptionViewItem & option ,
                                    const QModelIndex & index) const
 {
-    QFont aliasFont = option.font;
+    QFont aliasFont = makeAliasFont(option.font);
     QFont font = option.font;
-    aliasFont.setPointSize( font.pointSize() +2 );
 
     QFontMetrics fm(font);
     QFontMetrics aliasFm(aliasFont);
 
-    int aliasMargin = aliasFm.height()/2;
-    int margin = fm.height()/4;
-
     auto classif = static_cast<const FolderStatusModel *>(index.model())->classify(index);
     if (classif == FolderStatusModel::AddButton) {
+        const int margins = aliasFm.height();  // same as 2*aliasMargin of paint
         QFontMetrics fm(option.font);
         QStyleOptionButton opt;
         static_cast<QStyleOption&>(opt) = option;
@@ -56,7 +65,7 @@ QSize FolderStatusDelegate::sizeHint(const QStyleOptionViewItem & option ,
         return QApplication::style()->sizeFromContents(
                 QStyle::CT_PushButton, &opt, fm.size(Qt::TextSingleLine, opt.text)).
             expandedTo(QApplication::globalStrut())
-            + QSize(0, 2*aliasMargin);
+            + QSize(0, margins);
     }
 
     if (classif != FolderStatusModel::RootFolder) {
@@ -64,6 +73,22 @@ QSize FolderStatusDelegate::sizeHint(const QStyleOptionViewItem & option ,
     }
 
     // calc height
+    int h = rootFolderHeightWithoutErrors(fm, aliasFm);
+
+    // add some space to show an error condition.
+    if( ! qvariant_cast<QStringList>(index.data(FolderErrorMsg)).isEmpty() ) {
+        int margin = fm.height()/4;
+        QStringList errMsgs = qvariant_cast<QStringList>(index.data(FolderErrorMsg));
+        h += margin + errMsgs.count()*fm.height();
+    }
+
+    return QSize( 0, h);
+}
+
+int FolderStatusDelegate::rootFolderHeightWithoutErrors(const QFontMetrics &fm, const QFontMetrics &aliasFm)
+{
+    const int aliasMargin = aliasFm.height()/2;
+    const int margin = fm.height()/4;
 
     int h = aliasMargin;         // margin to top
     h += aliasFm.height();       // alias
@@ -72,20 +97,7 @@ QSize FolderStatusDelegate::sizeHint(const QStyleOptionViewItem & option ,
     h += margin;                 // between local and remote path
     h += fm.height();            // remote path
     h += aliasMargin;            // bottom margin
-
-    // add some space to show an error condition.
-    if( ! qvariant_cast<QStringList>(index.data(FolderErrorMsg)).isEmpty() ) {
-        QStringList errMsgs = qvariant_cast<QStringList>(index.data(FolderErrorMsg));
-        h += aliasMargin*2 + errMsgs.count()*fm.height();
-    }
-
-    if( qvariant_cast<bool>(index.data(AddProgressSpace)) ) {
-        int margin = fm.height()/4;
-        h += (5 * margin); // All the margins
-        h += 2* fm.boundingRect(tr("File")).height();
-    }
-
-    return QSize( 0, h);
+    return h;
 }
 
 void FolderStatusDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
@@ -93,15 +105,14 @@ void FolderStatusDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 {
     QStyledItemDelegate::paint(painter,option,index);
 
-    QFont aliasFont = option.font;
+    auto textAlign = Qt::AlignLeft;
+
+    QFont aliasFont = makeAliasFont(option.font);
     QFont subFont   = option.font;
     QFont errorFont = subFont;
     QFont progressFont = subFont;
 
     progressFont.setPointSize( subFont.pointSize()-2);
-    //font.setPixelSize(font.weight()+);
-    aliasFont.setBold(true);
-    aliasFont.setPointSize( subFont.pointSize()+2 );
 
     QFontMetrics subFm( subFont );
     QFontMetrics aliasFm( aliasFont );
@@ -119,6 +130,7 @@ void FolderStatusDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
         opt.text = addFolderText();
         opt.rect.setWidth(qMin(opt.rect.width(), hint.width()));
         opt.rect.adjust(0, aliasMargin, 0, -aliasMargin);
+        opt.rect = QStyle::visualRect(option.direction, option.rect, opt.rect);
         QApplication::style()->drawControl(QStyle::CE_PushButton, &opt, painter
 #if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
                 , option.widget
@@ -143,10 +155,7 @@ void FolderStatusDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     QString itemString    = qvariant_cast<QString>(index.data(SyncProgressItemString));
     int warningCount      = qvariant_cast<int>(index.data(WarningCount));
     bool syncOngoing      = qvariant_cast<bool>(index.data(SyncRunning));
-
-    // QString statusText = qvariant_cast<QString>(index.data(FolderStatus));
-    bool syncEnabled = index.data(FolderAccountConnected).toBool();
-    // QString syncStatus = syncEnabled? tr( "Enabled" ) : tr( "Disabled" );
+    bool syncEnabled      = qvariant_cast<bool>(index.data(FolderAccountConnected));
 
     QRect iconRect = option.rect;
     QRect aliasRect = option.rect;
@@ -179,8 +188,11 @@ void FolderStatusDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 
     int iconSize = iconRect.width();
 
+    auto optionsButtonVisualRect = optionsButtonRect(option.rect, option.direction);
+
     QPixmap pm = statusIcon.pixmap(iconSize, iconSize, syncEnabled ? QIcon::Normal : QIcon::Disabled );
-    painter->drawPixmap(QPoint(iconRect.left(), iconRect.top()), pm);
+    painter->drawPixmap(QStyle::visualRect(option.direction, option.rect, iconRect).left(),
+                        iconRect.top(), pm);
 
     // only show the warning icon if the sync is running. Otherwise its
     // encoded in the status icon.
@@ -193,6 +205,7 @@ void FolderStatusDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 
         QIcon warnIcon(":/client/resources/warning");
         QPixmap pm = warnIcon.pixmap(16,16, syncEnabled ? QIcon::Normal : QIcon::Disabled );
+        warnRect = QStyle::visualRect(option.direction, option.rect, warnRect);
         painter->drawPixmap(QPoint(warnRect.left(), warnRect.top()),pm );
     }
 
@@ -219,74 +232,68 @@ void FolderStatusDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     }
     QString elidedAlias = aliasFm.elidedText(aliasText, Qt::ElideRight, aliasRect.width());
     painter->setFont(aliasFont);
-    painter->drawText(aliasRect, elidedAlias);
+    painter->drawText(QStyle::visualRect(option.direction, option.rect, aliasRect), textAlign, elidedAlias);
 
-    painter->setFont(subFont);
-    QString elidedRemotePathText;
+    const bool showProgess = !overallString.isEmpty() || !itemString.isEmpty();
+    if(!showProgess) {
+        painter->setFont(subFont);
+        QString elidedRemotePathText = subFm.elidedText(
+                tr("Synchronizing with local folder"),
+                Qt::ElideRight, remotePathRect.width());
+        painter->drawText(QStyle::visualRect(option.direction, option.rect, remotePathRect),
+                          textAlign, elidedRemotePathText);
 
-    if (remotePath.isEmpty() || remotePath == QLatin1String("/")) {
-        elidedRemotePathText = subFm.elidedText(tr("Syncing selected files in your account with"),
-                                                Qt::ElideRight, remotePathRect.width());
-    } else {
-        elidedRemotePathText = subFm.elidedText(tr("Remote path: %1").arg(remotePath),
-                                                Qt::ElideMiddle, remotePathRect.width());
+        QString elidedPathText = subFm.elidedText(pathText, Qt::ElideMiddle, localPathRect.width());
+        painter->drawText(QStyle::visualRect(option.direction, option.rect, localPathRect),
+                          textAlign, elidedPathText);
     }
-    painter->drawText(remotePathRect, elidedRemotePathText);
-
-    QString elidedPathText = subFm.elidedText(pathText, Qt::ElideMiddle, localPathRect.width());
-    painter->drawText(localPathRect, elidedPathText);
 
     // paint an error overlay if there is an error string
 
     int h = iconRect.bottom();
     if( !errorTexts.isEmpty() ) {
-        h += aliasMargin;
+        h += margin;
         QRect errorRect = localPathRect;
         errorRect.setLeft( iconRect.left());
         errorRect.setTop( h );
-        errorRect.setHeight(errorTexts.count() * subFm.height()+aliasMargin);
-        errorRect.setRight( option.rect.right()-aliasMargin );
+        errorRect.setHeight(errorTexts.count() * subFm.height() + 2 * margin);
+        errorRect.setRight( option.rect.right() - margin );
 
         painter->setBrush( QColor(0xbb, 0x4d, 0x4d) );
         painter->setPen( QColor(0xaa, 0xaa, 0xaa));
-        painter->drawRoundedRect( errorRect, 4, 4 );
-
+        painter->drawRoundedRect(QStyle::visualRect(option.direction, option.rect, errorRect),
+                                 4, 4);
         painter->setPen( Qt::white );
         painter->setFont(errorFont);
-        QRect errorTextRect = errorRect;
-        errorTextRect.setLeft( errorTextRect.left()+aliasMargin );
-        errorTextRect.setTop( errorTextRect.top()+aliasMargin/2 );
-
-        int x = errorTextRect.left();
-        int y = errorTextRect.top()+aliasMargin/2 + subFm.height()/2;
+        QRect errorTextRect( errorRect.left() + margin,
+            errorRect.top() + margin,
+            errorRect.width() - 2 * margin,
+            subFm.height() );
 
         foreach( QString eText, errorTexts ) {
-            painter->drawText(x, y, subFm.elidedText( eText, Qt::ElideLeft, errorTextRect.width()-2*aliasMargin));
-            y += subFm.height();
+            painter->drawText(QStyle::visualRect(option.direction, option.rect, errorTextRect), textAlign,
+                              subFm.elidedText( eText, Qt::ElideLeft, errorTextRect.width()));
+            errorTextRect.translate(0, errorTextRect.height());
         }
 
         h = errorRect.bottom();
     }
-    h += aliasMargin;
+    h += margin;
 
     // Sync File Progress Bar: Show it if syncFile is not empty.
-    if( !overallString.isEmpty() || !itemString.isEmpty()) {
+    if (showProgess) {
         int fileNameTextHeight = subFm.boundingRect(tr("File")).height();
-        int barHeight = qMax(fileNameTextHeight, aliasFm.height()+4); ;
-        int overallWidth = option.rect.width()-aliasMargin-nextToIcon;
+        int barHeight = 7; // same height as quota bar
+        int overallWidth = option.rect.right() - aliasMargin - optionsButtonVisualRect.width() - nextToIcon;
 
         painter->save();
 
-        // Sizes-Text
-        QRect octetRect = progressFm.boundingRect(QRect(), 0, overallString );
-        int progressTextWidth = octetRect.width() + 2;
-
         // Overall Progress Bar.
         QRect pBRect;
-        pBRect.setTop( h );
+        pBRect.setTop( remotePathRect.top() );
         pBRect.setLeft( nextToIcon );
         pBRect.setHeight(barHeight);
-        pBRect.setWidth( overallWidth - progressTextWidth - 2 * margin );
+        pBRect.setWidth( overallWidth - 2 * margin );
 
         QStyleOptionProgressBarV2 pBarOpt;
 
@@ -295,30 +302,21 @@ void FolderStatusDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
         pBarOpt.maximum  = 100;
         pBarOpt.progress = overallPercent;
         pBarOpt.orientation = Qt::Horizontal;
-        pBarOpt.rect = pBRect;
+        pBarOpt.rect = QStyle::visualRect(option.direction, option.rect, pBRect);
 
         QApplication::style()->drawControl( QStyle::CE_ProgressBar, &pBarOpt, painter );
 
         // Overall Progress Text
         QRect overallProgressRect;
-        overallProgressRect.setTop( pBRect.top() );
-        overallProgressRect.setHeight( pBRect.height() );
-        overallProgressRect.setLeft( pBRect.right()+margin);
-        overallProgressRect.setWidth( progressTextWidth );
+        overallProgressRect.setTop( pBRect.bottom() + margin );
+        overallProgressRect.setHeight( fileNameTextHeight );
+        overallProgressRect.setLeft( pBRect.left() );
+        overallProgressRect.setWidth( pBRect.width() );
         painter->setFont(progressFont);
 
-        painter->drawText( overallProgressRect, Qt::AlignRight+Qt::AlignVCenter, overallString);
+        painter->drawText(QStyle::visualRect(option.direction, option.rect, overallProgressRect),
+                          Qt::AlignLeft | Qt::AlignVCenter, overallString);
         // painter->drawRect(overallProgressRect);
-
-        // Individual File Progress
-        QRect fileRect;
-        fileRect.setTop( pBRect.bottom() + margin);
-        fileRect.setLeft(pBRect.left());
-        fileRect.setWidth(overallWidth);
-        fileRect.setHeight(fileNameTextHeight);
-        QString elidedText = progressFm.elidedText(itemString, Qt::ElideLeft, fileRect.width());
-
-        painter->drawText( fileRect, Qt::AlignLeft+Qt::AlignVCenter, elidedText);
 
         painter->restore();
     }
@@ -327,13 +325,15 @@ void FolderStatusDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 
     {
         QStyleOptionToolButton btnOpt;
-        btnOpt.text = QLatin1String("...");
+        //btnOpt.text = QLatin1String("...");
         btnOpt.state = option.state;
         btnOpt.state &= ~(QStyle::State_Selected | QStyle::State_HasFocus);
         btnOpt.state |= QStyle::State_Raised;
         btnOpt.arrowType = Qt::NoArrow;
         btnOpt.subControls = QStyle::SC_ToolButton;
-        btnOpt.rect = optionsButtonRect(option.rect);
+        btnOpt.rect = optionsButtonVisualRect;
+        btnOpt.icon = m_moreIcon;
+        btnOpt.iconSize = btnOpt.rect.size();
         QApplication::style()->drawComplexControl( QStyle::CC_ToolButton, &btnOpt, painter );
     }
 }
@@ -344,20 +344,26 @@ bool FolderStatusDelegate::editorEvent ( QEvent * event, QAbstractItemModel * mo
     return QStyledItemDelegate::editorEvent(event, model, option, index);
 }
 
-QRect FolderStatusDelegate::optionsButtonRect(const QRect &within)
+QRect FolderStatusDelegate::optionsButtonRect(QRect within, Qt::LayoutDirection direction)
 {
+    QFont font = QFont();
+    QFont aliasFont = makeAliasFont(font);
+    QFontMetrics fm(font);
+    QFontMetrics aliasFm(aliasFont);
+    within.setHeight(FolderStatusDelegate::rootFolderHeightWithoutErrors(fm, aliasFm));
+
     QStyleOptionToolButton opt;
     opt.text = QLatin1String("...");
-    QFontMetrics fm = QFontMetrics(QFont());
     QSize textSize = fm.size(Qt::TextShowMnemonic, opt.text);
     opt.rect.setSize(textSize);
     QSize size = QApplication::style()->sizeFromContents(QStyle::CT_ToolButton, &opt, textSize).
         expandedTo(QApplication::globalStrut());
 
     int margin = QApplication::style()->pixelMetric(QStyle::PM_DefaultLayoutSpacing);
-    return QRect(QPoint(within.right() - size.width() - margin,
-                        within.top() + within.height()/2 - size.height()/2),
-                 size);
+    QRect r(QPoint(within.right() - size.width() - margin,
+                   within.top() + within.height()/2 - size.height()/2),
+            size);
+    return QStyle::visualRect(direction, within, r);
 }
 
 

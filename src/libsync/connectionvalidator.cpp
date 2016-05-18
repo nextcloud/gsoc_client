@@ -23,6 +23,10 @@
 
 namespace OCC {
 
+// Make sure the timeout for this job is less than how often we get called
+// This makes sure we get tried often enough without "ConnectionValidator already running"
+static qint64 timeoutToUseMsec = qMax(1000, ConnectionValidator::DefaultCallingIntervalMsec - 5*1000);
+
 ConnectionValidator::ConnectionValidator(AccountPtr account, QObject *parent)
     : QObject(parent),
       _account(account),
@@ -41,7 +45,7 @@ QString ConnectionValidator::statusString( Status stat )
         return QLatin1String("NotConfigured");
     case ServerVersionMismatch:
         return QLatin1String("Server Version Mismatch");
-    case CredentialsWrong:
+    case CredentialsMissingOrWrong:
         return QLatin1String("Credentials Wrong");
     case StatusNotFound:
         return QLatin1String("Status not found");
@@ -85,7 +89,11 @@ void ConnectionValidator::systemProxyLookupDone(const QNetworkProxy &proxy) {
         return;
     }
 
-    qDebug() << Q_FUNC_INFO << "Setting QNAM proxy to be system proxy" << printQNetworkProxy(proxy);
+    if (proxy.type() != QNetworkProxy::NoProxy) {
+        qDebug() << "Setting QNAM proxy to be system proxy" << printQNetworkProxy(proxy);
+    } else {
+        qDebug() << "No system proxy set by OS";
+    }
     _account->networkAccessManager()->setProxy(proxy);
 
     slotCheckServerAndAuth();
@@ -95,6 +103,7 @@ void ConnectionValidator::systemProxyLookupDone(const QNetworkProxy &proxy) {
 void ConnectionValidator::slotCheckServerAndAuth()
 {
     CheckServerJob *checkJob = new CheckServerJob(_account, this);
+    checkJob->setTimeout(timeoutToUseMsec);
     checkJob->setIgnoreCredentialFailure(true);
     connect(checkJob, SIGNAL(instanceFound(QUrl,QVariantMap)), SLOT(slotStatusFound(QUrl,QVariantMap)));
     connect(checkJob, SIGNAL(networkError(QNetworkReply*)), SLOT(slotNoStatusFound(QNetworkReply*)));
@@ -113,6 +122,7 @@ void ConnectionValidator::slotStatusFound(const QUrl&url, const QVariantMap &inf
     QString version = CheckServerJob::version(info);
     _account->setServerVersion(version);
 
+    // We cannot deal with servers < 5.0.0
     if (version.contains('.') && version.split('.')[0].toInt() < 5) {
         _errors.append( tr("The configured server for this client is too old") );
         _errors.append( tr("Please update to the latest server and restart the client.") );
@@ -120,19 +130,14 @@ void ConnectionValidator::slotStatusFound(const QUrl&url, const QVariantMap &inf
         return;
     }
 
-    // now check the authentication
-    AbstractCredentials *creds = _account->credentials();
-    if (creds->ready()) {
-        QTimer::singleShot( 0, this, SLOT( checkAuthentication() ));
-    } else {
-        // We can't proceed with the auth check because we don't have credentials.
-        // Fetch them now! Once fetched, a new connectivity check will be
-        // initiated anyway.
-        creds->fetch();
+    // We attempt to work with servers >= 5.0.0 but warn users.
+    // Check usages of Account::serverVersionUnsupported() for details.
 
-        // no result is reported
-        deleteLater();
-    }
+    // now check the authentication
+    if (_account->credentials()->ready())
+        QTimer::singleShot( 0, this, SLOT( checkAuthentication() ));
+    else
+        reportResult( CredentialsMissingOrWrong );
 }
 
 // status.php could not be loaded (network or server issue!).
@@ -169,9 +174,10 @@ void ConnectionValidator::checkAuthentication()
     // continue in slotAuthCheck here :-)
     qDebug() << "# Check whether authenticated propfind works.";
     PropfindJob *job = new PropfindJob(_account, "/", this);
+    job->setTimeout(timeoutToUseMsec);
     job->setProperties(QList<QByteArray>() << "getlastmodified");
     connect(job, SIGNAL(result(QVariantMap)), SLOT(slotAuthSuccess()));
-    connect(job, SIGNAL(networkError(QNetworkReply*)), SLOT(slotAuthFailed(QNetworkReply*)));
+    connect(job, SIGNAL(finishedWithError(QNetworkReply*)), SLOT(slotAuthFailed(QNetworkReply*)));
     job->start();
 }
 
@@ -184,7 +190,7 @@ void ConnectionValidator::slotAuthFailed(QNetworkReply *reply)
         qDebug() <<  reply->error() << reply->errorString();
         qDebug() << "******** Password is wrong!";
         _errors << tr("The provided credentials are not correct");
-        stat = CredentialsWrong;
+        stat = CredentialsMissingOrWrong;
 
     } else if( reply->error() != QNetworkReply::NoError ) {
         _errors << errorMessage(reply->errorString(), reply->readAll());
@@ -213,7 +219,8 @@ void ConnectionValidator::slotAuthSuccess()
 void ConnectionValidator::checkServerCapabilities()
 {
     JsonApiJob *job = new JsonApiJob(_account, QLatin1String("ocs/v1.php/cloud/capabilities"), this);
-    QObject::connect(job, SIGNAL(jsonRecieved(QVariantMap)), this, SLOT(slotCapabilitiesRecieved(QVariantMap)));
+    job->setTimeout(timeoutToUseMsec);
+    QObject::connect(job, SIGNAL(jsonReceived(QVariantMap, int)), this, SLOT(slotCapabilitiesRecieved(QVariantMap)));
     job->start();
 }
 
