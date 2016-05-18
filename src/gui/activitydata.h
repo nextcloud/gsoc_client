@@ -81,8 +81,24 @@ bool operator<( const Activity& rhs, const Activity& lhs );
  * A QList based list of Activities
  */
 
-typedef QList<Activity> ActivityList;
+/**
+ * @brief The ActivityList
+ * @ingroup gui
+ *
+ * A QList based list of Activities
+ */
+class ActivityList:public QList<Activity>
+{
+public:
+    ActivityList();
+    void setAccountName( const QString& name );
+    QString accountName() const;
+    int lastId() const;
 
+private:
+    QString _accountName;
+    int _lastId;
+};
 
 }
 

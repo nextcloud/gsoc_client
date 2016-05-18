@@ -31,5 +31,27 @@ Activity::Identifier Activity::ident() const {
     return Identifier( _id, _accName );
 }
 
+/* ==================================================================== */
+
+ActivityList::ActivityList()
+    :_lastId(0)
+{
+
+}
+
+void ActivityList::setAccountName( const QString& name )
+{
+    _accountName = name;
+}
+
+QString ActivityList::accountName() const
+{
+    return _accountName;
+}
+
+int ActivityList::lastId() const
+{
+    return _lastId;
+}
 
 }
