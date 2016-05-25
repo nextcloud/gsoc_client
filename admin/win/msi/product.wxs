@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='windows-1252'?> 
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'> 
+  <Product Name='$(var.ProductName)' Id='*'
+    UpgradeCode='9667b86a-1d70-11e6-9cd9-172dcee9770c'
+    Language='1033' Version='2.2.0' Manufacturer='$(var.Manufacturer)'> 
+
+    <Package Id='*' InstallerVersion='500' Compressed='yes'
+      InstallScope='perUser' InstallPrivileges='limited' />
+
+    <!-- Precondition checks -->
+    <Condition Message="!(loc.noossupport)"><![CDATA[Installed OR (VersionNT >= 601)]]></Condition>
+    <Condition Message="!(loc.newerinstalled)">NOT NEWERVERSIONDETECTED</Condition>
+
+    <Media Id='1' Cabinet='main.cab' EmbedCab='yes' />
+    <Icon Id="icon.exe" SourceFile="icon.ico"/>
+
+    <SetProperty Id="ProgramFilesFolder" Value="[LocalAppDataFolder]" Before="CostFinalize"><![CDATA[NOT Privileged]]></SetProperty>
+
+    <!-- Add/Remove Programs Info -->
+
+    <!-- Icon in Add/Remove Programs -->
+    <Property Id="ARPPRODUCTICON" Value="ProductIcon"/>
+    <!-- Help Link in Add/Remove Programs -->
+    <Property Id="ARPHELPLINK" Value="$(var.InfoURL)" />
+    <!-- Info Link in Add/Remove Programs -->
+    <Property Id="ARPURLINFOABOUT" Value="http://www.owncloud.org"/>
+    <!-- Update Info in Add/Remove Programs -->
+    <Property Id="ARPURLUPDATEINFO" Value="http://www.owncloud.org/install" />
+    <!-- Remove repair action -->
+    <Property Id="ARPNOREPAIR" Value="yes" Secure="yes" />
+    <!-- Remove modify action -->
+    <Property Id="ARPNOMODIFY" Value="yes" Secure="yes" />
+
+    <Directory Id='TARGETDIR' Name='SourceDir'>
+      <Directory Id="ApplicationProgramsFolder" Name="$(var.ProductName)"/>
+      <Directory Id='ProgramFilesFolder'>  
+	<Directory Id='INSTALLDIR' Name='$(var.InstallDir)'>
+	  <Directory Id="FilesDir"/>
+	</Directory>  
+      </Directory>  
+    </Directory>
+
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="cc1d09ce-1d93-11e6-a534-0bc7b5e11a24">
+	<Shortcut Id="ApplicationStartMenuShortcut" 
+	  Name="$(var.ProductName)" 
+	  Description="The $(var.ProductName) sync client"
+	  Target="[#$(var.MainExecutable)]"
+	  WorkingDirectory="APPLICATIONROOTDIRECTORY"/>
+	<RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\$(var.Manufacturer)\$(var.ProductName)" Name="installed"
+          Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+    <!-- Ensure old version is gone -->
+    <InstallExecuteSequence>
+        <RemoveExistingProducts After="InstallValidate"/>
+    </InstallExecuteSequence>
+
+    <Feature Id='Complete' Level="1">
+      <ComponentGroupRef Id="Files" />
+      <ComponentRef Id="ApplicationShortcut" />
+    </Feature>  
+
+  </Product>  
+</Wix>  

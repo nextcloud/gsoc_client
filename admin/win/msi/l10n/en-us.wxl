@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+  <String Id="noossupport" Overridable="yes">This application is only supported on Windows 7 or higher.</String>
+  <String Id="newerinstalled" Overridable="yes">A newer version of this software is already installed.</String>
+</WixLocalization>
