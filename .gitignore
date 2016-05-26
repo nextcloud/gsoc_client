@@ -161,6 +161,12 @@ UpgradeLog*.htm
 *.mdf
 *.ldf
 
+# WiX/MSI
+
+*.wixpdb
+*.wixobj
+files.wxs # generated
+
 # Microsoft Fakes
 FakesAssemblies/
 
