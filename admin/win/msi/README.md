@@ -1,5 +1,15 @@
-General TODOs
--------------
+# MSI installer using WiX Installer Framework
+
+## Introduction
+
+At this point, the installer assumes a pre-assembled ownCloud installation in
+a subdirectory 'ownCloud' as well as an up to date version of WiX with bash
+wrappers. This will both need to change. The Makefile harvests the files
+and creates a simple installers.
+
+## TODOs
+
+At this point: pretty much everything:
 
 - Add Explorer Integrations
   - VS Runtime (Fetch msm module(s), better: put aside)
@@ -28,8 +38,7 @@ Potentially:
 - WiX Firewall extension to allow port 80/443 outbound?
 - Single out crashreporter into extra component?
 
-Testing Scenarios
------------------
+## Testing Scenarios
 
 - Test Uninstall
 - Test Update
