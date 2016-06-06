@@ -16,6 +16,8 @@
 
 #include <QtCore>
 
+#include "accountstate.h"
+
 namespace OCC {
 /**
  * @brief The ActivityLink class describes actions of an activity
@@ -33,6 +35,32 @@ public:
 };
 
 /* ==================================================================== */
+
+/**
+ * @brief ActivityFile Structure
+ * @ingroup gui
+ *
+ * contains information about a file of an activity.
+ * Can handle the thumbnail and stuff later.
+ */
+class ActivityFile
+{
+public:
+    enum FileType {Unknown, File, Directory};
+    explicit ActivityFile();
+    explicit ActivityFile( const QString& file );
+
+    void setType( FileType type );
+    QString relativePath() const;
+    QString fullPath( const QString _accountName ) const;
+
+private:
+    QString _relFileName;
+    FileType _type;
+};
+
+/* ==================================================================== */
+
 /**
  * @brief Activity Structure
  * @ingroup gui
@@ -49,6 +77,11 @@ public:
         ActivityType,
         NotificationType
     };
+
+    void addFile( const QString& file );
+    void addDirectory( const QString& dir );
+
+    QVector<ActivityFile> files();
 
     Type      _type;
     qlonglong _id;
@@ -68,6 +101,10 @@ public:
 
 
     Identifier ident() const;
+
+private:
+
+    QVector<ActivityFile> _files;
 };
 
 bool operator==( const Activity& rhs, const Activity& lhs );
