@@ -91,13 +91,11 @@ class ActivityList:public QList<Activity>
 {
 public:
     ActivityList();
-    void setAccountName( const QString& name );
-    QString accountName() const;
-    int lastId() const;
+    void setAccountState(AccountState *ast);
+    AccountState* accountState();
 
 private:
-    QString _accountName;
-    int _lastId;
+    AccountState *_ast;
 };
 
 }

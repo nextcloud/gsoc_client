@@ -39,19 +39,21 @@ ActivityList::ActivityList()
 
 }
 
-void ActivityList::setAccountName( const QString& name )
+
+/* ==================================================================== */
+
+ActivityList::ActivityList()
 {
-    _accountName = name;
 }
 
-QString ActivityList::accountName() const
+void ActivityList::setAccountState(AccountState *ast)
 {
-    return _accountName;
+    _ast = ast;
 }
 
-int ActivityList::lastId() const
+AccountState* ActivityList::accountState()
 {
-    return _lastId;
+    return _ast;
 }
 
 }
