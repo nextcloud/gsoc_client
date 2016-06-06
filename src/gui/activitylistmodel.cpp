@@ -26,6 +26,8 @@
 #include "activitydata.h"
 #include "activitylistmodel.h"
 
+#define FETCH_ACTIVITIES_AMOUNT 1000
+
 namespace OCC {
 
 /* ==================================================================== */
@@ -51,7 +53,8 @@ bool ActivitySortProxyModel::lessThan(const QModelIndex &left, const QModelIndex
 /* ==================================================================== */
 
 ActivityListModel::ActivityListModel(QWidget *parent)
-    :QAbstractListModel(parent)
+    :QAbstractListModel(parent),
+      _fetchEntriesAmount(FETCH_ACTIVITIES_AMOUNT)
 {
 }
 
@@ -120,48 +123,40 @@ int ActivityListModel::rowCount(const QModelIndex&) const
     return cnt;
 }
 
-// current strategy: Fetch 100 items per Account
-// ATTENTION: This method is const and thus it is not possible to modify
-// the _activityLists hash or so. Doesn't make it easier...
-bool ActivityListModel::canFetchMore(const QModelIndex& ) const
+void ActivityListModel::startFetchJob(AccountState* ast)
 {
-    // if there are no activitylists registered yet, always
-    // let fetch more.
-    if( _activityLists.size() == 0 &&
-            AccountManager::instance()->accounts().count() > 0 ) {
-        return true;
-    }
-    int readyToFetch = 0;
-    foreach( ActivityList list, _activityLists) {
-        AccountStatePtr ast = AccountManager::instance()->account(list.accountName());
-
-        if( ast && ast->isConnected()
-                && list.count() == 0
-                && ! _currentlyFetching.contains(ast.data()) ) {
-            readyToFetch++;
-        }
-    }
-
-    return readyToFetch > 0;
-}
-
-void ActivityListModel::startFetchJob(AccountState* s)
-{
-    if( !s->isConnected() ) {
+    if( !ast->isConnected() || _currentlyFetching.contains(ast)) {
         return;
     }
-    JsonApiJob *job = new JsonApiJob(s->account(), QLatin1String("ocs/v1.php/cloud/activity"), this);
+
+    int activityListIndx = activityListIndxForAccountState(ast);
+    ActivityList activityList = _activityLists.at(activityListIndx);
+
+    // remove entries that might exist in this list.
+    int startItem = 0;
+    for( int i = 0; i < activityListIndx; i++ ) {
+        ActivityList al = _activityLists.at(i);
+        startItem += al.count();
+    }
+
+    beginRemoveRows(QModelIndex(), startItem, activityList.count() );
+    activityList.clear();
+    endRemoveRows();
+
+    _activityLists[activityListIndx] = activityList;
+
+    // start a new fetch job.
+    JsonApiJob *job = new JsonApiJob(ast->account(), QLatin1String("ocs/v1.php/cloud/activity"), this);
     QObject::connect(job, SIGNAL(jsonReceived(QVariantMap, int)),
                      this, SLOT(slotActivitiesReceived(QVariantMap, int)));
-    job->setProperty("AccountStatePtr", QVariant::fromValue<AccountState*>(s));
-
+    job->setProperty("AccountStatePtr", QVariant::fromValue<AccountState*>(ast));
     QList< QPair<QString,QString> > params;
-    params.append(qMakePair(QString::fromLatin1("page"),     QString::fromLatin1("0")));
-    params.append(qMakePair(QString::fromLatin1("pagesize"), QString::fromLatin1("100")));
+    params.append(qMakePair(QString::fromLatin1("start"), QLatin1String("0")));
+    params.append(qMakePair(QString::fromLatin1("count"), QString::number(_fetchEntriesAmount)));
     job->addQueryParams(params);
 
-    _currentlyFetching.insert(s);
-    qDebug() << Q_FUNC_INFO << "Start fetching activities for " << s->account()->displayName();
+    _currentlyFetching.insert(ast);
+    qDebug() << Q_FUNC_INFO << "Start fetching activities for " << ast->account()->displayName();
     job->start();
 }
 
@@ -169,12 +164,14 @@ void ActivityListModel::slotActivitiesReceived(const QVariantMap& json, int stat
 {
     auto activities = json.value("ocs").toMap().value("data").toList();
 
-    ActivityList list;
     AccountState* ast = qvariant_cast<AccountState*>(sender()->property("AccountStatePtr"));
+
     _currentlyFetching.remove(ast);
 
-    foreach( auto activ, activities ) {
-        auto json = activ.toMap();
+    // Read the new entries into a temporary list
+    ActivityList list;
+    foreach( auto activity, activities ) {
+        auto json = activity.toMap();
 
         Activity a;
         a._type = Activity::ActivityType;
@@ -190,73 +187,47 @@ void ActivityListModel::slotActivitiesReceived(const QVariantMap& json, int stat
 
     emit activityJobStatusCode(ast, statusCode);
 
-    addNewActivities(list);
+    addNewActivities(ast, list);
 }
 
 
-void ActivityListModel::addNewActivities(const ActivityList& list)
+void ActivityListModel::addNewActivities(AccountState* ast, const ActivityList& newItemsList)
 {
     int startItem = 0; // the start number of items to delete in the virtual overall list
-    int listIdx = 0;   // the index of the list that is to replace.
+    int activityListIndx = activityListIndxForAccountState(ast);
+    Q_ASSERT(activityListIndx != -1);
 
-    // check the existing list of activity lists if the incoming account
-    // is already in there.
-    foreach( ActivityList oldList, _activityLists ) {
-        if( oldList.accountName() == list.accountName() ) {
-            // listIndx contains the array index of the list and startItem
-            // the start item of the virtual overall list.
-            break;
-        }
-        startItem += oldList.count(); // add the number of items in the list
-        listIdx++;
-    }
+    ActivityList accountList = _activityLists.at(activityListIndx);
 
-    // if the activity list for this account was already known, remove its
-    // entry first and than insert the new list.
-    if( listIdx < _activityLists.count()-1 ) {
-        int removeItemCount = _activityLists.at(listIdx).count();
-        beginRemoveRows(QModelIndex(), startItem, removeItemCount);
-        _activityLists.value(listIdx).clear();
-        endRemoveRows();
+    for( int i = 0; i < activityListIndx; i++ ) {
+        ActivityList li = _activityLists.at(i);
+        startItem += li.count();
     }
 
     // insert the new list
-    beginInsertRows(QModelIndex(), startItem, list.count() );
-    if( listIdx == _activityLists.count() ) {
-        // not yet in the list of activity lists
-        _activityLists.append(list);
-    } else {
-        _activityLists[listIdx] = list;
-    }
+    beginInsertRows(QModelIndex(), startItem, newItemsList.count() );
+    accountList.append(newItemsList);
     endInsertRows();
 
+    _activityLists[activityListIndx] = accountList;
 }
 
-void ActivityListModel::fetchMore(const QModelIndex &)
+int ActivityListModel::activityListIndxForAccountState(AccountState *ast)
 {
-    QList<AccountStatePtr> accounts = AccountManager::instance()->accounts();
+    int i;
 
-    foreach ( AccountStatePtr ast, accounts) {
-        // For each account from the account manager, check if it has already
-        // an entry in the models list, if not, add one and call the fetch
-        // job.
-        bool found = false;
-        foreach (ActivityList list, _activityLists) {
-            if( AccountManager::instance()->account(list.accountName())==ast.data()) {
-                found = true;
-                break;
-            }
-        }
-
-        if( !found ) {
-            // add new list to the activity lists
-            ActivityList alist;
-            alist.setAccountName(ast->account()->displayName());
-            _activityLists.append(alist);
-            startFetchJob(ast.data());
-
-        }
+    for( i = 0; i < _activityLists.count(); i++ ) {
+        ActivityList li = _activityLists.at(i);
+        if( li.accountState() == ast )
+            return i;
     }
+    // if the AccountState was not found yet, add it to the list
+    if( i == _activityLists.count() ) {
+        ActivityList li;
+        li.setAccountState(ast);
+        _activityLists.append(li);
+    }
+    return i;
 }
 
 void ActivityListModel::slotRefreshActivity(AccountState *ast)
@@ -269,24 +240,18 @@ void ActivityListModel::slotRefreshActivity(AccountState *ast)
 
 void ActivityListModel::slotRemoveAccount(AccountState *ast )
 {
-    int i;
-    int removeIndx = -1;
+    int removeIndx = activityListIndxForAccountState(ast);
+
     int startRow = 0;
-    for( i = 0; i < _activityLists.count(); i++) {
+    for( int i = 0; i < removeIndx; i++) {
         ActivityList al = _activityLists.at(i);
-        if( al.accountName() == ast->account()->displayName() ) {
-            removeIndx = i;
-            break;
-        }
         startRow += al.count();
     }
 
-    if( removeIndx > -1 ) {
-        beginRemoveRows(QModelIndex(), startRow, startRow+_activityLists.at(removeIndx).count());
-        _activityLists.removeAt(removeIndx);
-        endRemoveRows();
-        _currentlyFetching.remove(ast);
-    }
+    beginRemoveRows(QModelIndex(), startRow, startRow+_activityLists.at(removeIndx).count());
+    _activityLists.removeAt(removeIndx);
+    endRemoveRows();
+    _currentlyFetching.remove(ast);
 }
 
 // combine all activities into one big result list

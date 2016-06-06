@@ -17,10 +17,9 @@
 #include <QtCore>
 
 #include "activitydata.h"
+#include "accountstate.h"
 
 namespace OCC {
-
-class AccountState;
 
 class ActivitySortProxyModel : public QSortFilterProxyModel
 {
@@ -50,9 +49,6 @@ public:
     QVariant data(const QModelIndex &index, int role) const Q_DECL_OVERRIDE;
     int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
 
-    bool canFetchMore(const QModelIndex& ) const Q_DECL_OVERRIDE;
-    void fetchMore(const QModelIndex&) Q_DECL_OVERRIDE;
-
     ActivityList activityList();
     Activity findItem(int indx) const;
 
@@ -67,13 +63,15 @@ signals:
     void activityJobStatusCode(AccountState* ast, int statusCode);
 
 private:
-    void addNewActivities(const ActivityList& list);
-    void startFetchJob(AccountState* s);
+    void addNewActivities(AccountState* ast, const ActivityList& newItemsList);
+    void startFetchJob(AccountState *ast);
     void combineActivityLists();
+    int activityListIndxForAccountState(AccountState *ast );
 
     QList<ActivityList> _activityLists;
     ActivityList _finalList;
     QSet<AccountState*> _currentlyFetching;
+    int _fetchEntriesAmount;
 };
 
 }
