@@ -15,9 +15,40 @@
 
 #pragma once
 #include "creds/httpcredentials.h"
+#include <QPointer>
 
 namespace OCC
 {
+
+
+class AssyncAuth : public QObject
+{
+    Q_OBJECT
+public:
+    AssyncAuth(Account *account, QObject *parent)
+        : QObject(parent), _account(account)
+    {}
+    ~AssyncAuth();
+
+    enum Result { Waiting, NotSupported, LoggedIn };
+    void start();
+public slots:
+    void startFinished();
+    void poll();
+    void pollFinished();
+
+signals:
+    void result(AssyncAuth::Result r, const QString &token);
+private:
+
+    Account *_account;
+    QUrl _pollUrl;
+    // Makes sure the reply is destroyed when this object is closed
+    QPointer<QNetworkReply> _reply;
+//    State _state;
+};
+
+
 
 /**
  * @brief The HttpCredentialsGui class
@@ -29,9 +60,13 @@ public:
     explicit HttpCredentialsGui() : HttpCredentials() {}
     HttpCredentialsGui(const QString& user, const QString& password, const QString& certificatePath, const QString& certificatePasswd) : HttpCredentials(user, password, certificatePath, certificatePasswd) {}
     void askFromUser() Q_DECL_OVERRIDE;
-    Q_INVOKABLE void askFromUserAsync();
 
     static QString requestAppPasswordText(const Account *account);
+private slots:
+    void asyncAuthResult(AssyncAuth::Result, const QString &token);
+    void showDialog();
+private:
+    QScopedPointer<AssyncAuth> _asyncAuth;
 };
 
 } // namespace OCC

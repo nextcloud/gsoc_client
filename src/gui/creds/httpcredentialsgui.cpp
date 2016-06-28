@@ -15,9 +15,14 @@
 
 #include <QInputDialog>
 #include <QLabel>
+#include <QDesktopServices>
+#include <QNetworkReply>
+#include <QTimer>
+#include <QBuffer>
 #include "creds/httpcredentialsgui.h"
 #include "theme.h"
 #include "account.h"
+#include <json.h>
 
 using namespace QKeychain;
 
@@ -26,11 +31,28 @@ namespace OCC
 
 void HttpCredentialsGui::askFromUser()
 {
-    // The rest of the code assumes that this will be done asynchronously
-    QMetaObject::invokeMethod(this, "askFromUserAsync", Qt::QueuedConnection);
+    _asyncAuth.reset(new AssyncAuth(_account, this));
+    connect(_asyncAuth.data(), SIGNAL(result(AssyncAuth::Result,QString)),
+            this, SLOT(asyncAuthResult(AssyncAuth::Result,QString)));
+    _asyncAuth->start();
 }
 
-void HttpCredentialsGui::askFromUserAsync()
+void HttpCredentialsGui::asyncAuthResult(AssyncAuth::Result r, const QString& token)
+{
+    if (r == AssyncAuth::NotSupported) {
+        // We will re-enter the event loop, so better wait the next iteration
+        QMetaObject::invokeMethod(this, "showDialog", Qt::QueuedConnection);
+        return;
+    }
+    if (r == AssyncAuth::LoggedIn) {
+        _password = token;
+        _ready = true;
+        persist();
+    }
+    emit asked();
+}
+
+void HttpCredentialsGui::showDialog()
 {
     QString msg = tr("Please enter %1 password:<br>"
                      "<br>"
@@ -77,6 +99,100 @@ QString HttpCredentialsGui::requestAppPasswordText(const Account* account)
 
     return tr("<a href=\"%1\">Click here</a> to request an app password from the web interface.")
         .arg(account->url().toString() + QLatin1String("/index.php/settings/personal?section=apppasswords"));
+}
+
+AssyncAuth::~AssyncAuth()
+{
+    delete _reply;
+}
+
+void AssyncAuth::start()
+{
+    QNetworkRequest req;
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+
+    auto buffer = new QBuffer();
+    buffer->setData("name=" + Utility::userAgentString().toPercentEncoding());
+    QNetworkReply *reply = _account->davRequest("POST",
+            Account::concatUrlPath(_account->url(), QLatin1String("/index.php/auth/start")),
+            req, buffer);
+    QObject::connect(reply, SIGNAL(finished()), this, SLOT(startFinished()));
+    buffer->setParent(reply);
+    QTimer::singleShot(30*1000, reply, SLOT(abort()));
+    _reply = reply;
+
+    // FIXME! timeout
+
+//     _state = AssyncAuth::QueryUrlState;
+}
+
+// We get a reply from /index.php/auth/start
+void AssyncAuth::startFinished()
+{
+    auto reply = qobject_cast<QNetworkReply *>(sender());
+    Q_ASSERT(reply);
+    reply->deleteLater();
+
+    if (reply->error() != QNetworkReply::NoError) {
+        qDebug() << "auth/start returned error" << reply->errorString();
+
+        // FIXME! we should make a difference between network errors and file not found error.
+        emit result(NotSupported, QString());
+        return;
+    }
+
+
+    const QString replyData = reply->readAll();
+
+    bool success;
+    QVariantMap json = QtJson::parse(replyData, success).toMap();
+    if (!success) {
+        qWarning() << "could not parse json" << replyData;
+        emit result(NotSupported, QString());
+        return;
+    }
+    auto clientUrl = QUrl::fromEncoded(json[QLatin1String("clientUrl")].toByteArray());
+    _pollUrl = QUrl::fromEncoded(json[QLatin1String("pollUrl")].toByteArray());
+    if (!_pollUrl.isValid() || !clientUrl.isValid()) {
+        qWarning() << "invalid urls from server" << json;
+        emit result(NotSupported, QString());
+        return;
+    }
+    if (!QDesktopServices::openUrl(clientUrl)) {
+        // We cannot open the browser, then we claim we don't support it.
+        emit result(NotSupported, QString());
+        return;
+    }
+    QTimer::singleShot(1000, this, SLOT(poll()));
+}
+
+void AssyncAuth::poll()
+{
+    QNetworkReply *reply = _account->davRequest("POST", _pollUrl, QNetworkRequest());
+    QObject::connect(reply, SIGNAL(finished()), this, SLOT(pollFinished()));
+    QTimer::singleShot(5*60*1000, reply, SLOT(abort()));
+    _reply = reply;
+}
+
+void AssyncAuth::pollFinished()
+{
+    auto reply = qobject_cast<QNetworkReply *>(sender());
+    Q_ASSERT(reply);
+
+    const QString replyData = reply->readAll();
+    reply->deleteLater();
+
+    bool success;
+    QVariantMap json = QtJson::parse(replyData, success).toMap();
+    qWarning() << json << success;
+    if (!success || json["status"].toUInt() != 1) {
+        QTimer::singleShot(4*1000, this, SLOT(poll()));
+        return;
+    }
+
+    auto token = json["token"].toString();
+
+    emit result(LoggedIn, token);
 }
 
 

@@ -17,6 +17,7 @@
 #define MIRALL_CREDS_HTTP_CREDENTIALS_H
 
 #include <QMap>
+#include <QUrl>
 
 #include "creds/abstractcredentials.h"
 
@@ -74,6 +75,7 @@ private:
     QString _certificatePath;
     QString _certificatePasswd;
 };
+
 
 } // namespace OCC
 
