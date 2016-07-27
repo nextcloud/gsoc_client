@@ -64,7 +64,8 @@ ActivityWidget::ActivityWidget(QWidget *parent) :
 #endif
 
     _model = new ActivitySortProxyModel(this);
-    _model->setSourceModel(new ActivityListModel);
+    ActivityListModel *rawModel = new ActivityListModel;
+    _model->setSourceModel(rawModel);
 
     ActivityItemDelegate *delegate = new ActivityItemDelegate;
     delegate->setParent(this);
@@ -72,8 +73,9 @@ ActivityWidget::ActivityWidget(QWidget *parent) :
     _ui->_activityList->setAlternatingRowColors(true);
     _ui->_activityList->setModel(_model);
 
-    _ui->_notifyLabel->hide();
-    _ui->_notifyScroll->hide();
+    _ui->_filterEdit->setClearButtonEnabled(true);
+    connect(_ui->_filterEdit, SIGNAL(textChanged(QString)),
+            SLOT(slotFilterTextChanged(QString)));
 
     // Create a widget container for the notifications. The ui file defines
     // a scroll area that get a widget with a layout as children
@@ -81,12 +83,10 @@ ActivityWidget::ActivityWidget(QWidget *parent) :
     _notificationsLayout = new QVBoxLayout;
     w->setLayout(_notificationsLayout);
     _notificationsLayout->setAlignment(Qt::AlignTop);
-    _ui->_notifyScroll->setAlignment(Qt::AlignTop);
-    _ui->_notifyScroll->setWidget(w);
 
     showLabels();
 
-    connect(_model, SIGNAL(activityJobStatusCode(AccountState*,int)),
+    connect(rawModel, SIGNAL(activityJobStatusCode(AccountState*,int)),
             this, SLOT(slotAccountActivityStatus(AccountState*,int)));
 
     _copyBtn = _ui->_dialogButtonBox->addButton(tr("Copy"), QDialogButtonBox::ActionRole);
@@ -107,6 +107,11 @@ ActivityWidget::~ActivityWidget()
     delete _ui;
 }
 
+void ActivityWidget::slotFilterTextChanged(const QString& exp)
+{
+    _model->setFilterRegExp(QRegExp(exp, Qt::CaseInsensitive, QRegExp::RegExp));
+}
+
 void ActivityWidget::slotRefreshActivities(AccountState *ptr)
 {
     qobject_cast<ActivityListModel*>(_model->sourceModel())->slotRefreshActivity(ptr);
@@ -122,7 +127,7 @@ void ActivityWidget::slotRefreshNotifications(AccountState *ptr)
         connect(snh, SIGNAL(newNotificationList(ActivityList)), this,
                 SLOT(slotBuildNotificationDisplay(ActivityList)));
 
-        snh->slotFetchNotifications(ptr);
+        snh->fetchNotifications(ptr);
     } else {
         qDebug() << Q_FUNC_INFO << "========> notification request counter not zero.";
     }
@@ -135,19 +140,15 @@ void ActivityWidget::slotRemoveAccount( AccountState *ptr )
 
 void ActivityWidget::showLabels()
 {
-    QString t = tr("Server Activities");
-    _ui->_headerLabel->setTextFormat(Qt::RichText);
-    _ui->_headerLabel->setText(t);
+    QString t;
 
-    _ui->_notifyLabel->setText(tr("Action Required: Notifications"));
-
-    t.clear();
     QSetIterator<QString> i(_accountsWithoutActivities);
     while (i.hasNext() ) {
         t.append( tr("<br/>Account %1 does not have activities enabled.").arg(i.next()));
     }
     _ui->_bottomLabel->setTextFormat(Qt::RichText);
     _ui->_bottomLabel->setText(t);
+    _ui->_bottomLabel->setVisible(!t.isEmpty());
 }
 
 void ActivityWidget::slotAccountActivityStatus(AccountState *ast, int statusCode)
@@ -221,11 +222,9 @@ void ActivityWidget::checkActivityTabVisibility()
             _accountsWithoutActivities.count() != accountCount;
     bool hasNotifications = !_widgetForNotifId.isEmpty();
 
-    _ui->_headerLabel->setVisible( hasAccountsWithActivity );
+    _ui->_filterLabel->setVisible( hasAccountsWithActivity );
     _ui->_activityList->setVisible( hasAccountsWithActivity );
-
-    _ui->_notifyLabel->setVisible( hasNotifications );
-    _ui->_notifyScroll->setVisible( hasNotifications );
+    _ui->_filterEdit->setVisible(hasAccountsWithActivity);
 
     emit hideActivityTab(!hasAccountsWithActivity && !hasNotifications);
 }
@@ -272,10 +271,6 @@ void ActivityWidget::slotBuildNotificationDisplay(const ActivityList& list)
                     this, SLOT(slotRequestCleanupAndBlacklist(Activity)));
 
             _notificationsLayout->addWidget(widget);
-            // _ui->_notifyScroll->setMinimumHeight( widget->height());
-#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
-            _ui->_notifyScroll->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContentsOnFirstShow);
-#endif
             _widgetForNotifId[activity.ident()] = widget;
             newNotificationShown = true;
         }
@@ -502,12 +497,6 @@ void ActivityWidget::slotCheckToCleanWidgets()
 
     if( _widgetsToRemove.isEmpty() ) {
         _removeTimer.stop();
-    }
-
-    // check to see if the whole notification pane should be hidden
-    if( _widgetForNotifId.isEmpty() ) {
-        _ui->_notifyLabel->setHidden(true);
-        _ui->_notifyScroll->setHidden(true);
     }
 }
 

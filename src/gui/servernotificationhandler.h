@@ -26,12 +26,12 @@ class ServerNotificationHandler : public QObject
     Q_OBJECT
 public:
     explicit ServerNotificationHandler(QObject *parent = 0);
+    bool fetchNotifications(AccountState *ptr);
 
 signals:
     void newNotificationList(ActivityList);
 
 public slots:
-    void slotFetchNotifications(AccountState *ptr);
 
 private slots:
     void slotNotificationsReceived(const QVariantMap& json, int statusCode);

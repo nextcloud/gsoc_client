@@ -85,6 +85,7 @@ signals:
     void newNotification();
 
 private slots:
+    void slotFilterTextChanged(const QString& exp);
     void slotBuildNotificationDisplay(const ActivityList& list);
     void slotSendNotificationRequest(const QString &accountName, const QString& link, const QByteArray &verb);
     void slotNotifyNetworkError( QNetworkReply* );
