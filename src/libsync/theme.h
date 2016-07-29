@@ -37,13 +37,6 @@ class OWNCLOUDSYNC_EXPORT Theme : public QObject
 {
     Q_OBJECT
 public:
-    enum CustomMediaType {
-        oCSetupTop,      // ownCloud connect page
-        oCSetupSide,
-        oCSetupBottom,
-        oCSetupResultTop // ownCloud connect result page
-    };
-
     /* returns a singleton instance. */
     static Theme* instance();
 
@@ -155,13 +148,6 @@ public:
     QString systrayIconFlavor(bool mono) const;
 
 #ifndef TOKEN_AUTH_ONLY
-    /**
-     * Override to use a string or a custom image name.
-     * The default implementation will try to look up
-     * :/client/theme/<type>.png
-     */
-    virtual QVariant customMedia( CustomMediaType type );
-
     /** @return color for the setup wizard */
     virtual QColor wizardHeaderTitleColor() const;
 

@@ -296,41 +296,6 @@ QString Theme::about() const
     return re;
 }
 
-#ifndef TOKEN_AUTH_ONLY
-QVariant Theme::customMedia( CustomMediaType type )
-{
-    QVariant re;
-    QString key;
-
-    switch ( type )
-    {
-    case oCSetupTop:
-        key = QLatin1String("oCSetupTop");
-        break;
-    case oCSetupSide:
-        key = QLatin1String("oCSetupSide");
-        break;
-    case oCSetupBottom:
-        key = QLatin1String("oCSetupBottom");
-        break;
-    case oCSetupResultTop:
-        key = QLatin1String("oCSetupResultTop");
-        break;
-    }
-
-    QString imgPath = QString::fromLatin1(":/client/theme/colored/%1.png").arg(key);
-    if ( QFile::exists( imgPath ) ) {
-        QPixmap pix( imgPath );
-        if( pix.isNull() ) {
-            // pixmap loading hasn't succeeded. We take the text instead.
-            re.setValue( key );
-        } else {
-            re.setValue( pix );
-        }
-    }
-    return re;
-}
-
 QIcon Theme::syncStateIcon( SyncResult::Status status, bool sysTray ) const
 {
     // FIXME: Mind the size!
@@ -401,7 +366,6 @@ QPixmap Theme::wizardHeaderBanner() const
     pix.fill(wizardHeaderBackgroundColor());
     return pix;
 }
-#endif
 
 bool Theme::wizardSelectiveSyncDefaultNothing() const
 {
