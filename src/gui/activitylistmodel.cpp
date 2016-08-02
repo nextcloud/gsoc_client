@@ -34,7 +34,7 @@ namespace OCC {
 ActivitySortProxyModel::ActivitySortProxyModel(QObject *parent)
     :QSortFilterProxyModel(parent)
 {
-
+    setFilterRole(ActivityItemDelegate::ActionTextRole);
 }
 
 bool ActivitySortProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
