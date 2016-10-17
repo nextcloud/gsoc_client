@@ -25,6 +25,7 @@ namespace OCC {
 
 class OwncloudSetupPage;
 class OwncloudHttpCredsPage;
+class OwncloudBrowserCredsPage;
 #ifndef NO_SHIBBOLETH
 class OwncloudShibbolethCredsPage;
 #endif
@@ -90,6 +91,7 @@ private:
     AccountPtr _account;
     OwncloudSetupPage* _setupPage;
     OwncloudHttpCredsPage* _httpCredsPage;
+    OwncloudBrowserCredsPage* _browserCredsPage;
 #ifndef NO_SHIBBOLETH
     OwncloudShibbolethCredsPage* _shibbolethCredsPage;
 #endif
@@ -98,6 +100,8 @@ private:
     AbstractCredentialsWizardPage* _credentialsPage;
 
     QStringList _setupLog;
+
+    friend class OwncloudSetupWizard;
 };
 
 } // namespace OCC

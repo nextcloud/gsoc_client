@@ -39,6 +39,9 @@ void HttpCredentialsGui::askFromUser()
 
 void HttpCredentialsGui::asyncAuthResult(AsyncAuth::Result r, const QString& token)
 {
+    if (r == AsyncAuth::Waiting) {
+        return;
+    }
     if (r == AsyncAuth::NotSupported) {
         // We will re-enter the event loop, so better wait the next iteration
         QMetaObject::invokeMethod(this, "showDialog", Qt::QueuedConnection);
@@ -147,7 +150,7 @@ void AsyncAuth::startFinished()
     bool success;
     QVariantMap json = QtJson::parse(replyData, success).toMap();
     if (!success) {
-        qWarning() << "could not parse json" << replyData;
+        qDebug() << "could not parse json" << replyData;
         emit result(NotSupported, QString());
         return;
     }
@@ -163,6 +166,7 @@ void AsyncAuth::startFinished()
         emit result(NotSupported, QString());
         return;
     }
+    emit result(Waiting, QString());
     QTimer::singleShot(1000, this, SLOT(poll()));
 }
 
@@ -184,7 +188,6 @@ void AsyncAuth::pollFinished()
 
     bool success;
     QVariantMap json = QtJson::parse(replyData, success).toMap();
-    qWarning() << json << success;
     if (!success || json["status"].toUInt() != 1) {
         QTimer::singleShot(4*1000, this, SLOT(poll()));
         return;

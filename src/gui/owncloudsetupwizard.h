@@ -26,6 +26,7 @@
 #include "networkjobs.h"
 
 #include "wizard/owncloudwizardcommon.h"
+#include "creds/httpcredentialsgui.h"
 
 namespace OCC {
 
@@ -80,6 +81,7 @@ private slots:
     void slotCreateRemoteFolderFinished(QNetworkReply::NetworkError);
     void slotAssistantFinished( int );
     void slotSkipFolderConfiguration();
+    void asyncAuthResult(AsyncAuth::Result, const QString &);
 
 private:
     explicit OwncloudSetupWizard(QObject *parent = 0 );
@@ -95,6 +97,7 @@ private:
     OwncloudWizard* _ocWizard;
     QString _initLocalFolder;
     QString _remoteFolder;
+    QScopedPointer<AsyncAuth> _asyncAuth;
 };
 
 }

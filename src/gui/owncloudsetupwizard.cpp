@@ -35,6 +35,8 @@
 #include "creds/credentialsfactory.h"
 #include "creds/abstractcredentials.h"
 #include "creds/dummycredentials.h"
+#include "creds/httpcredentialsgui.h"
+#include "wizard/owncloudbrowsercredspage.h"
 
 namespace OCC {
 
@@ -193,11 +195,31 @@ void OwncloudSetupWizard::slotOwnCloudFoundAuth(const QUrl& url, const QVariantM
         qDebug() << Q_FUNC_INFO << " was redirected to" << redirectedUrl.toString();
     }
 
-    DetermineAuthTypeJob *job = new DetermineAuthTypeJob(_ocWizard->account(), this);
-    job->setIgnoreCredentialFailure(true);
-    connect(job, SIGNAL(authType(WizardCommon::AuthType)),
-            _ocWizard, SLOT(setAuthType(WizardCommon::AuthType)));
-    job->start();
+    /* Start by trying a browser authentication if the server supports it.
+     * If it does not support it, asyncAuthResult will fallback to the legacy wizard page */
+
+    _asyncAuth.reset(new AsyncAuth(_ocWizard->account().data(), this));
+    connect(_asyncAuth.data(), SIGNAL(result(AsyncAuth::Result,QString)),
+            this, SLOT(asyncAuthResult(AsyncAuth::Result,QString)));
+    _asyncAuth->start();
+}
+
+void OwncloudSetupWizard::asyncAuthResult(AsyncAuth::Result r,const QString &token)
+{
+    if (r == AsyncAuth::NotSupported) {
+        _asyncAuth.reset(0);
+        DetermineAuthTypeJob *job = new DetermineAuthTypeJob(_ocWizard->account(), this);
+        job->setIgnoreCredentialFailure(true);
+        connect(job, SIGNAL(authType(WizardCommon::AuthType)),
+                _ocWizard, SLOT(setAuthType(WizardCommon::AuthType)));
+        job->start();
+    } else if (r == AsyncAuth::Waiting) {
+        _ocWizard->setAuthType(WizardCommon::Browser);
+    } else if (r == AsyncAuth::LoggedIn) {
+        _ocWizard->_browserCredsPage->_token = token;
+        slotConnectToOCUrl(_ocWizard->account()->url().toString());
+    }
+
 }
 
 void OwncloudSetupWizard::slotNoOwnCloudFoundAuth(QNetworkReply *reply)

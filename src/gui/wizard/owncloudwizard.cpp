@@ -20,6 +20,7 @@
 #include "wizard/owncloudwizard.h"
 #include "wizard/owncloudsetuppage.h"
 #include "wizard/owncloudhttpcredspage.h"
+#include "wizard/owncloudbrowsercredspage.h"
 #ifndef NO_SHIBBOLETH
 #include "wizard/owncloudshibbolethcredspage.h"
 #endif
@@ -41,6 +42,7 @@ OwncloudWizard::OwncloudWizard(QWidget *parent)
       _account(0),
       _setupPage(new OwncloudSetupPage(this)),
       _httpCredsPage(new OwncloudHttpCredsPage(this)),
+      _browserCredsPage(new OwncloudBrowserCredsPage),
 #ifndef NO_SHIBBOLETH
       _shibbolethCredsPage(new OwncloudShibbolethCredsPage),
 #endif
@@ -52,6 +54,7 @@ OwncloudWizard::OwncloudWizard(QWidget *parent)
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     setPage(WizardCommon::Page_ServerSetup, _setupPage);
     setPage(WizardCommon::Page_HttpCreds, _httpCredsPage);
+    setPage(WizardCommon::Page_BrowserCreds, _browserCredsPage);
 #ifndef NO_SHIBBOLETH
     setPage(WizardCommon::Page_ShibbolethCreds, _shibbolethCredsPage);
 #endif
@@ -136,6 +139,10 @@ void OwncloudWizard::successfulStep()
         _httpCredsPage->setConnected();
         break;
 
+    case WizardCommon::Page_BrowserCreds:
+        _browserCredsPage->setConnected();
+        break;
+
 #ifndef NO_SHIBBOLETH
     case WizardCommon::Page_ShibbolethCreds:
         _shibbolethCredsPage->setConnected();
@@ -163,7 +170,9 @@ void OwncloudWizard::setAuthType(WizardCommon::AuthType type)
     _credentialsPage = _shibbolethCredsPage;
   } else
 #endif
-  {
+  if (type == WizardCommon::Browser) {
+    _credentialsPage = _browserCredsPage;
+  } else {
     _credentialsPage = _httpCredsPage;
   }
   next();

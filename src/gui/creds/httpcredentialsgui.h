@@ -27,7 +27,7 @@ class AsyncAuth : public QObject
 public:
     AsyncAuth(Account *account, QObject *parent)
         : QObject(parent), _account(account)
-    {}
+    { }
     ~AsyncAuth();
 
     enum Result { Waiting, NotSupported, LoggedIn };
@@ -38,7 +38,11 @@ public slots:
     void pollFinished();
 
 signals:
-    void result(AsyncAuth::Result r, const QString &token);
+    /**
+     * The state has changed.
+     * when logged in, token has the value of the token.
+     */
+    void result(AsyncAuth::Result result, const QString &token);
 private:
 
     Account *_account;
