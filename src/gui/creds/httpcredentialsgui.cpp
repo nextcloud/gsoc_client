@@ -31,20 +31,20 @@ namespace OCC
 
 void HttpCredentialsGui::askFromUser()
 {
-    _asyncAuth.reset(new AssyncAuth(_account, this));
-    connect(_asyncAuth.data(), SIGNAL(result(AssyncAuth::Result,QString)),
-            this, SLOT(asyncAuthResult(AssyncAuth::Result,QString)));
+    _asyncAuth.reset(new AsyncAuth(_account, this));
+    connect(_asyncAuth.data(), SIGNAL(result(AsyncAuth::Result,QString)),
+            this, SLOT(asyncAuthResult(AsyncAuth::Result,QString)));
     _asyncAuth->start();
 }
 
-void HttpCredentialsGui::asyncAuthResult(AssyncAuth::Result r, const QString& token)
+void HttpCredentialsGui::asyncAuthResult(AsyncAuth::Result r, const QString& token)
 {
-    if (r == AssyncAuth::NotSupported) {
+    if (r == AsyncAuth::NotSupported) {
         // We will re-enter the event loop, so better wait the next iteration
         QMetaObject::invokeMethod(this, "showDialog", Qt::QueuedConnection);
         return;
     }
-    if (r == AssyncAuth::LoggedIn) {
+    if (r == AsyncAuth::LoggedIn) {
         _password = token;
         _ready = true;
         persist();
@@ -101,12 +101,12 @@ QString HttpCredentialsGui::requestAppPasswordText(const Account* account)
         .arg(account->url().toString() + QLatin1String("/index.php/settings/personal?section=apppasswords"));
 }
 
-AssyncAuth::~AssyncAuth()
+AsyncAuth::~AsyncAuth()
 {
     delete _reply;
 }
 
-void AssyncAuth::start()
+void AsyncAuth::start()
 {
     QNetworkRequest req;
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
@@ -123,11 +123,11 @@ void AssyncAuth::start()
 
     // FIXME! timeout
 
-//     _state = AssyncAuth::QueryUrlState;
+//     _state = AsyncAuth::QueryUrlState;
 }
 
 // We get a reply from /index.php/auth/start
-void AssyncAuth::startFinished()
+void AsyncAuth::startFinished()
 {
     auto reply = qobject_cast<QNetworkReply *>(sender());
     Q_ASSERT(reply);
@@ -166,7 +166,7 @@ void AssyncAuth::startFinished()
     QTimer::singleShot(1000, this, SLOT(poll()));
 }
 
-void AssyncAuth::poll()
+void AsyncAuth::poll()
 {
     QNetworkReply *reply = _account->davRequest("POST", _pollUrl, QNetworkRequest());
     QObject::connect(reply, SIGNAL(finished()), this, SLOT(pollFinished()));
@@ -174,7 +174,7 @@ void AssyncAuth::poll()
     _reply = reply;
 }
 
-void AssyncAuth::pollFinished()
+void AsyncAuth::pollFinished()
 {
     auto reply = qobject_cast<QNetworkReply *>(sender());
     Q_ASSERT(reply);
