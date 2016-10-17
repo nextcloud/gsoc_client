@@ -230,8 +230,12 @@ bool SqlQuery::isPragma()
 
 bool SqlQuery::exec()
 {
+    if (!_stmt) {
+        return false;
+    }
+
     // Don't do anything for selects, that is how we use the lib :-|
-    if(_stmt && !isSelect() && !isPragma() ) {
+    if( !isSelect() && !isPragma() ) {
         int rc, n = 0;
         do {
             rc = sqlite3_step(_stmt);
@@ -303,6 +307,11 @@ void SqlQuery::bindValue(int pos, const QVariant& value)
                 res = sqlite3_bind_null(_stmt, pos);
             }
             break; }
+        case QVariant::ByteArray: {
+            auto ba = value.toByteArray();
+            res = sqlite3_bind_text(_stmt, pos, ba.constData(), ba.size(), SQLITE_TRANSIENT);
+            break;
+        }
         default: {
             QString str = value.toString();
             // SQLITE_TRANSIENT makes sure that sqlite buffers the data
@@ -312,7 +321,7 @@ void SqlQuery::bindValue(int pos, const QVariant& value)
         }
     }
     if (res != SQLITE_OK) {
-        qDebug() << Q_FUNC_INFO << "ERROR" << value.toString() << res;
+        qDebug() << Q_FUNC_INFO << "ERROR" << value << res;
     }
     Q_ASSERT( res == SQLITE_OK );
 }
@@ -371,8 +380,10 @@ void SqlQuery::finish()
 
 void SqlQuery::reset_and_clear_bindings()
 {
-    SQLITE_DO(sqlite3_reset(_stmt));
-    SQLITE_DO(sqlite3_clear_bindings(_stmt));
+    if (_stmt) {
+        SQLITE_DO(sqlite3_reset(_stmt));
+        SQLITE_DO(sqlite3_clear_bindings(_stmt));
+    }
 }
 
 } // namespace OCC

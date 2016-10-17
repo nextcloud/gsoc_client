@@ -81,6 +81,9 @@ QString SyncRunFileLog::instructionToStr( csync_instructions_e inst )
     case CSYNC_INSTRUCTION_TYPE_CHANGE:
         re = "INST_TYPE_CHANGE";
         break;
+    case CSYNC_INSTRUCTION_UPDATE_METADATA:
+        re = "INST_METADATA";
+        break;
     }
 
     return re;
@@ -142,7 +145,11 @@ void SyncRunFileLog::logItem( const SyncFileItem& item )
     const QChar L = QLatin1Char('|');
     _out << ts << L;
     _out << QString::number(item._requestDuration) << L;
-    _out << item._file << L;
+    if( item.log._instruction != CSYNC_INSTRUCTION_RENAME ) {
+        _out << item._file << L;
+    } else {
+        _out << item._file << QLatin1String(" -> ") << item._renameTarget << L;
+    }
     _out << instructionToStr( item.log._instruction ) << L;
     _out << directionToStr( item._direction ) << L;
     _out << QString::number(item.log._modtime) << L;

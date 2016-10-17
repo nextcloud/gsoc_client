@@ -321,7 +321,7 @@ public:
         if (_rootJob) {
             _rootJob->abort();
         }
-        emitFinished();
+        emitFinished(SyncFileItem::NormalError);
     }
 
     // timeout in seconds
@@ -349,9 +349,9 @@ public:
 private slots:
 
     /** Emit the finished signal and make sure it is only emitted once */
-    void emitFinished() {
+    void emitFinished(SyncFileItem::Status status) {
         if (!_finishedEmited)
-            emit finished();
+            emit finished(status == SyncFileItem::Success);
         _finishedEmited = true;
     }
 
@@ -360,7 +360,7 @@ private slots:
 signals:
     void itemCompleted(const SyncFileItem &, const PropagatorJob &);
     void progress(const SyncFileItem&, quint64 bytes);
-    void finished();
+    void finished(bool success);
 
     /** Emitted when propagation has problems with a locked file. */
     void seenLockedFile(const QString &fileName);
@@ -378,8 +378,8 @@ private:
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
     // access to signals which are protected in Qt4
-    friend class PropagateDownloadFileQNAM;
-    friend class PropagateUploadFileQNAM;
+    friend class PropagateDownloadFile;
+    friend class PropagateUploadFile;
     friend class PropagateLocalMkdir;
     friend class PropagateLocalRename;
     friend class PropagateRemoteMove;
@@ -404,6 +404,10 @@ public:
 
     ~CleanupPollsJob();
 
+    /**
+     * Start the job.  After the job is completed, it will emit either finished or aborted, and it
+     * will destroy itself.
+     */
     void start();
 signals:
     void finished();

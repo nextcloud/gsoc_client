@@ -155,10 +155,10 @@ signals:
 };
 
 /**
- * @brief The PropagateUploadFileQNAM class
+ * @brief The PropagateUploadFile class
  * @ingroup libsync
  */
-class PropagateUploadFileQNAM : public PropagateItemJob {
+class PropagateUploadFile : public PropagateItemJob {
     Q_OBJECT
 
 private:
@@ -191,9 +191,11 @@ private:
     quint64 chunkSize() const { return _propagator->chunkSize(); }
 
 public:
-    PropagateUploadFileQNAM(OwncloudPropagator* propagator,const SyncFileItemPtr& item)
+    PropagateUploadFile(OwncloudPropagator* propagator,const SyncFileItemPtr& item)
         : PropagateItemJob(propagator, item), _startChunk(0), _currentChunk(0), _chunkCount(0), _transferId(0), _finished(false), _deleteExisting(false) {}
     void start() Q_DECL_OVERRIDE;
+
+    bool isLikelyFinishedQuickly() Q_DECL_OVERRIDE { return _item->_size < 100*1024; }
 
     /**
      * Whether an existing entity with the same name may be deleted before

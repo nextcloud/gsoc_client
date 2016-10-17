@@ -209,20 +209,25 @@ void AccountManager::saveAccountHelper(Account* acc, QSettings& settings, bool s
 
 AccountPtr AccountManager::loadAccountHelper(QSettings& settings)
 {
+    auto urlConfig = settings.value(QLatin1String(urlC));
+    if (!urlConfig.isValid()) {
+        // No URL probably means a corrupted entry in the account settings
+        qDebug() << "No URL for account " << settings.group();
+        return AccountPtr();
+    }
+
     auto acc = createAccount();
 
     QString authType = settings.value(QLatin1String(authTypeC)).toString();
     QString overrideUrl = Theme::instance()->overrideServerUrl();
-    if( !overrideUrl.isEmpty() ) {
-        // if there is a overrideUrl, don't even bother reading from the config as all the accounts
-        // must use the overrideUrl
+    QString forceAuth = Theme::instance()->forceConfigAuthType();
+    if(!forceAuth.isEmpty() && !overrideUrl.isEmpty() ) {
+        // If forceAuth is set, this might also mean the overrideURL has changed.
+        // See enterprise issues #1126
         acc->setUrl(overrideUrl);
-        auto forceAuth = Theme::instance()->forceConfigAuthType();
-        if (!forceAuth.isEmpty()) {
-            authType = forceAuth;
-        }
+        authType = forceAuth;
     } else {
-        acc->setUrl(settings.value(QLatin1String(urlC)).toUrl());
+        acc->setUrl(urlConfig.toUrl());
     }
     acc->_serverVersion = settings.value(QLatin1String(serverVersionC)).toString();
 

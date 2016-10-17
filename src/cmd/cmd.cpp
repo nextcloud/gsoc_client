@@ -18,6 +18,7 @@
 #include <QStringList>
 #include <QUrl>
 #include <QFile>
+#include <QFileInfo>
 #include <qdebug.h>
 
 #include "account.h"
@@ -28,6 +29,7 @@
 #include "syncengine.h"
 #include "syncjournaldb.h"
 #include "config.h"
+#include "connectionvalidator.h"
 
 #include "cmd.h"
 
@@ -40,9 +42,13 @@
 #include <windows.h>
 #else
 #include <termios.h>
+#include <unistd.h>
 #endif
 
 using namespace OCC;
+
+
+static void nullMessageHandler(QtMsgType, const char *) {}
 
 struct CmdOptions {
     QString source_dir;
@@ -66,6 +72,8 @@ struct CmdOptions {
 // we can't use csync_set_userdata because the SyncEngine sets it already.
 // So we have to use a global variable
 CmdOptions *opts = 0;
+
+const qint64 timeoutToUseMsec = qMax(1000, ConnectionValidator::DefaultCallingIntervalMsec - 5*1000);
 
 class EchoDisabler
 {
@@ -196,10 +204,12 @@ void parseOptions( const QStringList& app_args, CmdOptions *options )
     if (!options->source_dir.endsWith('/')) {
         options->source_dir.append('/');
     }
-    if( !QFile::exists( options->source_dir )) {
+    QFileInfo fi(options->source_dir);
+    if( !fi.exists() ) {
         std::cerr << "Source dir '" << qPrintable(options->source_dir) << "' does not exist." << std::endl;
         exit(1);
     }
+    options->source_dir = fi.absoluteFilePath();
 
     QStringListIterator it(args);
     // skip file name;
@@ -272,6 +282,12 @@ void selectiveSyncFixup(OCC::SyncJournalDb *journal, const QStringList &newList)
 int main(int argc, char **argv) {
     QCoreApplication app(argc, argv);
 
+#ifdef Q_OS_WIN
+    // Ensure OpenSSL config file is only loaded from app directory
+    QString opensslConf = QCoreApplication::applicationDirPath()+QString("/openssl.cnf");
+    qputenv("OPENSSL_CONF", opensslConf.toLocal8Bit());
+#endif
+
     qsrand(QTime::currentTime().msec() * QCoreApplication::applicationPid());
 
     CmdOptions options;
@@ -285,6 +301,11 @@ int main(int argc, char **argv) {
     ClientProxy clientProxy;
 
     parseOptions( app.arguments(), &options );
+
+    csync_set_log_level(options.silent ? 1 : 11);
+    if (options.silent) {
+        qInstallMsgHandler(nullMessageHandler);
+    }
 
     AccountPtr account = Account::create();
 
@@ -379,13 +400,29 @@ int main(int argc, char **argv) {
     account->setCredentials(cred);
     account->setSslErrorHandler(sslErrorHandler);
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    //obtain capabilities using event loop
+    QEventLoop loop;
+
+    JsonApiJob *job = new JsonApiJob(account, QLatin1String("ocs/v1.php/cloud/capabilities"));
+    job->setTimeout(timeoutToUseMsec);
+    QObject::connect(job, &JsonApiJob::jsonReceived, [&](const QVariantMap &json) {
+        auto caps = json.value("ocs").toMap().value("data").toMap().value("capabilities");
+        qDebug() << "Server capabilities" << caps;
+        account->setCapabilities(caps.toMap());
+        loop.quit();
+    });
+    job->start();
+
+    loop.exec();
+#endif
+
     // much lower age than the default since this utility is usually made to be run right after a change in the tests
     SyncEngine::minimumFileAgeForUpload = 0;
 
     int restartCount = 0;
 restart_sync:
 
-    csync_set_log_level(options.silent ? 1 : 11);
 
     opts = &options;
 

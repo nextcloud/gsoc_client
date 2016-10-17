@@ -123,6 +123,13 @@ Folder::~Folder()
 void Folder::checkLocalPath()
 {
     const QFileInfo fi(_definition.localPath);
+    _canonicalLocalPath = fi.canonicalFilePath();
+    if (_canonicalLocalPath.isEmpty()) {
+        qDebug() << "Broken symlink:" << _definition.localPath;
+        _canonicalLocalPath = _definition.localPath;
+    } else if( !_canonicalLocalPath.endsWith('/') ) {
+        _canonicalLocalPath.append('/');
+    }
 
     if( fi.isDir() && fi.isReadable() ) {
         qDebug() << "Checked local path ok";
@@ -161,11 +168,7 @@ QString Folder::alias() const
 
 QString Folder::path() const
 {
-    QString p(_definition.localPath);
-    if( ! p.endsWith('/') ) {
-        p.append('/');
-    }
-    return p;
+    return _canonicalLocalPath;
 }
 
 QString Folder::shortGuiLocalPath() const
@@ -198,7 +201,7 @@ void Folder::setIgnoreHiddenFiles(bool ignore)
 
 QString Folder::cleanPath()
 {
-    QString cleanedPath = QDir::cleanPath(_definition.localPath);
+    QString cleanedPath = QDir::cleanPath(_canonicalLocalPath);
 
     if(cleanedPath.length() == 3 && cleanedPath.endsWith(":/"))
         cleanedPath.remove(2,1);
@@ -410,11 +413,9 @@ void Folder::bubbleUpSyncResult()
                         firstItemDeleted = item;
                     break;
                 case CSYNC_INSTRUCTION_SYNC:
-                    if (!item->_isDirectory) {
-                        updatedItems++;
-                        if (!firstItemUpdated)
-                            firstItemUpdated = item;
-                    }
+                    updatedItems++;
+                    if (!firstItemUpdated)
+                        firstItemUpdated = item;
                     break;
                 case CSYNC_INSTRUCTION_ERROR:
                     qDebug() << "Got Instruction ERROR. " << _syncResult.errorString();

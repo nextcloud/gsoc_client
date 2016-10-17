@@ -85,8 +85,6 @@ public:
     /* Return true if we detected that another sync is needed to complete the sync */
     bool isAnotherSyncNeeded() { return _anotherSyncNeeded; }
 
-    SyncFileItem* findSyncItem(const QString &fileName) const;
-
     /** Get the ms since a file was touched, or -1 if it wasn't.
      *
      * Thread-safe.
@@ -152,7 +150,7 @@ signals:
 private slots:
     void slotRootEtagReceived(const QString &);
     void slotItemCompleted(const SyncFileItem& item, const PropagatorJob & job);
-    void slotFinished();
+    void slotFinished(bool success);
     void slotProgress(const SyncFileItem& item, quint64 curent);
     void slotDiscoveryJobFinished(int updateResult);
     void slotCleanPollsJobAborted(const QString &error);
@@ -204,7 +202,6 @@ private:
     SyncJournalDb *_journal;
     QPointer<DiscoveryMainThread> _discoveryMainThread;
     QSharedPointer <OwncloudPropagator> _propagator;
-    QString _lastDeleted; // if the last item was a path and it has been deleted
 
     // After a sync, only the syncdb entries whose filenames appear in this
     // set will be kept. See _temporarilyUnavailablePaths.
