@@ -34,6 +34,8 @@ if( Qt5Core_FOUND )
                 message(FATAL_ERROR "Qt5WebKit required for Shibboleth. Use -DNO_SHIBBOLETH=1 to disable it.")
             endif()
         endif()
+
+        find_package(Qt5WebSockets)
     endif()
 
 else( Qt5Core_FOUND )
@@ -65,6 +67,12 @@ if( Qt5Core_FOUND )
 	include_directories(${Qt5MacExtras_INCLUDE_DIRS})
 	add_definitions(${Qt5MacExtras_DEFINITIONS})
 	set (QT_LIBRARIES ${QT_LIBRARIES} ${Qt5MacExtras_LIBRARIES})
+    endif()
+
+    if(Qt5WebSockets_FOUND)
+        message(STATUS "Building with websocket notify support")
+        include_directories(${Qt5WebSockets_INCLUDE_DIRS})
+        set (QT_LIBRARIES ${QT_LIBRARIES} ${Qt5WebSockets_LIBRARIES})
     endif()
 
 if(NOT BUILD_LIBRARIES_ONLY)

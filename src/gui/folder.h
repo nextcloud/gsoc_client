@@ -27,6 +27,8 @@
 
 #include <QObject>
 #include <QStringList>
+#include <QtWebSockets/QWebSocket>
+
 
 class QThread;
 class QSettings;
@@ -269,6 +271,9 @@ private slots:
     void etagRetreived(const QString &);
     void etagRetreivedFromSyncEngine(const QString &);
 
+    void slotWebSocketConnected();
+    void slotWebSocketTextMessageReceived(QString message);
+
     void slotThreadTreeWalkResult(const SyncFileItemVector& ); // after sync is done
 
     void slotEmitFinishedDelayed();
@@ -314,6 +319,8 @@ private:
     bool         _wipeDb;
     bool         _proxyDirty;
     QPointer<RequestEtagJob> _requestEtagJob;
+    // FIXME: ifdef etc
+    QScopedPointer<QWebSocket> _webSocket;
     QString       _lastEtag;
     QElapsedTimer _timeSinceLastSyncDone;
     QElapsedTimer _timeSinceLastSyncStart;

@@ -33,6 +33,10 @@
 #include "filesystem.h"
 #include "excludedfiles.h"
 
+// FIXME ifdef
+#include "json.h"
+#include <QtWebSockets/QWebSocket>
+
 #include "creds/abstractcredentials.h"
 
 #include <QDebug>
@@ -116,6 +120,23 @@ Folder::Folder(const FolderDefinition& definition,
     _scheduleSelfTimer.setInterval(SyncEngine::minimumFileAgeForUpload);
     connect(&_scheduleSelfTimer, SIGNAL(timeout()),
             SLOT(slotScheduleThisFolder()));
+
+    _webSocket.reset(new QWebSocket());
+    // FIXME: Also handle re-connect
+    QObject::connect(_webSocket.data(), &QWebSocket::connected, this, &Folder::slotWebSocketConnected);
+    QObject::connect(_webSocket.data(), &QWebSocket::textMessageReceived,
+                                 this, &Folder::slotWebSocketTextMessageReceived);
+    // FIXME: Accept same ssl errors as normal server?
+//    typedef void (QWebSocket:: *sslErrorsSignal)(const QList<QSslError> &);
+//    connect(&m_webSocket, static_cast<sslErrorsSignal>(&QWebSocket::sslErrors),
+//        this, &SslEchoClient::onSslErrors);
+    // FIXME something with _accountState->account()->davUrl()
+    // FIXME: Check env / capabilities
+    QByteArray wsUrl = qgetenv("OWNCLOUD_WEBSOCKET_URL");
+    if (wsUrl.length() > 0) {
+        qDebug() << "Connecting to websocket " << wsUrl;
+        _webSocket->open(QUrl::fromEncoded(wsUrl));
+    }
 }
 
 Folder::~Folder()
@@ -298,6 +319,33 @@ void Folder::slotRunEtagJob()
     QObject::connect(_requestEtagJob, SIGNAL(etagRetreived(QString)), this, SLOT(etagRetreived(QString)));
     FolderMan::instance()->slotScheduleETagJob(alias(), _requestEtagJob);
     // The _requestEtagJob is auto deleting itself on finish. Our guard pointer _requestEtagJob will then be null.
+}
+
+void Folder::slotWebSocketConnected()
+{
+    qDebug() << "CONNECTED";
+}
+
+// FIXME: Can we always assume it's a message? the docs are unclear
+void Folder::slotWebSocketTextMessageReceived(QString message)
+{
+    qDebug() << message;
+    if (!canSync() || isBusy()) {
+        return;
+    }
+    bool success;
+    QVariantMap json = QtJson::parse(message, success).toMap();
+    if (success) {
+        QString notificationEtag = json["etag"].toString();
+        QString notificationUser = json["user"].toString();
+        QString user = _accountState->account()->credentials()->user();
+        if (user == notificationUser && _lastEtag != notificationEtag) {
+            qDebug() << "* [WebSocket] Compare etag with previous etag: last:" << _lastEtag << ", received:" << notificationEtag << "-> CHANGED";
+            _lastEtag = notificationEtag;
+            slotScheduleThisFolder();
+            _accountState->tagLastSuccessfullETagRequest();
+        }
+    }
 }
 
 void Folder::etagRetreived(const QString& etag)
