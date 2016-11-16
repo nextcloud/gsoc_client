@@ -38,6 +38,12 @@ FolderStatusModel::FolderStatusModel(QObject *parent)
 FolderStatusModel::~FolderStatusModel()
 { }
 
+static bool sortByFolderHeader(const FolderStatusModel::SubFolderInfo& lhs, const FolderStatusModel::SubFolderInfo& rhs)
+{
+    return QString::compare(lhs._folder->shortGuiRemotePathOrAppName(),
+                            rhs._folder->shortGuiRemotePathOrAppName(),
+                            Qt::CaseInsensitive) < 0;
+}
 
 void FolderStatusModel::setAccountState(const AccountState* accountState)
 {
@@ -58,7 +64,6 @@ void FolderStatusModel::setAccountState(const AccountState* accountState)
         if (f->accountState() != accountState)
             continue;
         SubFolderInfo info;
-        info._pathIdx << _folders.size();
         info._name = f->alias();
         info._path = "/";
         info._folder = f;
@@ -67,6 +72,14 @@ void FolderStatusModel::setAccountState(const AccountState* accountState)
 
         connect(f, SIGNAL(progressInfo(ProgressInfo)), this, SLOT(slotSetProgress(ProgressInfo)), Qt::UniqueConnection);
         connect(f, SIGNAL(newBigFolderDiscovered(QString)), this, SLOT(slotNewBigFolder()), Qt::UniqueConnection);
+    }
+
+    // Sort by header text
+    qSort(_folders.begin(), _folders.end(), sortByFolderHeader);
+
+    // Set the root _pathIdx after the sorting
+    for (int i = 0; i < _folders.size(); ++i) {
+        _folders[i]._pathIdx << i;
     }
 
     endResetModel();
@@ -375,12 +388,13 @@ QModelIndex FolderStatusModel::indexForPath(Folder *f, const QString& path) cons
     if (slashPos == -1) {
         // first level folder
         for (int i = 0; i < _folders.size(); ++i) {
-            if (_folders.at(i)._folder == f) {
+            auto& info = _folders.at(i);
+            if (info._folder == f) {
                 if( path.isEmpty() ) { // the folder object
                     return index(i, 0);
                 }
-                for (int j = 0; j < _folders.at(i)._subs.size(); ++j) {
-                    const QString subName = _folders.at(i)._subs.at(j)._name;
+                for (int j = 0; j < info._subs.size(); ++j) {
+                    const QString subName = info._subs.at(j)._name;
                     if (subName == path) {
                         return index(j, 0, index(i));
                     }
@@ -785,7 +799,7 @@ void FolderStatusModel::slotApplySelectiveSync()
             foreach(const auto &it, changes) {
                 folder->journalDb()->avoidReadFromDbOnNextSync(it);
             }
-            FolderMan::instance()->slotScheduleSync(folder);
+            FolderMan::instance()->scheduleFolder(folder);
         }
     }
 
@@ -986,10 +1000,12 @@ void FolderStatusModel::slotFolderSyncStateChange(Folder *f)
     }
     if (folderIndex < 0) { return; }
 
+    auto& pi = _folders[folderIndex]._progress;
+
     SyncResult::Status state = f->syncResult().status();
     if (f->syncPaused()) {
         // Reset progress info.
-        _folders[folderIndex]._progress = SubFolderInfo::Progress();
+        pi = SubFolderInfo::Progress();
     } else if (state == SyncResult::NotYetStarted) {
         FolderMan* folderMan = FolderMan::instance();
         int pos = folderMan->scheduleQueue().indexOf(f);
@@ -1003,16 +1019,16 @@ void FolderStatusModel::slotFolderSyncStateChange(Folder *f)
         } else {
             message = tr("Waiting for %n other folder(s)...", "", pos);
         }
-        _folders[folderIndex]._progress = SubFolderInfo::Progress();
-        _folders[folderIndex]._progress._overallSyncString = message;
+        pi = SubFolderInfo::Progress();
+        pi._overallSyncString = message;
     } else if (state == SyncResult::SyncPrepare) {
-        _folders[folderIndex]._progress = SubFolderInfo::Progress();
-        _folders[folderIndex]._progress._overallSyncString = tr("Preparing to sync...");
+        pi = SubFolderInfo::Progress();
+        pi._overallSyncString = tr("Preparing to sync...");
     } else if (state == SyncResult::Problem || state == SyncResult::Success) {
         // Reset the progress info after a sync.
-        _folders[folderIndex]._progress = SubFolderInfo::Progress();
+        pi = SubFolderInfo::Progress();
     } else if (state == SyncResult::Error) {
-        _folders[folderIndex]._progress = SubFolderInfo::Progress();
+        pi = SubFolderInfo::Progress();
     }
 
     // update the icon etc. now
@@ -1099,7 +1115,7 @@ void FolderStatusModel::slotSyncAllPendingBigFolders()
         foreach (const auto &it, undecidedList) {
             folder->journalDb()->avoidReadFromDbOnNextSync(it);
         }
-        FolderMan::instance()->slotScheduleSync(folder);
+        FolderMan::instance()->scheduleFolder(folder);
     }
 
     resetFolders();

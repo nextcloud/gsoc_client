@@ -117,7 +117,7 @@ void AsyncAuth::start()
     auto buffer = new QBuffer();
     buffer->setData("name=" + Utility::userAgentString().toPercentEncoding());
     QNetworkReply *reply = _account->davRequest("POST",
-            Account::concatUrlPath(_account->url(), QLatin1String("/index.php/auth/start")),
+            Utility::concatUrlPath(_account->url(), QLatin1String("/index.php/auth/start")),
             req, buffer);
     QObject::connect(reply, SIGNAL(finished()), this, SLOT(startFinished()));
     buffer->setParent(reply);

@@ -195,10 +195,11 @@ public:
     int _jobsFinished; // number of jobs that have completed
     int _runningNow; // number of subJobs running right now
     SyncFileItem::Status _hasError;  // NoStatus,  or NormalError / SoftError if there was an error
+    int _firstUnfinishedSubJob;
 
     explicit PropagateDirectory(OwncloudPropagator *propagator, const SyncFileItemPtr &item = SyncFileItemPtr(new SyncFileItem))
         : PropagatorJob(propagator)
-        , _firstJob(0), _item(item),  _jobsFinished(0), _runningNow(0), _hasError(SyncFileItem::NoStatus)
+        , _firstJob(0), _item(item),  _jobsFinished(0), _runningNow(0), _hasError(SyncFileItem::NoStatus), _firstUnfinishedSubJob(0)
     { }
 
     virtual ~PropagateDirectory() {
@@ -379,10 +380,11 @@ private:
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
     // access to signals which are protected in Qt4
     friend class PropagateDownloadFile;
-    friend class PropagateUploadFile;
     friend class PropagateLocalMkdir;
     friend class PropagateLocalRename;
     friend class PropagateRemoteMove;
+    friend class PropagateUploadFileV1;
+    friend class PropagateUploadFileNG;
 #endif
 };
 

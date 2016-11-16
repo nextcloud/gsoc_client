@@ -356,6 +356,144 @@ X-GNOME-Autostart-Delay=3
 
 
 # Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
+
+
+# Translations
 Comment[oc]=@APPLICATION_NAME@ sincronizacion del client
 GenericName[oc]=Dorsièr de Sincronizacion
 Name[oc]=@APPLICATION_NAME@ sincronizacion del client
@@ -445,10 +583,10 @@ Comment[cs_CZ]=@APPLICATION_NAME@ počítačový synchronizační klient
 GenericName[cs_CZ]=Synchronizace adresáře
 Name[cs_CZ]=@APPLICATION_NAME@ počítačový synchronizační klient
 Icon[cs_CZ]=@APPLICATION_EXECUTABLE@
-Comment[ru]=Настольный клиент синхронизации @НАЗВАНИЕ_ПРИЛОЖЕНИЯ@ 
-GenericName[ru]=Синхронизация папки
-Name[ru]=Настольный клиент синхронизации @НАЗВАНИЕ_ПРИЛОЖЕНИЯ@
-Icon[ru]=@ВЫПОЛНЯЕМОЕ_ПРИЛОЖЕНИЕ@
+Comment[ru]=Настольный клиент синхронизации @APPLICATION_NAME@ 
+GenericName[ru]=Синхронизация каталогов
+Name[ru]=Настольный клиент синхронизации @APPLICATION_NAME@
+Icon[ru]=@APPLICATION_EXECUTABLE@
 Comment[sl]=@APPLICATION_NAME@ ‒ Program za usklajevanje datotek z namizjem
 GenericName[sl]=Usklajevanje map
 Name[sl]=@APPLICATION_NAME@ ‒ Program za usklajevanje datotek z namizjem
@@ -490,6 +628,7 @@ Comment[th_TH]=@APPLICATION_NAME@ ไคลเอนต์ประสานข�
 GenericName[th_TH]=ประสานข้อมูลโฟลเดอร์
 Name[th_TH]= @APPLICATION_NAME@ ไคลเอนต์ประสานข้อมูลเดสก์ท็อป
 Icon[th_TH]=@APPLICATION_EXECUTABLE@
+GenericName[es_MX]=Sincronización de Carpetas
 Comment[nb_NO]=@APPLICATION_NAME@ skrivebordssynkroniseringsklient
 GenericName[nb_NO]=Mappesynkronisering
 Name[nb_NO]=@APPLICATION_NAME@ skrivebordssynkroniseringsklient 

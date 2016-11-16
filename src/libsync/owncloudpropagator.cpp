@@ -270,7 +270,14 @@ PropagateItemJob* OwncloudPropagator::createJob(const SyncFileItemPtr &item) {
                 job->setDeleteExistingFolder(deleteExisting);
                 return job;
             } else {
-                auto job = new PropagateUploadFile(this, item);
+                PropagateUploadFileCommon *job = 0;
+                static const auto chunkng = qgetenv("OWNCLOUD_CHUNKING_NG");
+                if (item->_size > chunkSize()
+                        && (account()->capabilities().chunkingNg() || chunkng == "1") && chunkng != "0") {
+                    job = new PropagateUploadFileNG(this, item);
+                } else {
+                    job = new PropagateUploadFileV1(this, item);
+                }
                 job->setDeleteExisting(deleteExisting);
                 return job;
             }
@@ -606,9 +613,15 @@ bool PropagateDirectory::scheduleNextJob()
         return false;
     }
 
+    // cache the value of first unfinished subjob
     bool stopAtDirectory = false;
-    // FIXME: use the cached value of finished job
-    for (int i = 0; i < _subJobs.count(); ++i) {
+    int i = _firstUnfinishedSubJob;
+    int subJobsCount = _subJobs.count();
+    while (i < subJobsCount && _subJobs.at(i)->_state == Finished) {
+      _firstUnfinishedSubJob = ++i;
+    }
+
+    for (int i = _firstUnfinishedSubJob; i < subJobsCount; ++i) {
         if (_subJobs.at(i)->_state == Finished) {
             continue;
         }
