@@ -11,10 +11,6 @@
 
 using namespace OCC;
 
-#define STR_(X) #X
-#define STR(X) STR_(X)
-#define BIN_PATH STR(OWNCLOUD_BIN_PATH)
-
 class TestExcludedFiles: public QObject
 {
     Q_OBJECT
@@ -31,7 +27,7 @@ private slots:
         QVERIFY(!excluded.isExcluded("/a/.b", "/a", keepHidden));
         QVERIFY(excluded.isExcluded("/a/.b", "/a", excludeHidden));
 
-        QString path(BIN_PATH);
+        QString path(OWNCLOUD_BIN_PATH);
         path.append("/sync-exclude.lst");
         excluded.addExcludeFilePath(path);
         excluded.reloadExcludes();
@@ -39,9 +35,9 @@ private slots:
         QVERIFY(!excluded.isExcluded("/a/b", "/a", keepHidden));
         QVERIFY(excluded.isExcluded("/a/b~", "/a", keepHidden));
         QVERIFY(!excluded.isExcluded("/a/.b", "/a", keepHidden));
+        QVERIFY(excluded.isExcluded("/a/.b", "/a", excludeHidden));
         QVERIFY(excluded.isExcluded("/a/.Trashes", "/a", keepHidden));
         QVERIFY(excluded.isExcluded("/a/foo_conflict-bar", "/a", keepHidden));
-        QVERIFY(excluded.isExcluded("/a/.b", "/a", excludeHidden));
     }
 };
 
