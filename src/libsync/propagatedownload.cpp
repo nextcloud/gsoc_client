@@ -805,6 +805,12 @@ void PropagateDownloadFile::downloadFinished()
     }
     FileSystem::setFileHidden(fn, false);
 
+    // Set modification time of moved file again (because we modified permissions above and that changes modification time, depending on filesystem)
+    FileSystem::setModTime(fn, _item->_modtime);
+    // We need to fetch the time again because some file systems such as FAT have worse than a second
+    // Accuracy, and we really need the time from the file system. (#3103)
+    _item->_modtime = FileSystem::getModTime(fn);
+
     // Maybe we downloaded a newer version of the file than we thought we would...
     // Get up to date information for the journal.
     _item->_size = FileSystem::getSize(fn);
