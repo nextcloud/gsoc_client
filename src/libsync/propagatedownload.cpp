@@ -739,10 +739,12 @@ void PropagateDownloadFile::downloadFinished()
         qDebug() << "Created conflict file" << fn << "->" << conflictFileName;
     }
 
+    qDebug() << "1 We need to fetch the time again" << _item->_modtime;
     FileSystem::setModTime(_tmpFile.fileName(), _item->_modtime);
     // We need to fetch the time again because some file systems such as FAT have worse than a second
     // Accuracy, and we really need the time from the file system. (#3103)
     _item->_modtime = FileSystem::getModTime(_tmpFile.fileName());
+    qDebug() << "2 and we really need the time from the file system" << _item->_modtime;
 
     if (FileSystem::fileExists(fn)) {
         // Preserve the existing file permissions.
@@ -805,11 +807,13 @@ void PropagateDownloadFile::downloadFinished()
     }
     FileSystem::setFileHidden(fn, false);
 
+    qDebug() << "1 Set modification time of moved file again" << _item->_modtime;
     // Set modification time of moved file again (because we modified permissions above and that changes modification time, depending on filesystem)
     FileSystem::setModTime(fn, _item->_modtime);
     // We need to fetch the time again because some file systems such as FAT have worse than a second
     // Accuracy, and we really need the time from the file system. (#3103)
     _item->_modtime = FileSystem::getModTime(fn);
+    qDebug() << "2 and we really need the time from the file system" << _item->_modtime;
 
     // Maybe we downloaded a newer version of the file than we thought we would...
     // Get up to date information for the journal.
