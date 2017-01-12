@@ -74,17 +74,8 @@ OwncloudPropagator::~OwncloudPropagator()
 /* The maximum number of active jobs in parallel  */
 int OwncloudPropagator::maximumActiveJob()
 {
-    static int max = qgetenv("OWNCLOUD_MAX_PARALLEL").toUInt();
-    if (!max) {
-        max = 3; //default
-    }
-
-    if (_downloadLimit.fetchAndAddAcquire(0) != 0 || _uploadLimit.fetchAndAddAcquire(0) != 0) {
-        // disable parallelism when there is a network limit.
-        return 1;
-    }
-
-    return max;
+    // this will be parallelised to 100 by hardMaximumActiveJob for files < 100kB
+    return 50;
 }
 
 int OwncloudPropagator::hardMaximumActiveJob()

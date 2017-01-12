@@ -204,6 +204,7 @@ QNetworkReply *Account::headRequest(const QUrl &url)
     QNetworkRequest request(url);
 #if QT_VERSION > QT_VERSION_CHECK(4, 8, 4)
     request.setSslConfiguration(this->getOrCreateSslConfig());
+    request.setAttribute(QNetworkRequest::HTTP2AllowedAttribute, true);
 #endif
     return _am->head(request);
 }
@@ -218,6 +219,7 @@ QNetworkReply *Account::getRequest(const QUrl &url)
     QNetworkRequest request(url);
 #if QT_VERSION > QT_VERSION_CHECK(4, 8, 4)
     request.setSslConfiguration(this->getOrCreateSslConfig());
+    request.setAttribute(QNetworkRequest::HTTP2AllowedAttribute, true);
 #endif
     return _am->get(request);
 }
@@ -227,6 +229,7 @@ QNetworkReply *Account::deleteRequest( const QUrl &url)
     QNetworkRequest request(url);
 #if QT_VERSION > QT_VERSION_CHECK(4, 8, 4)
     request.setSslConfiguration(this->getOrCreateSslConfig());
+    request.setAttribute(QNetworkRequest::HTTP2AllowedAttribute, true);
 #endif
     return _am->deleteResource(request);
 }
@@ -241,6 +244,7 @@ QNetworkReply *Account::davRequest(const QByteArray &verb, const QUrl &url, QNet
     req.setUrl(url);
 #if QT_VERSION > QT_VERSION_CHECK(4, 8, 4)
     req.setSslConfiguration(this->getOrCreateSslConfig());
+    req.setAttribute(QNetworkRequest::HTTP2AllowedAttribute, true);
 #endif
     return _am->sendCustomRequest(req, verb, data);
 }
