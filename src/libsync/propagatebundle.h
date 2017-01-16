@@ -103,7 +103,7 @@ private:
 
 public:
     PropagateBundle(OwncloudPropagator* propagator)
-        : PropagateItemJob(propagator, SyncFileItemPtr(new SyncFileItem)), _preparingBundle(true), _size(0), _currentBundleSize(0), _currentRequestsNumber(0) {}
+        : PropagateItemJob(propagator, SyncFileItemPtr(new SyncFileItem)), _preparingBundle(true), _size(0), _currentBundleSize(0), _currentRequestsNumber(0), _totalFiles(0) {}
     void start() Q_DECL_OVERRIDE;
     void startBundle();
     void append(const SyncFileItemPtr &bundledFile);
@@ -130,8 +130,8 @@ private:
     quint64 checkBundledRequestsLimits()
     {
         //TODO: obtain this value from the server or by other means
-        quint64 maximumBundledFiles = 500;
-        return (maximumBundledFiles/_propagator->maximumActiveJob());
+        quint64 maximumBundledFiles = 100;
+        return maximumBundledFiles;
     }
     quint64 chunkSize() const { return _propagator->chunkSize(); }
     int getHttpStatusCode(const QString &status);

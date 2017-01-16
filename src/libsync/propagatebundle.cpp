@@ -136,10 +136,13 @@ void PropagateBundle::slotStartUpload(const QByteArray& transmissionChecksumType
     if (!_itemsToChecksum.empty()){
         SyncFileItemPtr nextItem = _itemsToChecksum.first();
 
+        // Ensure that we always send at least 1/6 of total files to sync, to avoid situation that all files fit into 1 request (no parallelism)
+        quint64 bundleLimits = qMin(checkBundledRequestsLimits(), (_totalFiles/_propagator->hardMaximumActiveJob()));
+
         // if next item will exceed bundle size, send the bundle now
         // otherwise, compute next checksum
         if (((_currentBundleSize + nextItem->_size) >= chunkSize())
-                || (_currentRequestsNumber >= checkBundledRequestsLimits())){
+                || (_currentRequestsNumber >= bundleLimits)){
             _currentBundleSize = 0;
             _currentRequestsNumber = 0;
             startBundle();
@@ -260,8 +263,9 @@ void PropagateBundle::startBundle()
         // we have finished preparing bundles to send, allow other bundles to be send
         _preparingBundle = false;
 
-        // check if there are any items to be bundled and if you can run another parallel job
-        if (!_itemsToChecksum.empty() && (_propagator->_activeJobList.count() < _propagator->maximumActiveJob())) {
+        // Check if there are any items to be bundled and if you can run another parallel job
+        // Parallelisze to hardMaximumActiveJob() since it is the same as in upload.h -> isLikelyFinishedQuickly for small files
+        if (!_itemsToChecksum.empty() && (_propagator->_activeJobList.count() < _propagator->hardMaximumActiveJob())) {
             start();
         }
     } else {
@@ -275,6 +279,7 @@ QByteArray PropagateBundle::getRemotePath(QString filePath){
 }
 
 void PropagateBundle::append(const SyncFileItemPtr &bundledFile){
+    _totalFiles++;
     _size += bundledFile->_size;
     _itemsToChecksum.append(bundledFile);
 }

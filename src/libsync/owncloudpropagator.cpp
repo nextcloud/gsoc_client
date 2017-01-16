@@ -329,6 +329,7 @@ void OwncloudPropagator::start(const SyncFileItemVector& items)
 
     // TODO: here we should also check somehow if bundle is not blacklisted
     bool enableBundledRequests = _account->bundledRequestsEnabled() && !this->hasNetworkLimit();
+    //bool enableBundledRequests = false;
 
     foreach(const SyncFileItemPtr &item, items) {
 
