@@ -839,6 +839,10 @@ void ownCloudGui::slotHelp()
 
 void ownCloudGui::raiseDialog( QWidget *raiseWidget )
 {
+    qDebug() << "RAISE " << raiseWidget;
+    if (raiseWidget) qDebug() << raiseWidget->parentWidget() << raiseWidget->isVisible();
+
+
     if( raiseWidget && raiseWidget->parentWidget() == 0) {
         // Qt has a bug which causes parent-less dialogs to pop-under.
         raiseWidget->showNormal();

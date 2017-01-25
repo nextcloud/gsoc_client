@@ -185,6 +185,10 @@ void ConnectionValidator::slotAuthFailed(QNetworkReply *reply)
 {
     Status stat = Timeout;
 
+
+    qWarning() << reply->error() << _account->credentials()->stillValid(reply) << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
+
+
     if( reply->error() == QNetworkReply::AuthenticationRequiredError ||
              !_account->credentials()->stillValid(reply)) {
         qDebug() <<  reply->error() << reply->errorString();

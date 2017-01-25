@@ -155,6 +155,10 @@ QNetworkReply *AbstractNetworkJob::deleteRequest(const QUrl &url)
 
 void AbstractNetworkJob::slotFinished()
 {
+
+    qWarning() << reply()->request().url() << reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute) << _followRedirects << reply()->attribute(QNetworkRequest::RedirectionTargetAttribute)  <<
+    reply()->header(QNetworkRequest::LocationHeader);
+
     _timer.stop();
 
     if( _reply->error() == QNetworkReply::SslHandshakeFailedError ) {

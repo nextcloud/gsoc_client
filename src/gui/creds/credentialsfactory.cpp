@@ -18,6 +18,8 @@
 #include "creds/dummycredentials.h"
 #include "creds/shibbolethcredentials.h"
 
+#include <QDebug>
+
 namespace OCC
 {
 
@@ -26,6 +28,7 @@ namespace CredentialsFactory
 
 AbstractCredentials* create(const QString& type)
 {
+    qDebug() << type;
     // empty string might happen for old version of configuration
     if (type == "http" || type == "") {
         return new HttpCredentialsGui;

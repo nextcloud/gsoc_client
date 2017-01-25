@@ -103,6 +103,8 @@ static bool isEqualExceptProtocol(const QUrl &url1, const QUrl &url2)
 
 bool Account::changed(AccountPtr other, bool ignoreUrlProtocol) const
 {
+    qDebug() << _credentials << other->credentials();
+
     if (!other) {
         return false;
     }
@@ -125,6 +127,8 @@ AbstractCredentials *Account::credentials() const
 
 void Account::setCredentials(AbstractCredentials *cred)
 {
+    qDebug() << this << cred;
+
     // set active credential manager
     QNetworkCookieJar *jar = 0;
     if (_am) {

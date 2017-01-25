@@ -68,10 +68,13 @@ bool AccountManager::restore()
 
 bool AccountManager::restoreFromLegacySettings()
 {
+
     // try to open the correctly themed settings
     auto settings = Account::settingsWithGroup(Theme::instance()->appName());
 
     bool migratedCreds = false;
+
+    qDebug() << "LEGACY!" << Theme::instance()->appName() << settings->childKeys();
 
     // if the settings file could not be opened, the childKeys list is empty
     // then try to load settings from a very old place
@@ -214,11 +217,15 @@ AccountPtr AccountManager::loadAccountHelper(QSettings& settings)
     QString authType = settings.value(QLatin1String(authTypeC)).toString();
     QString overrideUrl = Theme::instance()->overrideServerUrl();
     QString forceAuth = Theme::instance()->forceConfigAuthType();
+
+    qDebug() << "LOADING ACCOUNT" << authType << overrideUrl << forceAuth << settings.value(QLatin1String(urlC));
+
     if(!forceAuth.isEmpty() && !overrideUrl.isEmpty() ) {
         // If forceAuth is set, this might also mean the overrideURL has changed.
         // See enterprise issues #1126
         acc->setUrl(overrideUrl);
         authType = forceAuth;
+        qDebug() << "SHOULD NOT BE THERE !!!!!!";
     } else {
         acc->setUrl(settings.value(QLatin1String(urlC)).toUrl());
     }
@@ -233,7 +240,11 @@ AccountPtr AccountManager::loadAccountHelper(QSettings& settings)
         acc->_settingsMap.insert(key, settings.value(key));
     }
 
+    qDebug() << acc->_settingsMap << "from" << settings.childKeys();
+
     acc->setCredentials(CredentialsFactory::create(authType));
+
+    qDebug() << "Loaded Cred" <<  acc->credentials() << authType;
 
     // now the cert, it is in the general group
     settings.beginGroup(QLatin1String("General"));

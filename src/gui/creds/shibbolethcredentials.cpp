@@ -53,7 +53,10 @@ ShibbolethCredentials::ShibbolethCredentials()
       _ready(false),
       _stillValid(false),
       _browser(0)
-{}
+{
+    qDebug() << "HELO ShibbolethCredentials 1";
+
+}
 
 ShibbolethCredentials::ShibbolethCredentials(const QNetworkCookie& cookie)
   : _ready(true),
@@ -61,6 +64,7 @@ ShibbolethCredentials::ShibbolethCredentials(const QNetworkCookie& cookie)
     _browser(0),
     _shibCookie(cookie)
 {
+    qDebug() << "HELO ShibbolethCredentials 2" << cookie.toRawForm();
 }
 
 void ShibbolethCredentials::setAccount(Account* account)
@@ -71,6 +75,8 @@ void ShibbolethCredentials::setAccount(Account* account)
     if (_user.isEmpty()) {
         _user = _account->credentialSetting(QLatin1String(userC)).toString();
     }
+
+    qDebug() << _user;
 
     // When constructed with a cookie (by the wizard), we usually don't know the
     // user name yet. Request it now from the server.
@@ -107,13 +113,19 @@ QString ShibbolethCredentials::user() const
 QNetworkAccessManager* ShibbolethCredentials::getQNAM() const
 {
     QNetworkAccessManager* qnam(new AccessManager);
-    connect(qnam, SIGNAL(finished(QNetworkReply*)),
+    bool ok = connect(qnam, SIGNAL(finished(QNetworkReply*)),
             this, SLOT(slotReplyFinished(QNetworkReply*)));
+    qDebug() << "QNAM creaded and connected" << ok;
     return qnam;
 }
 
 void ShibbolethCredentials::slotReplyFinished(QNetworkReply* r)
 {
+    qWarning() << r->request().url() << _browser << r->attribute(QNetworkRequest::HttpStatusCodeAttribute)
+        << r->attribute(QNetworkRequest::RedirectionTargetAttribute) << r->header(QNetworkRequest::LocationHeader);
+
+
+
     if (!_browser.isNull()) {
         return;
     }
@@ -163,6 +175,7 @@ bool ShibbolethCredentials::stillValid(QNetworkReply *reply)
 
 void ShibbolethCredentials::persist()
 {
+    qDebug() << _shibCookie;
     storeShibCookie(_shibCookie);
     if (!_user.isEmpty()) {
         _account->setCredentialSetting(QLatin1String(userC), _user);
@@ -201,6 +214,7 @@ void ShibbolethCredentials::onShibbolethCookieReceived(const QNetworkCookie& shi
 {
     storeShibCookie(shibCookie);
     _shibCookie = shibCookie;
+    qDebubug << _shibCookie;
     addToCookieJar(shibCookie);
 
     slotFetchUser();
@@ -252,10 +266,13 @@ void ShibbolethCredentials::slotBrowserRejected()
 
 void ShibbolethCredentials::slotReadJobDone(QKeychain::Job *job)
 {
+    qDebug() << "FROM KEYCHAIN" << job->error();
+
     if (job->error() == QKeychain::NoError) {
         ReadPasswordJob *readJob = static_cast<ReadPasswordJob*>(job);
         delete readJob->settings();
         QList<QNetworkCookie> cookies = QNetworkCookie::parseCookies(readJob->textData().toUtf8());
+        qDebug() <<readJob->textData() << cookies.count();
         if (cookies.count() > 0) {
             _shibCookie = cookies.first();
             addToCookieJar(_shibCookie);
@@ -274,6 +291,9 @@ void ShibbolethCredentials::slotReadJobDone(QKeychain::Job *job)
 
 void ShibbolethCredentials::showLoginWindow()
 {
+    qWarning() << "SHOW LOGIN WINDOW " << _browser;
+
+
     if (!_browser.isNull()) {
         ownCloudGui::raiseDialog(_browser);
         return;
