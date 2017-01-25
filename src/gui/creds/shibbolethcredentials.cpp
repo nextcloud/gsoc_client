@@ -214,7 +214,7 @@ void ShibbolethCredentials::onShibbolethCookieReceived(const QNetworkCookie& shi
 {
     storeShibCookie(shibCookie);
     _shibCookie = shibCookie;
-    qDebug << _shibCookie;
+    qDebug() << _shibCookie;
     addToCookieJar(shibCookie);
 
     slotFetchUser();
