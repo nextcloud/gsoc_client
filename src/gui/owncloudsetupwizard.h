@@ -81,6 +81,7 @@ private slots:
     void slotAssistantFinished( int );
     void slotSkipFolderConfiguration();
 
+
 private:
     explicit OwncloudSetupWizard(QObject *parent = 0 );
     ~OwncloudSetupWizard();

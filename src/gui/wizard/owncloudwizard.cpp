@@ -20,6 +20,7 @@
 #include "wizard/owncloudwizard.h"
 #include "wizard/owncloudsetuppage.h"
 #include "wizard/owncloudhttpcredspage.h"
+#include "wizard/owncloudoauthcredspage.h"
 #ifndef NO_SHIBBOLETH
 #include "wizard/owncloudshibbolethcredspage.h"
 #endif
@@ -41,6 +42,7 @@ OwncloudWizard::OwncloudWizard(QWidget *parent)
       _account(0),
       _setupPage(new OwncloudSetupPage(this)),
       _httpCredsPage(new OwncloudHttpCredsPage(this)),
+      _browserCredsPage(new OwncloudOAuthCredsPage),
 #ifndef NO_SHIBBOLETH
       _shibbolethCredsPage(new OwncloudShibbolethCredsPage),
 #endif
@@ -52,6 +54,7 @@ OwncloudWizard::OwncloudWizard(QWidget *parent)
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     setPage(WizardCommon::Page_ServerSetup, _setupPage);
     setPage(WizardCommon::Page_HttpCreds, _httpCredsPage);
+    setPage(WizardCommon::Page_OAuthCreds, _browserCredsPage);
 #ifndef NO_SHIBBOLETH
     setPage(WizardCommon::Page_ShibbolethCreds, _shibbolethCredsPage);
 #endif
@@ -67,6 +70,7 @@ OwncloudWizard::OwncloudWizard(QWidget *parent)
     connect( this, SIGNAL(currentIdChanged(int)), SLOT(slotCurrentPageChanged(int)));
     connect( _setupPage, SIGNAL(determineAuthType(QString)), SIGNAL(determineAuthType(QString)));
     connect( _httpCredsPage, SIGNAL(connectToOCUrl(QString)), SIGNAL(connectToOCUrl(QString)));
+    connect( _browserCredsPage, SIGNAL(connectToOCUrl(QString)), SIGNAL(connectToOCUrl(QString)));
 #ifndef NO_SHIBBOLETH
     connect( _shibbolethCredsPage, SIGNAL(connectToOCUrl(QString)), SIGNAL(connectToOCUrl(QString)));
 #endif
@@ -139,6 +143,10 @@ void OwncloudWizard::successfulStep()
         _httpCredsPage->setConnected();
         break;
 
+    case WizardCommon::Page_OAuthCreds:
+        _browserCredsPage->setConnected();
+        break;
+
 #ifndef NO_SHIBBOLETH
     case WizardCommon::Page_ShibbolethCreds:
         _shibbolethCredsPage->setConnected();
@@ -166,7 +174,9 @@ void OwncloudWizard::setAuthType(WizardCommon::AuthType type)
     _credentialsPage = _shibbolethCredsPage;
   } else
 #endif
-  {
+  if (type == WizardCommon::OAuth) {
+    _credentialsPage = _browserCredsPage;
+  } else {
     _credentialsPage = _httpCredsPage;
   }
   next();

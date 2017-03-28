@@ -198,6 +198,7 @@ void OwncloudSetupWizard::slotOwnCloudFoundAuth(const QUrl& url, const QVariantM
     connect(job, SIGNAL(authType(WizardCommon::AuthType)),
             _ocWizard, SLOT(setAuthType(WizardCommon::AuthType)));
     job->start();
+
 }
 
 void OwncloudSetupWizard::slotNoOwnCloudFoundAuth(QNetworkReply *reply)
@@ -605,7 +606,11 @@ bool DetermineAuthTypeJob::finished()
         redirection.clear();
     }
     if ((reply()->error() == QNetworkReply::AuthenticationRequiredError) || redirection.isEmpty()) {
-        emit authType(WizardCommon::HttpCreds);
+        if(reply()->rawHeader("WWW-Authenticate").contains("Bearer realm=")) {
+            emit authType(WizardCommon::OAuth);
+        } else {
+            emit authType(WizardCommon::HttpCreds);
+        }
     } else if (redirection.toString().endsWith(account()->davPath())) {
         // do a new run
         _redirects++;
