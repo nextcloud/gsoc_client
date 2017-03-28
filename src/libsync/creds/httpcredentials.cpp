@@ -64,7 +64,6 @@ protected:
             req.setSslConfiguration(sslConfiguration);
         }
 
-
         return AccessManager::createRequest(op, req, outgoingData);
     }
 private:

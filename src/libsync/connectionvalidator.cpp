@@ -132,6 +132,15 @@ void ConnectionValidator::slotStatusFound(const QUrl&url, const QVariantMap &inf
         return;
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+    if (auto job = qobject_cast<AbstractNetworkJob *>(sender())) {
+        if (auto reply = job->reply()) {
+            _account->setHttp2Supported(
+                reply->attribute(QNetworkRequest::HTTP2WasUsedAttribute).toBool());
+        }
+    }
+#endif
+
     // We attempt to work with servers >= 5.0.0 but warn users.
     // Check usages of Account::serverVersionUnsupported() for details.
 
