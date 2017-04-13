@@ -52,13 +52,15 @@ protected:
     QNetworkReply *createRequest(Operation op, const QNetworkRequest &request, QIODevice *outgoingData) Q_DECL_OVERRIDE {
         QNetworkRequest req(request);
         if (!_cred->password().isEmpty()) {
-            if (_cred->isBearerAuth()) {
+            if (_cred->isUsingOAuth()) {
                 req.setRawHeader("Authorization", "Bearer " + _cred->password().toUtf8());
             } else {
                 QByteArray credHash = QByteArray(_cred->user().toUtf8()+":"+_cred->password().toUtf8()).toBase64();
                 req.setRawHeader("Authorization", "Basic " + credHash);
             }
-        } else {
+        } else if (!request.url().password().isEmpty()) {
+            // Typically the requests to get or refresh the OAuth access token. The client
+            // credentials are put in the URL from the code making the request.
             QByteArray credHash = request.url().userInfo().toUtf8().toBase64();
             req.setRawHeader("Authorization", "Basic " + credHash);
         }
@@ -151,7 +153,9 @@ void HttpCredentials::fetchFromKeychain()
     // User must be fetched from config file
     fetchUser();
 
-    if(!_refreshToken.isEmpty()) {
+    if(!_ready && !_refreshToken.isEmpty()) {
+        // This happens if the credentials are still loaded from the keychain, bur we are called
+        // here because the auth is invalid, so this means we simply need to refresh the credentials
         refreshAccessToken();
         return;
     }
@@ -299,6 +303,7 @@ void HttpCredentials::refreshAccessToken()
             qDebug() << "Error while refreshing the token" << reply->errorString() << json;
         } else if (accessToken.isEmpty()) {
             // The token is no longer valid.
+            qDebug() << "Expired refresh token. Logging out";
             _refreshToken.clear();
         } else {
             _ready = true;
@@ -328,8 +333,11 @@ void HttpCredentials::invalidateToken()
         return;
     }
 
-    if (!_refreshToken.isEmpty()) // only invalidate the access_token (_password) but keep the _refreshToken in the keychain
+    if (!_refreshToken.isEmpty()) {
+        // Only invalidate the access_token (_password) but keep the _refreshToken in the keychain
+        // (when coming from forgetSensitiveData, the _refreshToken is cleared)
         return;
+    }
 
     DeletePasswordJob *job = new DeletePasswordJob(Theme::instance()->appName());
     addSettingsToJob(_account, job);
@@ -367,7 +375,8 @@ void HttpCredentials::clearQNAMCache()
 
 void HttpCredentials::forgetSensitiveData()
 {
-    _refreshToken.clear();
+    _refreshToken.clear(); // need to be done before invalidateToken, so it actually deletes the
+                           // refresh_token from the keychain
     invalidateToken();
     _previousPassword.clear();
 }
@@ -380,7 +389,7 @@ void HttpCredentials::persist()
     }
 
     _account->setCredentialSetting(QLatin1String(userC), _user);
-    _account->setCredentialSetting(QLatin1String(isOAuthC), isBearerAuth());
+    _account->setCredentialSetting(QLatin1String(isOAuthC), isUsingOAuth());
 
     // write cert
     WritePasswordJob *job = new WritePasswordJob(Theme::instance()->appName());
@@ -413,7 +422,7 @@ void HttpCredentials::slotWriteClientKeyPEMJobDone(Job *incomingJob)
     job->setInsecureFallback(false);
     connect(job, SIGNAL(finished(QKeychain::Job*)), SLOT(slotWriteJobDone(QKeychain::Job*)));
     job->setKey(keychainKey(_account->url().toString(), _user));
-    job->setTextData(isBearerAuth() ? _refreshToken : _password);
+    job->setTextData(isUsingOAuth() ? _refreshToken : _password);
     job->start();
 }
 

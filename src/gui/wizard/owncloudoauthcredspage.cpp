@@ -1,10 +1,10 @@
-#include <creds/credentialsfactory.h>
 /*
- * Copyright (C) by Krzesimir Nowak <krzesimir@endocode.com>
+ * Copyright (C) by Olivier Goffart <ogoffart@woboq.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
@@ -21,6 +21,7 @@
 #include "wizard/owncloudwizardcommon.h"
 #include "wizard/owncloudwizard.h"
 #include "creds/httpcredentialsgui.h"
+#include "creds/credentialsfactory.h"
 
 namespace OCC
 {
@@ -51,6 +52,7 @@ void OwncloudOAuthCredsPage::setVisible(bool visible)
         _asyncAuth->start();
         wizard()->hide();
     } else {
+        // The next or back button was activated, show the wizard again
         wizard()->show();
     }
 }
@@ -62,9 +64,6 @@ void OwncloudOAuthCredsPage::asyncAuthResult(OAuth::Result r,const QString &user
         case OAuth::NotSupported:
         case OAuth::Error:
             qWarning() << "FIXME!!!";
-            break;
-        case OAuth::Waiting:
-            // Nothing to do
             break;
         case OAuth::LoggedIn: {
             _token = token;
@@ -99,12 +98,6 @@ AbstractCredentials* OwncloudOAuthCredsPage::getCredentials() const
     Q_ASSERT(ocWizard);
     return new HttpCredentialsGui(_user, _token, _refreshToken,
                                   ocWizard->_clientSslCertificate, ocWizard->_clientSslKey);
-}
-
-void OwncloudOAuthCredsPage::slotBrowserRejected()
-{
-    wizard()->back();
-    wizard()->show();
 }
 
 } // namespace OCC

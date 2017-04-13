@@ -31,8 +31,14 @@ class HttpCredentialsGui : public HttpCredentials {
 public:
     explicit HttpCredentialsGui() : HttpCredentials() {}
     HttpCredentialsGui(const QString& user, const QString& password, const QSslCertificate& certificate, const QSslKey& key) : HttpCredentials(user, password, certificate, key) {}
-    HttpCredentialsGui(const QString& user, const QString& password, const QString &refreshToken, const QSslCertificate& certificate, const QSslKey& key)
+    HttpCredentialsGui(const QString &user, const QString &password, const QString &refreshToken,
+                       const QSslCertificate &certificate, const QSslKey &key)
         : HttpCredentials(user, password, certificate, key) { _refreshToken = refreshToken; }
+
+    /**
+     * This will query the server and either uses OAuth via _asyncAuth->start()
+     * or call showDialog to ask the password
+     */
     Q_INVOKABLE void askFromUser() Q_DECL_OVERRIDE;
 
     static QString requestAppPasswordText(const Account *account);

@@ -21,6 +21,21 @@ namespace OCC
 
 /**
  * Job that do the authorization grant and fetch the access token
+ *
+ * Normal workflow:
+ *
+ *   --> start()
+ *       |
+ *       +----> openBrowser() open the browser to the login page, redirects to http://localhost:xxx
+ *       |
+ *       +----> _server starts listening on a TCP port waiting for an HTTP request with a 'code'
+ *                |
+ *                v
+ *             request the access_token and the refresh_token via 'apps/oauth2/api/v1/token'
+ *                |
+ *                v
+ *              emit result(...)
+ *
  */
 class OAuth : public QObject
 {
@@ -31,7 +46,7 @@ public:
     { }
     ~OAuth();
 
-    enum Result { Waiting, NotSupported, LoggedIn, Error };
+    enum Result { NotSupported, LoggedIn, Error };
     void start();
     bool openBrowser();
 
@@ -45,8 +60,6 @@ private:
 
     Account *_account;
     QTcpServer _server;
-
-    QUrl _pollUrl;
 };
 
 

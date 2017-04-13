@@ -50,13 +50,11 @@ void OAuth::start()
     if (!openBrowser())
         return;
 
-    emit result(Waiting);
-
     QObject::connect(&_server, &QTcpServer::newConnection, this, [this] {
         while (QTcpSocket *socket = _server.nextPendingConnection()) {
             QObject::connect(socket, &QTcpSocket::disconnected, socket, &QTcpSocket::deleteLater);
             QObject::connect(socket, &QIODevice::readyRead, this, [this, socket]{
-                QByteArray peek = socket->peek(qMax(socket->bytesAvailable(), 4000LL)); //The code should always be within the first 4K
+                QByteArray peek = socket->peek(qMin(socket->bytesAvailable(), 4000LL)); //The code should always be within the first 4K
                 if (peek.indexOf('\n') < 0)
                     return;  // wait until we find a \n
                 QRegExp rx("^GET /\\?code=([a-zA-Z0-9]+)[& ]"); // Match a  /?code=...  URL

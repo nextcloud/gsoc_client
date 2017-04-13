@@ -18,7 +18,6 @@
 
 #include <QMap>
 #include <QSslCertificate>
-#include <QUrl>
 #include <QSslKey>
 #include "creds/abstractcredentials.h"
 
@@ -48,25 +47,27 @@ namespace OCC
 
    1) First, AccountState will attempt to load the certificate from the keychain
 
-   ---->  fetchFromKeychain                 }
-                |                            }
+   ---->  fetchFromKeychain  ------------------------> shortcut to refreshAccessToken if the cached
+                |                           }                            information is still valid
                 v                            }
           slotReadClientCertPEMJobDone       }     There are first 3 QtKeychain jobs to fetch
                 |                             }   the TLS client keys, if any, and the password
                 v                            }      (or refresh token
           slotReadClientKeyPEMJobDone        }
-                |                            }
-                v                           }
+                |                           }
+                v
             slotReadJobDone
+                |        |
+                |        +-------> emit fetched()   if OAuth is not used
                 |
-                +-------> refreshToken() ---> emit fetched()
+                v
+            refreshAccessToken()
                 |
                 v
             emit fetched()
 
-   2) If the credentials is still not valid, ask the password from the user
-
-   ---> calls  HttpCredentials: askFrom User which will trigger the auth
+   2) If the credentials is still not valid when fetched() is emitted, the ui, will call askFromUser()
+      which is implemented in HttpCredentialsGui
 
  */
 class OWNCLOUDSYNC_EXPORT HttpCredentials : public AbstractCredentials
@@ -96,8 +97,8 @@ public:
     // To fetch the user name as early as possible
     void setAccount(Account* account) Q_DECL_OVERRIDE;
 
-    // Weather we should use the Bearer auth with the password
-    bool isBearerAuth() const { return !_refreshToken.isNull(); }
+    // Whether we are using OAuth
+    bool isUsingOAuth() const { return !_refreshToken.isNull(); }
 
 private Q_SLOTS:
     void slotAuthentication(QNetworkReply*, QAuthenticator*);

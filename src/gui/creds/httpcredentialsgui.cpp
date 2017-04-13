@@ -39,7 +39,7 @@ void HttpCredentialsGui::askFromUser()
     QTimer::singleShot(30 * 1000, reply, &QNetworkReply::abort);
     QObject::connect(reply, &QNetworkReply::finished, this, [this,reply] {
         reply->deleteLater();
-        if (reply->rawHeader("WWW-Authenticate").contains("Bearer realm=")) {
+        if (reply->rawHeader("WWW-Authenticate").contains("Bearer ")) {
             // OAuth
             _asyncAuth.reset(new OAuth(_account, this));
             connect(_asyncAuth.data(), &OAuth::result,
@@ -57,11 +57,9 @@ void HttpCredentialsGui::askFromUser()
 }
 
 void HttpCredentialsGui::asyncAuthResult(OAuth::Result r, const QString &user,
-                                         const QString &token,const QString& refreshToken)
+                                         const QString &token, const QString &refreshToken)
 {
     switch (r) {
-        case OAuth::Waiting:
-            return;
         case OAuth::NotSupported:
             // We will re-enter the event loop, so better wait the next iteration
             QMetaObject::invokeMethod(this, "showDialog", Qt::QueuedConnection);
