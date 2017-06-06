@@ -22,6 +22,7 @@
 #include <QSsl>
 #include <QSslCertificate>
 #include <QNetworkAccessManager>
+#include <QDesktopServices>
 
 #include "QProgressIndicator.h"
 
@@ -40,6 +41,7 @@ OwncloudSetupPage::OwncloudSetupPage(QWidget *parent)
     , _ocUser()
     , _authTypeKnown(false)
     , _checking(false)
+    , _noAccount(true)
     , _authType(WizardCommon::HttpCreds)
     , _progressIndi(new QProgressIndicator(this))
 {
@@ -68,6 +70,12 @@ OwncloudSetupPage::OwncloudSetupPage(QWidget *parent)
     slotUrlChanged(QLatin1String("")); // don't jitter UI
     connect(_ui.leUrl, SIGNAL(textChanged(QString)), SLOT(slotUrlChanged(QString)));
     connect(_ui.leUrl, SIGNAL(editingFinished()), SLOT(slotUrlEditFinished()));
+    connect(_ui.btnProviders, SIGNAL(clicked(bool)), SLOT(slotGotoProviderList()));
+#ifdef APPLICATION_SERVERSETUP
+    connect(_ui.btnSetup, SIGNAL(clicked(bool)), SLOT(slotOpenSetupInstructions()));
+#else
+    _ui.btnSetup->hide();
+#endif
 
     addCertDial = new AddCertificateDialog(this);
 }
@@ -201,6 +209,9 @@ bool OwncloudSetupPage::urlHasChanged()
 
 int OwncloudSetupPage::nextId() const
 {
+    if (_noAccount == true) {
+        return WizardCommon::Page_ProviderList;
+    }
     if (_authType == WizardCommon::HttpCreds) {
         return WizardCommon::Page_HttpCreds;
     } else if (_authType == WizardCommon::OAuth) {
@@ -218,7 +229,10 @@ QString OwncloudSetupPage::url() const
 
 bool OwncloudSetupPage::validatePage()
 {
-    if (!_authTypeKnown) {
+    if( _noAccount == true) {
+        return true;
+    }
+    if( ! _authTypeKnown) {
         setErrorString(QString::null, false);
         _checking = true;
         startSpinner();
@@ -346,6 +360,23 @@ void OwncloudSetupPage::slotCertificateAccepted()
     }
 #endif
 }
+
+void OwncloudSetupPage::slotGotoProviderList()
+{
+    _noAccount = true;
+    _ocWizard->next();
+    emit completeChanged();
+}
+
+#ifdef APPLICATION_SERVERSETUP
+void OwncloudSetupPage::slotOpenSetupInstructions()
+{
+    QUrl url = QUrl(APPLICATION_SERVERSETUP);
+    QDesktopServices::openUrl(url);
+}
+#endif
+
+
 
 OwncloudSetupPage::~OwncloudSetupPage()
 {
