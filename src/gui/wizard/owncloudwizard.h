@@ -23,6 +23,7 @@
 
 #include "wizard/owncloudwizardcommon.h"
 #include "accountfwd.h"
+#include "config.h"
 
 namespace OCC {
 
@@ -35,6 +36,9 @@ class OwncloudOAuthCredsPage;
 class OwncloudShibbolethCredsPage;
 #endif
 class OwncloudAdvancedSetupPage;
+#ifdef APPLICATION_PROVIDERS
+class OwncloudProviderListPage;
+#endif
 class OwncloudWizardResultPage;
 class AbstractCredentials;
 class AbstractCredentialsWizardPage;
@@ -51,6 +55,7 @@ public:
         LogPlain,
         LogParagraph
     };
+
 
     OwncloudWizard(QWidget *parent = 0);
 
@@ -94,6 +99,9 @@ signals:
 private:
     AccountPtr _account;
     OwncloudSetupPage *_setupPage;
+#ifdef APPLICATION_PROVIDERS
+    OwncloudProviderListPage* _providerList;
+#endif
     OwncloudHttpCredsPage *_httpCredsPage;
     OwncloudOAuthCredsPage *_browserCredsPage;
 #ifndef NO_SHIBBOLETH

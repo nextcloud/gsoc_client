@@ -33,11 +33,13 @@ set(client_UI
     proxyauthdialog.ui
     notificationwidget.ui
     wizard/owncloudadvancedsetuppage.ui
+    wizard/owncloudproviderlistpage.ui
     wizard/owncloudconnectionmethoddialog.ui
     wizard/owncloudhttpcredspage.ui
     wizard/owncloudoauthcredspage.ui
     wizard/owncloudsetupnocredspage.ui
     wizard/owncloudwizardresultpage.ui
+    wizard/providerwidget.ui
 )
 
 qt_wrap_ui(client_UI_SRCS ${client_UI})
@@ -98,6 +100,7 @@ set(client_SRCS
     wizard/postfixlineedit.cpp
     wizard/abstractcredswizardpage.cpp
     wizard/owncloudadvancedsetuppage.cpp
+    wizard/owncloudproviderlistpage.cpp
     wizard/owncloudconnectionmethoddialog.cpp
     wizard/owncloudhttpcredspage.cpp
     wizard/owncloudoauthcredspage.cpp
@@ -105,6 +108,7 @@ set(client_SRCS
     wizard/owncloudwizardcommon.cpp
     wizard/owncloudwizard.cpp
     wizard/owncloudwizardresultpage.cpp
+    wizard/providerwidget.cpp
 )
 
 IF(NOT NO_SHIBBOLETH)
