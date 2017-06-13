@@ -91,13 +91,15 @@ void OwncloudProviderListPage::serviceRequestFinished(QNetworkReply* reply)
             foreach(const QJsonValue & flag, object["flags"].toArray()) {
                 countryList << flag.toString();
             }
-            ProviderWidget *widget = new ProviderWidget;
+            ProviderWidget *widget = new ProviderWidget(this);
             QListWidgetItem *witem = new QListWidgetItem();
             witem->setData(ProviderWidget::DataRole::headerTextRole, object["title"].toString());
             witem->setData(ProviderWidget::DataRole::subHeaderTextRole, object["specializes"].toArray()[0].toString());
             witem->setData(ProviderWidget::DataRole::registrationRole, object["registration"].toString());
             witem->setData(ProviderWidget::DataRole::providerUrlRole, object["url"].toString());
+            witem->setData(ProviderWidget::DataRole::imageRole, object["imagename"].toString());
             ui->listWidget->addItem(witem);
+
             ui->listWidget->setItemWidget(witem, qobject_cast<QWidget*>(widget));
             widget->updateProvider(witem);
             witem->setSizeHint(QSize(ui->listWidget->sizeHint().width(), widget->sizeHint().height()));

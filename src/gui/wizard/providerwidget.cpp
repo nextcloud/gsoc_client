@@ -6,7 +6,7 @@
 #include <QByteArray>
 #include <QNetworkReply>
 
-
+#include "config.h"
 #include "providerwidget.h"
 
 ProviderWidget::ProviderWidget(QWidget *parent) :
@@ -14,7 +14,6 @@ ProviderWidget::ProviderWidget(QWidget *parent) :
     ui(new Ui_ProviderWidget)
 {
     ui->setupUi(this);
-    this->setLayout(ui->horizontalLayout);
 }
 
 ProviderWidget::~ProviderWidget()
@@ -41,12 +40,25 @@ void ProviderWidget::updateProvider(const QListWidgetItem *item)
     _providerUrl = qvariant_cast<QString>(item->data(DataRole::providerUrlRole));
     QObject::connect(ui->informationButton, SIGNAL (clicked()),
                              this, SLOT (openInformation()));
+    QObject::connect(ui->providerLogo, SIGNAL (clicked()),
+                                this, SLOT (openInformation()));
 
-    QUrl url("https://bitgrid.net/~jus/provider1.png");
+    QString imageUrl = qvariant_cast<QString>(item->data(DataRole::imageRole));
+    QUrl url(imageUrl);
+    if(url.isRelative()) {
+        QUrl baseUrl(APPLICATION_PROVIDERS);
+        QUrl adjusted = baseUrl.adjusted(QUrl::UrlFormattingOption::RemoveFilename);
+        url = QUrl(adjusted.toString() + imageUrl);
+        qDebug() << url;
+    } else {
+        url = url;
+    }
     _nam = new QNetworkAccessManager(this);
     QObject::connect(_nam, SIGNAL(finished(QNetworkReply*)),
                      this,  SLOT(finishedImageLoading(QNetworkReply*)));
     _nam->get(QNetworkRequest(url));
+
+    updateGeometry();
 }
 
 void ProviderWidget::openRegistration()
