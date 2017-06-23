@@ -21,7 +21,9 @@ public:
         subHeaderTextRole   = Qt::UserRole+101,
         imageRole           = Qt::UserRole+102,
         registrationRole    = Qt::UserRole+103,
-        providerUrlRole     = Qt::UserRole+104
+        providerUrlRole     = Qt::UserRole+104,
+        freeRole            = Qt::UserRole+105,
+        countryRole         = Qt::UserRole+106
     };
 
 public slots:

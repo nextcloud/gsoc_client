@@ -24,7 +24,8 @@ OwncloudProviderListPage::OwncloudProviderListPage(QWidget *parent) :
     QWizardPage(parent),
     ui(new Ui_OwncloudProviderListPage),
     countryModel(new QStringListModel(this)),
-    _progressIndicator(new QProgressIndicator(this))
+    _progressIndicator(new QProgressIndicator(this)),
+    showFreeOnly(false)
 {
     ui->setupUi(this);
     setTitle(WizardCommon::titleTemplate().arg(tr("Hosting providers")));
@@ -47,6 +48,7 @@ void OwncloudProviderListPage::setupCustomization()
 
 void OwncloudProviderListPage::initializePage() {
     loadProviders();
+    filterProviders();
 }
 
 void OwncloudProviderListPage::startSpinner()
@@ -63,6 +65,17 @@ void OwncloudProviderListPage::stopSpinner()
     _progressIndicator->setVisible(false);
     _progressIndicator->stopAnimation();
 }
+void OwncloudProviderListPage::toggleFreePlans(bool state)
+{
+    showFreeOnly = state;
+    filterProviders();
+}
+
+void OwncloudProviderListPage::setCountry(QString current)
+{
+    showCountryOnly = new QString(current);
+    filterProviders();
+}
 
 void OwncloudProviderListPage::loadProviders()
 {
@@ -75,6 +88,30 @@ void OwncloudProviderListPage::loadProviders()
     _nam->get(QNetworkRequest(url));
     qDebug() << "Loading providers from" << url;
 
+}
+
+void OwncloudProviderListPage::filterProviders()
+{
+    const int itemCount = ui->listWidget->count();
+    for ( int index = 0; index < itemCount; index++)
+    {
+          QListWidgetItem *item = ui->listWidget->item(index);
+          QJsonArray countries = item->data(ProviderWidget::DataRole::countryRole).toJsonArray();
+          bool free = item->data(ProviderWidget::DataRole::freeRole).toBool();
+          bool countryMatches = false;
+          foreach (const QJsonValue & value, countries) {
+              QString country = value.toString();
+              if(country.contains(ui->country->currentText())) {
+                  countryMatches = true;
+              }
+          }
+
+          if((!free && showFreeOnly) || !countryMatches) {
+              item->setHidden(true);
+          } else {
+              item->setHidden(false);
+          }
+    }
 }
 
 void OwncloudProviderListPage::serviceRequestFinished(QNetworkReply* reply)
@@ -98,6 +135,9 @@ void OwncloudProviderListPage::serviceRequestFinished(QNetworkReply* reply)
             witem->setData(ProviderWidget::DataRole::registrationRole, object["registration"].toString());
             witem->setData(ProviderWidget::DataRole::providerUrlRole, object["url"].toString());
             witem->setData(ProviderWidget::DataRole::imageRole, object["imagename"].toString());
+            witem->setData(ProviderWidget::DataRole::freeRole, object["freeplans"].toBool());
+            witem->setData(ProviderWidget::DataRole::countryRole, object["flags"].toArray());
+
             ui->listWidget->addItem(witem);
 
             ui->listWidget->setItemWidget(witem, qobject_cast<QWidget*>(widget));
