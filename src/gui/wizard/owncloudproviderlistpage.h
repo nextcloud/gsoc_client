@@ -19,6 +19,9 @@ public:
     ~OwncloudProviderListPage();
     int nextId();
     void initializePage();
+public slots:
+    void toggleFreePlans(bool state);
+    void setCountry(QString current);
 
 protected slots:
     void setupCustomization();
@@ -31,11 +34,14 @@ protected slots:
 
 private:
     void loadProviders();
+    void filterProviders();
 
     Ui_OwncloudProviderListPage *ui;
     QNetworkAccessManager *_nam;
     QStringListModel *countryModel;
     QProgressIndicator *_progressIndicator;
+    bool showFreeOnly;
+    QString *showCountryOnly;
 };
 
 }

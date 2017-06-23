@@ -128,5 +128,42 @@
   </widget>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>freePlans</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>OwncloudProviderListPage</receiver>
+   <slot>toggleFreePlans(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>46</x>
+     <y>27</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>482</x>
+     <y>557</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>country</sender>
+   <signal>currentTextChanged(QString)</signal>
+   <receiver>OwncloudProviderListPage</receiver>
+   <slot>setCountry(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>665</x>
+     <y>18</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>812</x>
+     <y>128</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>toggleFreePlans(bool)</slot>
+  <slot>setCountry(QString)</slot>
+ </slots>
 </ui>
