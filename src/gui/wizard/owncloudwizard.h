@@ -38,6 +38,7 @@ class OwncloudShibbolethCredsPage;
 class OwncloudAdvancedSetupPage;
 #ifdef APPLICATION_PROVIDERS
 class OwncloudProviderListPage;
+class OwncloudProviderRegistrationPage;
 #endif
 class OwncloudWizardResultPage;
 class AbstractCredentials;
@@ -101,6 +102,7 @@ private:
     OwncloudSetupPage *_setupPage;
 #ifdef APPLICATION_PROVIDERS
     OwncloudProviderListPage* _providerList;
+    OwncloudProviderRegistrationPage* _providerRegistration;
 #endif
     OwncloudHttpCredsPage *_httpCredsPage;
     OwncloudOAuthCredsPage *_browserCredsPage;

@@ -34,6 +34,7 @@ set(client_UI
     proxyauthdialog.ui
     notificationwidget.ui
     wizard/owncloudadvancedsetuppage.ui
+    wizard/owncloudproviderregistrationpage.ui
     wizard/owncloudconnectionmethoddialog.ui
     wizard/owncloudhttpcredspage.ui
     wizard/owncloudoauthcredspage.ui
@@ -67,6 +68,7 @@ set(client_SRCS
     ocsjob.cpp
     ocssharejob.cpp
     ocsshareejob.cpp
+    ocsregistrationjob.cpp
     openfilemanager.cpp
     owncloudgui.cpp
     owncloudsetupwizard.cpp
@@ -108,6 +110,7 @@ set(client_SRCS
     wizard/postfixlineedit.cpp
     wizard/abstractcredswizardpage.cpp
     wizard/owncloudadvancedsetuppage.cpp
+    wizard/owncloudproviderregistrationpage.cpp
     wizard/owncloudconnectionmethoddialog.cpp
     wizard/owncloudhttpcredspage.cpp
     wizard/owncloudoauthcredspage.cpp

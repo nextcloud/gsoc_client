@@ -10,6 +10,10 @@
 #include "config.h"
 #include "providerwidget.h"
 #include "owncloudprovidermodel.h"
+#include "providerwidget.h"
+#include "owncloudproviderlistpage.h"
+
+namespace OCC {
 
 ProviderWidget::ProviderWidget(QWidget *parent) :
     QWidget(parent),
@@ -20,12 +24,13 @@ ProviderWidget::ProviderWidget(QWidget *parent) :
 
 ProviderWidget::~ProviderWidget()
 {
-    //delete ui;
+    delete ui;
 }
 
 void ProviderWidget::updateProvider(const QListWidgetItem *item)
 {
     OwncloudProviderModel *model = item->data(Qt::UserRole).value<OwncloudProviderModel*>();
+    _model = model;
     ui->providerName->setText(model->providerName());
     ui->providerDesc->setText(model->providerDescription());
     if(!model->free()) {
@@ -50,11 +55,16 @@ void ProviderWidget::updateProvider(const QListWidgetItem *item)
                      this,  SLOT(finishedImageLoading(QNetworkReply*)));
     _nam->get(QNetworkRequest(model->providerLogo()));
 
+    QObject::connect(model, SIGNAL(logoReady(QPixmap *)), this, SLOT(finishedImageLoading(QPixmap *)));
+    model->loadImage();
+
 }
 
 void ProviderWidget::openRegistration()
 {
     qDebug() << "Open registration for " << _registrationUrl;
+    OCC::OwncloudProviderListPage* page = qobject_cast<OCC::OwncloudProviderListPage*>(parentWidget()->parentWidget()->parentWidget());
+    page->openRegistration(_model);
 }
 
 void ProviderWidget::openInformation()
@@ -63,12 +73,12 @@ void ProviderWidget::openInformation()
     QDesktopServices::openUrl(url);
 }
 
-void ProviderWidget::finishedImageLoading(QNetworkReply* reply)
+void ProviderWidget::finishedImageLoading(QPixmap *image)
 {
-    if(reply->error() == QNetworkReply::NoError) {
-        QImage img;
-        img.loadFromData(reply->readAll());
-        ui->providerLogo->setPixmap(QPixmap::fromImage(img));
+    if(image != nullptr) {
+        ui->providerLogo->setPixmap(*image);
         ui->providerLogo->setScaledContents(true);
     }
+}
+
 }

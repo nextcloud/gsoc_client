@@ -2,7 +2,10 @@
 #include "owncloudprovidermodel.h"
 #include "config.h"
 
-OwncloudProviderModel::OwncloudProviderModel(QObject *parent) : QObject(parent)
+OwncloudProviderModel::OwncloudProviderModel(QObject *parent) :
+    QObject(parent),
+    _nam(new QNetworkAccessManager(this)),
+    _providerLogoImage(nullptr)
 {
 
 }
@@ -16,6 +19,27 @@ void OwncloudProviderModel::setJsonObject(QJsonObject object)
     _registrationUrl = object["registration"].toString();
     _free = object["freeplans"].toBool();
     _flags = object["flags"].toArray();
+}
+
+void OwncloudProviderModel::loadImage() {
+    if(this->_providerLogoImage != nullptr) {
+        emit logoReady(_providerLogoImage);
+        return;
+    }
+    QObject::connect(_nam, SIGNAL(finished(QNetworkReply*)),
+                     this,  SLOT(finishedImageLoading(QNetworkReply*)));
+    _nam->get(QNetworkRequest(this->providerLogo()));
+}
+
+void OwncloudProviderModel::finishedImageLoading(QNetworkReply* reply)
+{
+    if(reply->error() == QNetworkReply::NoError) {
+        QImage img;
+        img.loadFromData(reply->readAll());
+        _providerLogoImage = new QPixmap(QPixmap::fromImage(img));
+        emit logoReady(_providerLogoImage);
+    }
+
 }
 
 QString OwncloudProviderModel::providerName()
@@ -41,6 +65,13 @@ QUrl OwncloudProviderModel::providerLogo() {
         url = QUrl(adjusted.toString() + _providerLogo);
     }
     return url;
+}
+
+QPixmap* OwncloudProviderModel::providerLogoImage() {
+    if(this->_providerLogoImage != nullptr) {
+        return this->_providerLogoImage;
+    }
+    return nullptr;
 }
 
 QString OwncloudProviderModel::registrationUrl()

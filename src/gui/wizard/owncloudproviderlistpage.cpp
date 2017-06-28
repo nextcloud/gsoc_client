@@ -11,6 +11,8 @@
 #include <QLocale>
 
 #include "owncloudproviderlistpage.h"
+#include "owncloudproviderregistrationpage.h"
+#include "owncloudwizard.h"
 #include "ui_owncloudproviderlistpage.h"
 #include "theme.h"
 #include "config.h"
@@ -26,7 +28,8 @@ OwncloudProviderListPage::OwncloudProviderListPage(QWidget *parent) :
     ui(new Ui_OwncloudProviderListPage),
     countryModel(new QStringListModel(this)),
     _progressIndicator(new QProgressIndicator(this)),
-    showFreeOnly(true)
+    showFreeOnly(true),
+    _nam(new QNetworkAccessManager(this))
 {
     ui->setupUi(this);
     setTitle(WizardCommon::titleTemplate().arg(tr("Hosting providers")));
@@ -36,6 +39,7 @@ OwncloudProviderListPage::OwncloudProviderListPage(QWidget *parent) :
 
 OwncloudProviderListPage::~OwncloudProviderListPage()
 {
+    delete ui;
     delete countryModel;
 }
 
@@ -81,7 +85,6 @@ void OwncloudProviderListPage::setCountry(QString current)
 void OwncloudProviderListPage::loadProviders()
 {
 
-    _nam = new QNetworkAccessManager(this);
     QObject::connect(_nam, SIGNAL(finished(QNetworkReply*)),
                      this,
                      SLOT(serviceRequestFinished(QNetworkReply*)));
@@ -122,8 +125,8 @@ void OwncloudProviderListPage::serviceRequestFinished(QNetworkReply* reply)
     if(reply->error() == QNetworkReply::NoError) {
         QString strReply = (QString)reply->readAll();
         QJsonDocument jsonResponse = QJsonDocument::fromJson(strReply.toUtf8());
-
         QStringList countryList;
+
         if (!jsonResponse.isArray())
             return;
         foreach (const QJsonValue & value, jsonResponse.array()) {
@@ -179,9 +182,24 @@ void OwncloudProviderListPage::serviceRequestFinished(QNetworkReply* reply)
     }
 }
 
-int OwncloudProviderListPage::nextId()
+void OwncloudProviderListPage::openRegistration(OwncloudProviderModel *model)
 {
-    return -1;
+    OwncloudProviderRegistrationPage *page = qobject_cast<OwncloudProviderRegistrationPage *>(wizard()->page(WizardCommon::Page_ProviderRegistration));
+    page->setProvider(model);
+    wizard()->next();
+}
+
+int OwncloudProviderListPage::nextId() const
+{
+    return WizardCommon::Page_ProviderRegistration;
+}
+
+bool OwncloudProviderListPage::isComplete() const
+{
+    OwncloudProviderRegistrationPage *page = qobject_cast<OwncloudProviderRegistrationPage *>(wizard()->page(WizardCommon::Page_ProviderRegistration));
+    if(page->hasProvider())
+        return true;
+    return false;
 }
 
 }

@@ -8,6 +8,8 @@
 #include "ui_providerwidget.h"
 #include "owncloudprovidermodel.h"
 
+namespace OCC {
+
 class ProviderWidget : public QWidget
 {
     Q_OBJECT
@@ -28,16 +30,18 @@ public:
     };
 
 public slots:
-    void finishedImageLoading(QNetworkReply*);
+    void finishedImageLoading(QPixmap *image);
     void openRegistration();
     void openInformation();
 
 private:
     Ui_ProviderWidget *ui;
+    OwncloudProviderModel *_model;
     int Request;
     QString _registrationUrl;
     QString _providerUrl;
     QNetworkAccessManager *_nam;
 };
 
+}
 #endif // PROVIDERWIDGET_H

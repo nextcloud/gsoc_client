@@ -42,6 +42,7 @@ namespace WizardCommon {
     enum Pages {
         Page_ServerSetup,
         Page_ProviderList,
+        Page_ProviderRegistration,
         Page_HttpCreds,
         Page_ShibbolethCreds,
         Page_OAuthCreds,
