@@ -41,7 +41,7 @@ OwncloudSetupPage::OwncloudSetupPage(QWidget *parent)
     , _ocUser()
     , _authTypeKnown(false)
     , _checking(false)
-    , _noAccount(true)
+    , _noAccount(false)
     , _authType(WizardCommon::HttpCreds)
     , _progressIndi(new QProgressIndicator(this))
 {
@@ -70,7 +70,13 @@ OwncloudSetupPage::OwncloudSetupPage(QWidget *parent)
     slotUrlChanged(QLatin1String("")); // don't jitter UI
     connect(_ui.leUrl, SIGNAL(textChanged(QString)), SLOT(slotUrlChanged(QString)));
     connect(_ui.leUrl, SIGNAL(editingFinished()), SLOT(slotUrlEditFinished()));
+
+#ifdef APPLICATION_PROVIDERS
     connect(_ui.btnProviders, SIGNAL(clicked(bool)), SLOT(slotGotoProviderList()));
+#else
+    _ui.btnProviders->hide();
+#endif
+
 #ifdef APPLICATION_SERVERSETUP
     connect(_ui.btnSetup, SIGNAL(clicked(bool)), SLOT(slotOpenSetupInstructions()));
 #else
@@ -110,6 +116,7 @@ void OwncloudSetupPage::setupCustomization()
 // slot hit from textChanged of the url entry field.
 void OwncloudSetupPage::slotUrlChanged(const QString &url)
 {
+    _noAccount = false;
     _authTypeKnown = false;
 
     QString newUrl = url;
@@ -209,9 +216,11 @@ bool OwncloudSetupPage::urlHasChanged()
 
 int OwncloudSetupPage::nextId() const
 {
+#ifdef APPLICATION_PROVIDERS
     if (_noAccount == true) {
         return WizardCommon::Page_ProviderList;
     }
+#endif
     if (_authType == WizardCommon::HttpCreds) {
         return WizardCommon::Page_HttpCreds;
     } else if (_authType == WizardCommon::OAuth) {
@@ -364,6 +373,7 @@ void OwncloudSetupPage::slotCertificateAccepted()
 void OwncloudSetupPage::slotGotoProviderList()
 {
     _noAccount = true;
+    setServerUrl("");
     _ocWizard->next();
     emit completeChanged();
 }
