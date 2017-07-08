@@ -96,8 +96,9 @@ void OwncloudProviderListPage::filterProviders()
     for ( int index = 0; index < itemCount; index++)
     {
           QListWidgetItem *item = ui->listWidget->item(index);
-          QJsonArray countries = item->data(ProviderWidget::DataRole::countryRole).toJsonArray();
-          bool free = item->data(ProviderWidget::DataRole::freeRole).toBool();
+          OwncloudProviderModel *provider = qvariant_cast<OwncloudProviderModel*>(item->data(Qt::UserRole));
+          QJsonArray countries = provider->flags();
+          bool free = provider->free();
           bool countryMatches = false;
           foreach (const QJsonValue & value, countries) {
               QString country = value.toString();
@@ -128,18 +129,14 @@ void OwncloudProviderListPage::serviceRequestFinished(QNetworkReply* reply)
             foreach(const QJsonValue & flag, object["flags"].toArray()) {
                 countryList << flag.toString();
             }
+            OwncloudProviderModel *model = new OwncloudProviderModel(this);
+            model->setJsonObject(object);
             ProviderWidget *widget = new ProviderWidget(this);
             QListWidgetItem *witem = new QListWidgetItem();
-            witem->setData(ProviderWidget::DataRole::headerTextRole, object["title"].toString());
-            witem->setData(ProviderWidget::DataRole::subHeaderTextRole, object["specializes"].toArray()[0].toString());
-            witem->setData(ProviderWidget::DataRole::registrationRole, object["registration"].toString());
-            witem->setData(ProviderWidget::DataRole::providerUrlRole, object["url"].toString());
-            witem->setData(ProviderWidget::DataRole::imageRole, object["imagename"].toString());
-            witem->setData(ProviderWidget::DataRole::freeRole, object["freeplans"].toBool());
-            witem->setData(ProviderWidget::DataRole::countryRole, object["flags"].toArray());
+            QVariant v = QVariant::fromValue(model);
+            witem->setData(Qt::UserRole, v);
 
             ui->listWidget->addItem(witem);
-
             ui->listWidget->setItemWidget(witem, qobject_cast<QWidget*>(widget));
             widget->updateProvider(witem);
             witem->setSizeHint(QSize(ui->listWidget->sizeHint().width(), widget->sizeHint().height()));

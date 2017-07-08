@@ -6,6 +6,7 @@
 #include <QListWidgetItem>
 #include <QNetworkAccessManager>
 #include "ui_providerwidget.h"
+#include "owncloudprovidermodel.h"
 
 class ProviderWidget : public QWidget
 {
