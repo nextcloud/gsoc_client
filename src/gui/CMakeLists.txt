@@ -111,6 +111,7 @@ set(client_SRCS
     wizard/owncloudwizardcommon.cpp
     wizard/owncloudwizard.cpp
     wizard/owncloudwizardresultpage.cpp
+    wizard/owncloudprovidermodel.cpp
 )
 
 IF(NOT NO_SHIBBOLETH)

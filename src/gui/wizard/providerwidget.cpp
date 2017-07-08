@@ -5,9 +5,11 @@
 #include <QBuffer>
 #include <QByteArray>
 #include <QNetworkReply>
+#include <QVariant>
 
 #include "config.h"
 #include "providerwidget.h"
+#include "owncloudprovidermodel.h"
 
 ProviderWidget::ProviderWidget(QWidget *parent) :
     QWidget(parent),
@@ -23,13 +25,11 @@ ProviderWidget::~ProviderWidget()
 
 void ProviderWidget::updateProvider(const QListWidgetItem *item)
 {
-    QString headerText = qvariant_cast<QString>(item->data(DataRole::headerTextRole));
-    ui->providerName->setText(headerText);
+    OwncloudProviderModel *model = item->data(Qt::UserRole).value<OwncloudProviderModel*>();
+    ui->providerName->setText(model->providerName());
+    ui->providerDesc->setText(model->providerDescription());
 
-    QString description = qvariant_cast<QString>(item->data(DataRole::subHeaderTextRole));
-    ui->providerDesc->setText(description);
-
-    _registrationUrl = qvariant_cast<QString>(item->data(DataRole::registrationRole));
+    _registrationUrl = model->registrationUrl();
     if(_registrationUrl.isEmpty()) {
             ui->registerButton->hide();
     } else {
@@ -37,26 +37,17 @@ void ProviderWidget::updateProvider(const QListWidgetItem *item)
                          this, SLOT (openRegistration()));
     }
 
-    _providerUrl = qvariant_cast<QString>(item->data(DataRole::providerUrlRole));
+    _providerUrl = model->providerUrl();
+
     QObject::connect(ui->informationButton, SIGNAL (clicked()),
                              this, SLOT (openInformation()));
     QObject::connect(ui->providerLogo, SIGNAL (clicked()),
                                 this, SLOT (openInformation()));
 
-    QString imageUrl = qvariant_cast<QString>(item->data(DataRole::imageRole));
-    QUrl url(imageUrl);
-    if(url.isRelative()) {
-        QUrl baseUrl(APPLICATION_PROVIDERS);
-        QUrl adjusted = baseUrl.adjusted(QUrl::UrlFormattingOption::RemoveFilename);
-        url = QUrl(adjusted.toString() + imageUrl);
-        qDebug() << url;
-    } else {
-        url = url;
-    }
     _nam = new QNetworkAccessManager(this);
     QObject::connect(_nam, SIGNAL(finished(QNetworkReply*)),
                      this,  SLOT(finishedImageLoading(QNetworkReply*)));
-    _nam->get(QNetworkRequest(url));
+    _nam->get(QNetworkRequest(model->providerLogo()));
 
     updateGeometry();
 }
