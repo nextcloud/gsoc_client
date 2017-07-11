@@ -35,6 +35,7 @@ set(client_UI
     notificationwidget.ui
     wizard/owncloudadvancedsetuppage.ui
     wizard/owncloudproviderregistrationpage.ui
+    wizard/owncloudregistrationfinishedpage.ui
     wizard/owncloudconnectionmethoddialog.ui
     wizard/owncloudhttpcredspage.ui
     wizard/owncloudoauthcredspage.ui
@@ -111,6 +112,7 @@ set(client_SRCS
     wizard/abstractcredswizardpage.cpp
     wizard/owncloudadvancedsetuppage.cpp
     wizard/owncloudproviderregistrationpage.cpp
+    wizard/owncloudregistrationfinishedpage.cpp
     wizard/owncloudconnectionmethoddialog.cpp
     wizard/owncloudhttpcredspage.cpp
     wizard/owncloudoauthcredspage.cpp

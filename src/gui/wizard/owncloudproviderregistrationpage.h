@@ -20,16 +20,20 @@ public:
     void setProvider(OwncloudProviderModel *url);
     bool hasProvider();
     bool isComplete() const;
+    int nextId() const;
+    bool validatePage();
 
 public slots:
     void verifyData();
     void updateVerifiedData(const QJsonDocument &jsonDocument, const QVariant &value);
+    void finishedRegistration(const QJsonDocument &jsonDocument, const QVariant &value);
     void slotOcsError(int statusCode, const QString &message);
 
 private:
     Ui_OwncloudProviderRegistrationPage *ui;
     OwncloudProviderModel *model;
     bool _isValid = false;
+    bool _registrationFinished = false;
 };
 
 }

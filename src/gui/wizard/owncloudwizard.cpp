@@ -25,6 +25,8 @@
 #ifdef APPLICATION_PROVIDERS
 #include "wizard/owncloudproviderlistpage.h"
 #include "wizard/owncloudproviderregistrationpage.h"
+#include "wizard/owncloudregistrationfinishedpage.h"
+
 #endif
 #ifndef NO_SHIBBOLETH
 #include "wizard/owncloudshibbolethcredspage.h"
@@ -50,6 +52,7 @@ OwncloudWizard::OwncloudWizard(QWidget *parent)
 #ifdef APPLICATION_PROVIDERS
     , _providerList(new OwncloudProviderListPage(this))
     , _providerRegistration(new OwncloudProviderRegistrationPage(this))
+    , _providerRegistrationFinished(new OwncloudRegistrationFinishedPage(this))
 #endif
     , _httpCredsPage(new OwncloudHttpCredsPage(this))
     , _browserCredsPage(new OwncloudOAuthCredsPage)
@@ -66,6 +69,7 @@ OwncloudWizard::OwncloudWizard(QWidget *parent)
 #ifdef APPLICATION_PROVIDERS
     setPage(WizardCommon::Page_ProviderList, _providerList);
     setPage(WizardCommon::Page_ProviderRegistration, _providerRegistration);
+    setPage(WizardCommon::Page_ProviderRegistrationFinished, _providerRegistrationFinished);
 #endif
     setPage(WizardCommon::Page_HttpCreds, _httpCredsPage);
     setPage(WizardCommon::Page_OAuthCreds, _browserCredsPage);

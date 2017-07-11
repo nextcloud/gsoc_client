@@ -39,6 +39,7 @@ class OwncloudAdvancedSetupPage;
 #ifdef APPLICATION_PROVIDERS
 class OwncloudProviderListPage;
 class OwncloudProviderRegistrationPage;
+class OwncloudRegistrationFinishedPage;
 #endif
 class OwncloudWizardResultPage;
 class AbstractCredentials;
@@ -103,6 +104,7 @@ private:
 #ifdef APPLICATION_PROVIDERS
     OwncloudProviderListPage* _providerList;
     OwncloudProviderRegistrationPage* _providerRegistration;
+    OwncloudRegistrationFinishedPage* _providerRegistrationFinished;
 #endif
     OwncloudHttpCredsPage *_httpCredsPage;
     OwncloudOAuthCredsPage *_browserCredsPage;

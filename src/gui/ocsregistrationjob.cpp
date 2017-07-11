@@ -45,6 +45,7 @@ void OcsRegistrationJob::verify(const QString &username, const QString &displayn
 void OcsRegistrationJob::createRegistration(const QString &username, const QString &displayname, const QString &email, const QString &password)
 {
     setVerb("POST");
+    setPath("/register");
 
     // FIXME: use proper status code for pending
     addPassStatusCode(404);
