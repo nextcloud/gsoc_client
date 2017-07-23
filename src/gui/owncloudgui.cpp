@@ -35,11 +35,17 @@
 #include "accountmanager.h"
 #include "syncjournalfilerecord.h"
 #include "creds/abstractcredentials.h"
+#ifdef WITH_LIBCLOUDPROVIDERS
+#include "cloudproviders/cloudprovidermanager.h"
+#endif
 
 #include <QDesktopServices>
 #include <QDir>
 #include <QMessageBox>
 #include <QSignalMapper>
+#include <QtDBus/QDBusConnection>
+#include <QtDBus/QDBusInterface>
+#include <QDebug>
 
 #if defined(Q_OS_X11)
 #include <QX11Info>
@@ -62,6 +68,7 @@ ownCloudGui::ownCloudGui(Application *parent)
 #endif
     _logBrowser(0)
     , _contextMenuVisibleOsx(false)
+    , _bus(QDBusConnection::sessionBus())
     , _recentActionsMenu(0)
     , _qdbusmenuWorkaround(false)
     , _folderOpenActionMapper(new QSignalMapper(this))
@@ -109,6 +116,29 @@ ownCloudGui::ownCloudGui(Application *parent)
     connect(Logger::instance(), SIGNAL(guiMessage(QString, QString)),
         SLOT(slotShowGuiMessage(QString, QString)));
 }
+
+#ifdef WITH_LIBCLOUDPROVIDERS
+void ownCloudGui::setupCloudProviders()
+{
+    new CloudProviderManager(this);
+}
+
+bool ownCloudGui::cloudProviderApiAvailable()
+{
+    if(!_bus.isConnected())
+        return false;
+    QDBusInterface dbus_iface("org.freedesktop.CloudProviderManager", "/org/freedesktop/CloudProviderManager",
+                              "org.freedesktop.CloudProvider.Manager1", _bus);
+
+    if(!dbus_iface.isValid())
+    {
+        qDebug() << "Dbus interface unavailable";
+        return false;
+    }
+    qDebug() << "Dbus interface available";
+    return true;
+}
+#endif
 
 // This should rather be in application.... or rather in ConfigFile?
 void ownCloudGui::slotOpenSettingsDialog()
