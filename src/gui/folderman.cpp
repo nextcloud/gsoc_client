@@ -788,6 +788,7 @@ void FolderMan::slotRemoveFoldersForAccount(AccountState *accountState)
     foreach (const auto &f, foldersToRemove) {
         removeFolder(f);
     }
+    emit folderListChanged(_folderMap);
 }
 
 void FolderMan::slotForwardFolderSyncStateChange()

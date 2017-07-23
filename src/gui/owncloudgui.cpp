@@ -34,11 +34,17 @@
 #include "openfilemanager.h"
 #include "accountmanager.h"
 #include "creds/abstractcredentials.h"
+#ifdef WITH_LIBCLOUDPROVIDERS
+#include "cloudproviders/cloudprovidermanager.h"
+#endif
 
 #include <QDesktopServices>
 #include <QDir>
 #include <QMessageBox>
 #include <QSignalMapper>
+#include <QtDBus/QDBusConnection>
+#include <QtDBus/QDBusInterface>
+#include <QDebug>
 
 #if defined(Q_OS_X11)
 #include <QX11Info>
@@ -61,6 +67,7 @@ ownCloudGui::ownCloudGui(Application *parent)
 #endif
     _logBrowser(0)
     , _contextMenuVisibleOsx(false)
+    , _bus(QDBusConnection::sessionBus())
     , _recentActionsMenu(0)
     , _qdbusmenuWorkaround(false)
     , _folderOpenActionMapper(new QSignalMapper(this))
@@ -111,10 +118,33 @@ ownCloudGui::ownCloudGui(Application *parent)
     setupOverlayIcons();
 }
 
+#ifdef WITH_LIBCLOUDPROVIDERS
+void ownCloudGui::setupCloudProviders()
+{
+    new CloudProviderManager(this);
+}
+#endif
+
 // Use this to do platform specific code to make overlay icons appear
 // in the gui
 // MacOSX: perform a AppleScript code piece to load the Finder Plugin.
+#ifdef WITH_LIBCLOUDPROVIDERS
+bool ownCloudGui::cloudProviderApiAvailable()
+{
+    if(!_bus.isConnected())
+        return false;
+    QDBusInterface dbus_iface("org.freedesktop.CloudProviderManager", "/org/freedesktop/CloudProviderManager",
+                              "org.freedesktop.CloudProvider.Manager1", _bus);
 
+    if(!dbus_iface.isValid())
+    {
+        qDebug() << "Dbus interface unavailable";
+        return false;
+    }
+    qDebug() << "Dbus interface available";
+    return true;
+}
+#endif
 
 void ownCloudGui::setupOverlayIcons()
 {
