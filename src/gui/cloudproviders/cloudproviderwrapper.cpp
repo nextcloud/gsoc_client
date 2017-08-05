@@ -83,8 +83,8 @@ CloudProviderWrapper::CloudProviderWrapper(QObject *parent, Folder *folder, Clou
 
 
     cloud_provider_export_account(_cloudProvider, _accountName, _cloudProviderAccount1);
-    cloud_provider_export_menu (_cloudProvider, _accountName, getMenuModel());
-    cloud_provider_export_actions (_cloudProvider, _accountName, getActionGroup());
+    this->export_id_menu = cloud_provider_export_menu (_cloudProvider, _accountName, getMenuModel());
+    this->export_id_actions = cloud_provider_export_action_group (_cloudProvider, _accountName, getActionGroup());
 
 
     ProgressDispatcher *pd = ProgressDispatcher::instance();
@@ -93,10 +93,16 @@ CloudProviderWrapper::CloudProviderWrapper(QObject *parent, Folder *folder, Clou
     connect(this, SIGNAL(CloudProviderChanged()), this, SLOT(slotCloudProviderChanged()));
     connect(_folder, SIGNAL(syncStarted()), this, SLOT(slotSyncStarted()));
     connect(_folder, SIGNAL(syncFinished(SyncResult)), this, SLOT(slotSyncFinished(const SyncResult)));
-
-    //g_free(account_object_name);
+    connect(_folder, SIGNAL(syncPausedChanged(Folder*,bool)), this, SLOT(syncPausedChanged(Folder*, bool)));
 
     emit CloudProviderChanged();
+}
+
+CloudProviderWrapper::~CloudProviderWrapper()
+{
+    g_free(this->icon);
+    g_free(this->name);
+    g_free(this->path);
 }
 
 gchar* CloudProviderWrapper::accountName()
@@ -107,8 +113,8 @@ gchar* CloudProviderWrapper::accountName()
 static bool shouldShowInRecentsMenu(const SyncFileItem &item)
 {
     return !Progress::isIgnoredKind(item._status)
-        && item._instruction != CSYNC_INSTRUCTION_EVAL
-        && item._instruction != CSYNC_INSTRUCTION_NONE;
+            && item._instruction != CSYNC_INSTRUCTION_EVAL
+            && item._instruction != CSYNC_INSTRUCTION_NONE;
 }
 
 void CloudProviderWrapper::slotUpdateProgress(const QString &folder, const ProgressInfo &progress)
@@ -120,7 +126,7 @@ void CloudProviderWrapper::slotUpdateProgress(const QString &folder, const Progr
 
     // Build recently changed files list
     if (!progress._lastCompletedItem.isEmpty()
-        && shouldShowInRecentsMenu(progress._lastCompletedItem)) {
+            && shouldShowInRecentsMenu(progress._lastCompletedItem)) {
         if (Progress::isWarningKind(progress._lastCompletedItem._status)) {
             // display a warn icon if warnings happened.
         }
@@ -153,13 +159,13 @@ void CloudProviderWrapper::slotUpdateProgress(const QString &folder, const Progr
         QString msg;
         if (progress.trustEta()) {
             msg = tr("Syncing %1 of %2  (%3 left)")
-                      .arg(currentFile)
-                      .arg(totalFileCount)
-                      .arg(Utility::durationToDescriptiveString2(progress.totalProgress().estimatedEta));
+                    .arg(currentFile)
+                    .arg(totalFileCount)
+                    .arg(Utility::durationToDescriptiveString2(progress.totalProgress().estimatedEta));
         } else {
             msg = tr("Syncing %1 of %2")
-                      .arg(currentFile)
-                      .arg(totalFileCount);
+                    .arg(currentFile)
+                    .arg(totalFileCount);
         }
         _statusText = msg;
         emit CloudProviderChanged();
@@ -168,13 +174,13 @@ void CloudProviderWrapper::slotUpdateProgress(const QString &folder, const Progr
         QString msg;
         if (progress.trustEta()) {
             msg = tr("Syncing %1 (%2 left)")
-                      .arg(totalSizeStr, Utility::durationToDescriptiveString2(progress.totalProgress().estimatedEta));
+                    .arg(totalSizeStr, Utility::durationToDescriptiveString2(progress.totalProgress().estimatedEta));
         } else {
             msg = tr("Syncing %1")
-                      .arg(totalSizeStr);
+                    .arg(totalSizeStr);
         }
         msg = tr("Syncing %1 (%2 left)")
-                  .arg(totalSizeStr, Utility::durationToDescriptiveString2(progress.totalProgress().estimatedEta));
+                .arg(totalSizeStr, Utility::durationToDescriptiveString2(progress.totalProgress().estimatedEta));
         _statusText = msg;
         emit CloudProviderChanged();
     }
@@ -182,8 +188,8 @@ void CloudProviderWrapper::slotUpdateProgress(const QString &folder, const Progr
     if (progress.isUpdatingEstimates()
             && progress.completedFiles() >= progress.totalFiles()
             && progress._currentDiscoveredFolder.isEmpty()) {
-            QTimer::singleShot(2000, this, SLOT(slotStatusUpdateIdle()));
-        }
+        QTimer::singleShot(2000, this, SLOT(slotStatusUpdateIdle()));
+    }
 }
 
 void CloudProviderWrapper::slotStatusUpdateIdle()
@@ -228,6 +234,14 @@ void CloudProviderWrapper::slotSyncFinished(const SyncResult &result)
     emit CloudProviderChanged();
 }
 
+void CloudProviderWrapper::slotSyncPausedChanged(Folder *folder, bool state)
+{
+    paused = state;
+    cloud_provider_unexport_menu (_cloudProvider, this->export_id_menu);
+    this->export_id_menu = cloud_provider_export_menu (_cloudProvider, _accountName, getMenuModel());
+    emit CloudProviderChanged();
+}
+
 GMenuModel* CloudProviderWrapper::getMenuModel() {
 
     GMenu* section;
@@ -237,8 +251,6 @@ GMenuModel* CloudProviderWrapper::getMenuModel() {
     mainMenu = g_menu_new();
 
     section = g_menu_new();
-    //item = g_menu_item_new(qstring_to_gchar(_folder->syncResult().statusString()), NULL);
-    //g_menu_append_item(section, item);
     item = g_menu_item_new("Open website", "cloudprovider.openwebsite");
     g_menu_append_item(section, item);
     g_menu_append_section(mainMenu, NULL, G_MENU_MODEL(section));
@@ -246,7 +258,6 @@ GMenuModel* CloudProviderWrapper::getMenuModel() {
     // Recently changed files menu
     GMenu* recentMenu = g_menu_new();
     section = g_menu_new();
-
     // FIXME: use real data
     item = g_menu_item_new("file.pdf", "cloudprovider.openfolder");
     g_menu_append_item(recentMenu, item);
@@ -263,9 +274,12 @@ GMenuModel* CloudProviderWrapper::getMenuModel() {
 
     // Additional items
     section = g_menu_new();
-    item = g_menu_item_new("Pause synchronization", "cloudprovider.pause");
+    if(paused) {
+        item = g_menu_item_new("Pause synchronization", "cloudprovider.pause");
+    } else {
+        item = g_menu_item_new("Resume synchronization", "cloudprovider.pause");
+    }
     g_menu_append_item(section, item);
-
     g_menu_append_section(mainMenu, NULL, G_MENU_MODEL(section));
 
     section = g_menu_new();
@@ -295,8 +309,8 @@ activate_action_open (GSimpleAction *action, GVariant *parameter, gpointer user_
     }
 
     if(g_str_equal(name, "opensettings")) {
-            gui->slotShowSettings();
-        }
+        gui->slotShowSettings();
+    }
 
     if(g_str_equal(name, "openwebsite")) {
         QDesktopServices::openUrl(self->folder()->accountState()->account()->url());
@@ -326,23 +340,26 @@ activate_action_openrecentfile (GSimpleAction *action, GVariant *parameter, gpoi
 
 static void
 activate_action_pause (GSimpleAction *action,
-                 GVariant      *parameter,
-                 gpointer       user_data)
+                       GVariant      *parameter,
+                       gpointer       user_data)
 {
-  GVariant *old_state, *new_state;
+    (void)parameter;
+    (void)user_data;
+    GVariant *old_state, *new_state;
 
-  old_state = g_action_get_state (G_ACTION (action));
-  new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
+    old_state = g_action_get_state (G_ACTION (action));
+    new_state = g_variant_new_boolean (!g_variant_get_boolean (old_state));
 
-  /*g_print ("Toggle action %s activated, state changes from %d to %d\n",
+    /*g_print ("Toggle action %s activated, state changes from %d to %d\n",
            g_action_get_name (G_ACTION (action)),
            g_variant_get_boolean (old_state),
            g_variant_get_boolean (new_state));*/
 
-  g_simple_action_set_state (action, new_state);
-  g_variant_unref (old_state);
+    g_simple_action_set_state (action, new_state);
+    g_variant_unref (old_state);
 }
 
+static GActionEntry action_pause = { "pause",  activate_action_pause, NULL, "false", NULL, {0,0,0}};
 static GActionEntry actions[] = {
     { "openwebsite",  activate_action_open, NULL, NULL, NULL, {0,0,0}},
     { "quit",  activate_action_open, NULL, NULL, NULL, {0,0,0}},
@@ -351,8 +368,7 @@ static GActionEntry actions[] = {
     { "openhelp",  activate_action_open, NULL, NULL, NULL, {0,0,0}},
     { "opensettings",  activate_action_open, NULL, NULL, NULL, {0,0,0}},
     { "openrecentfile",  activate_action_openrecentfile, "s", NULL, NULL, {0,0,0}},
-    { "pause",  activate_action_pause, NULL, "false", NULL, {0,0,0}},
-
+    action_pause
 };
 
 GActionGroup* CloudProviderWrapper::getActionGroup()
@@ -362,5 +378,9 @@ GActionGroup* CloudProviderWrapper::getActionGroup()
     g_action_map_add_action_entries (G_ACTION_MAP (group),
                                      actions,
                                      G_N_ELEMENTS (actions), this);
+    GAction *pause = g_action_map_lookup_action(G_ACTION_MAP(group), "pause");
+    bool state = _folder->syncPaused();
+    g_simple_action_set_state(G_SIMPLE_ACTION(pause), g_variant_new_boolean(state));
+
     return G_ACTION_GROUP (group);
 }

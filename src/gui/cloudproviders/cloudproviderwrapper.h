@@ -15,6 +15,7 @@ struct _GActionGroup;
 typedef _GActionGroup GActionGroup;
 typedef char gchar;
 typedef void* gpointer;
+typedef unsigned int guint;
 
 using namespace OCC;
 
@@ -23,6 +24,7 @@ class CloudProviderWrapper : public QObject
     Q_OBJECT
 public:
     explicit CloudProviderWrapper(QObject *parent = nullptr, OCC::Folder *folder = nullptr, CloudProvider* cloudprovider = nullptr);
+    ~CloudProviderWrapper();
     gchar* accountName();
     OCC::Folder* folder();
     GMenuModel* getMenuModel();
@@ -41,6 +43,8 @@ public slots:
     void slotSyncFinished(const SyncResult &);
     void slotUpdateProgress(const QString &folder, const ProgressInfo &progress);
     void slotStatusUpdateIdle();
+    void slotSyncPausedChanged(Folder*, bool);
+
 private:
     OCC::Folder *_folder;
     CloudProvider *_cloudProvider;
@@ -49,6 +53,9 @@ private:
     uint _syncStatus;
     QList<QString> *_recentlyChanged;
     QString _statusText;
+    bool paused;
+    guint export_id_menu;
+    guint export_id_actions;
 };
 
 #endif // CLOUDPROVIDER_H

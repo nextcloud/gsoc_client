@@ -15,15 +15,16 @@ GDBusConnection *_connection;
 
 void on_bus_acquired (GDBusConnection *connection, const gchar *name, gpointer user_data)
 {
-  QString orgName = QString(APPLICATION_VENDOR).replace(" ", "").toLower();
-  QString appName = QString(APPLICATION_SHORTNAME).replace(" ", "").toLower();
-  QString busName = "org." + orgName + "." + appName;
-  QString objectName = "/org/" + orgName + "/" + appName;
+    (void)(name);
+    QString orgName = QString(APPLICATION_VENDOR).replace(" ", "").toLower();
+    QString appName = QString(APPLICATION_SHORTNAME).replace(" ", "").toLower();
+    QString busName = "org." + orgName + "." + appName;
+    QString objectName = "/org/" + orgName + "/" + appName;
 
-  CloudProviderManager *self = static_cast<CloudProviderManager*>(user_data);
-  _cloudProvider = cloud_provider_new(connection, busName.toAscii().data(), objectName.toAscii().data());
-  _connection = connection;
-  self->registerSignals();
+    CloudProviderManager *self = static_cast<CloudProviderManager*>(user_data);
+    _cloudProvider = cloud_provider_new(connection, busName.toAscii().data(), objectName.toAscii().data());
+    _connection = connection;
+    self->registerSignals();
 }
 
 static void on_name_acquired (GDBusConnection *connection, const gchar *name, gpointer user_data)
