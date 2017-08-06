@@ -28,6 +28,9 @@ void ProviderWidget::updateProvider(const QListWidgetItem *item)
     OwncloudProviderModel *model = item->data(Qt::UserRole).value<OwncloudProviderModel*>();
     ui->providerName->setText(model->providerName());
     ui->providerDesc->setText(model->providerDescription());
+    if(!model->free()) {
+        ui->labelFree->setVisible(false);
+    }
 
     _registrationUrl = model->registrationUrl();
     if(_registrationUrl.isEmpty()) {
@@ -71,5 +74,4 @@ void ProviderWidget::finishedImageLoading(QNetworkReply* reply)
         ui->providerLogo->setPixmap(QPixmap::fromImage(img));
         ui->providerLogo->setScaledContents(true);
     }
-
 }

@@ -8,6 +8,7 @@
 #include <QJsonArray>
 #include <QListWidgetItem>
 #include <QObject>
+#include <QLocale>
 
 #include "owncloudproviderlistpage.h"
 #include "ui_owncloudproviderlistpage.h"
@@ -25,7 +26,7 @@ OwncloudProviderListPage::OwncloudProviderListPage(QWidget *parent) :
     ui(new Ui_OwncloudProviderListPage),
     countryModel(new QStringListModel(this)),
     _progressIndicator(new QProgressIndicator(this)),
-    showFreeOnly(false)
+    showFreeOnly(true)
 {
     ui->setupUi(this);
     setTitle(WizardCommon::titleTemplate().arg(tr("Hosting providers")));
@@ -53,15 +54,15 @@ void OwncloudProviderListPage::initializePage() {
 
 void OwncloudProviderListPage::startSpinner()
 {
-    //_ui.resultLayout->setEnabled(true);
     _progressIndicator->setVisible(true);
     _progressIndicator->startAnimation();
+    ui->country->setVisible(false);
 }
 
 void OwncloudProviderListPage::stopSpinner()
 {
     ui->bottomLabel->setText("");
-    ui->topLabel->setText("");
+    ui->country->setVisible(true);
     _progressIndicator->setVisible(false);
     _progressIndicator->stopAnimation();
 }
@@ -102,12 +103,12 @@ void OwncloudProviderListPage::filterProviders()
           bool countryMatches = false;
           foreach (const QJsonValue & value, countries) {
               QString country = value.toString();
-              if(country.contains(ui->country->currentText())) {
+              if(country.contains(ui->country->currentData().toString())) {
                   countryMatches = true;
               }
           }
 
-          if((!free && showFreeOnly) || !countryMatches) {
+          if((showFreeOnly && !free) || !countryMatches) {
               item->setHidden(true);
           } else {
               item->setHidden(false);
@@ -117,6 +118,7 @@ void OwncloudProviderListPage::filterProviders()
 
 void OwncloudProviderListPage::serviceRequestFinished(QNetworkReply* reply)
 {
+    QString currentCountry = QLocale::system().name().split('_').at(1).toLower();
     if(reply->error() == QNetworkReply::NoError) {
         QString strReply = (QString)reply->readAll();
         QJsonDocument jsonResponse = QJsonDocument::fromJson(strReply.toUtf8());
@@ -141,14 +143,39 @@ void OwncloudProviderListPage::serviceRequestFinished(QNetworkReply* reply)
             widget->updateProvider(witem);
             witem->setSizeHint(QSize(ui->listWidget->sizeHint().width(), widget->sizeHint().height()));
         }
+
+        // Build country list
         countryList.removeDuplicates();
-        countryList.sort();
-        countryModel->setStringList(countryList);
-        ui->country->setModel(countryModel);
+        ui->country->addItem(tr("All countries"), QVariant("all"));
+        QList<QLocale> cnt = QLocale::matchingLocales(QLocale::AnyLanguage, QLocale::AnyScript, QLocale::AnyCountry);
+        std::sort(cnt.begin(), cnt.end(), [ ]( const QLocale& l1, const QLocale& l2 )
+        {
+            return QLocale::countryToString(l1.country()) < QLocale::countryToString(l2.country());
+        });
+        foreach (const QLocale countryCode, cnt) {
+            QLocale::Country country = countryCode.country();
+            if(countryCode.name() == "C")
+                continue;
+
+            QString countryIdentifier = countryCode.name().split('_').at(1).toLower();
+            if(countryList.contains(countryIdentifier) && ui->country->findData(QVariant(countryIdentifier)) == -1) {
+                ui->country->addItem(QLocale::countryToString(country), QVariant(countryIdentifier));
+            }
+        }
+
         reply->deleteLater();
         stopSpinner();
     } else {
         ui->bottomLabel->setText(tr("Failed to fetch provider list."));
+    }
+
+
+
+    int index = ui->country->findData(QVariant(currentCountry));
+    if ( index != -1 ) {
+       ui->country->setCurrentIndex(index);
+    } else {
+        ui->country->setCurrentIndex(ui->country->findData(QVariant("all")));
     }
 }
 
