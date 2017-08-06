@@ -40,7 +40,10 @@
       <item>
        <widget class="QCheckBox" name="freePlans">
         <property name="text">
-         <string>Free plans</string>
+         <string>Show free plans only</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -59,41 +62,24 @@
       </item>
       <item>
        <widget class="QComboBox" name="country">
-        <item>
-         <property name="text">
-          <string>Germany</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>USA</string>
-         </property>
-        </item>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>160</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="insertPolicy">
+         <enum>QComboBox::InsertAlphabetically</enum>
+        </property>
        </widget>
       </item>
      </layout>
-    </item>
-    <item>
-     <widget class="QLabel" name="topLabel">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="text">
-       <string>TextLabel</string>
-      </property>
-      <property name="textFormat">
-       <enum>Qt::RichText</enum>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-      <property name="wordWrap">
-       <bool>true</bool>
-      </property>
-     </widget>
     </item>
     <item>
      <widget class="QListWidget" name="listWidget">
