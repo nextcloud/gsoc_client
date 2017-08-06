@@ -18,7 +18,6 @@ find_path(LIBCLOUDPROVIDERS_INCLUDE_DIR
     /opt/local/lib
     ${CMAKE_LIBRARY_PATH}
     ${CMAKE_INSTALL_PREFIX}/lib
-    /home/jus/jhbuild/install/include
 )
 find_library(LIBCLOUDPROVIDERS_LIBRARY
     NAMES libcloudproviders.so

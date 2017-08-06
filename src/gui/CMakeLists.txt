@@ -180,7 +180,7 @@ set(3rdparty_INC
 
 include_directories(${3rdparty_INC})
 
-IF( NOT WIN32 AND NOT APPLE AND WITH_DBUS)
+IF( NOT WIN32 AND NOT APPLE AND WITH_DBUS AND LIBCLOUDPROVIDERS_FOUND)
     add_definitions(-DWITH_LIBCLOUDPROVIDERS)
     set(client_SRCS ${client_SRCS} cloudproviders/cloudprovidermanager.cpp)
     set(client_SRCS ${client_SRCS} cloudproviders/cloudproviderwrapper.cpp)
@@ -312,7 +312,7 @@ target_link_libraries( ${APPLICATION_EXECUTABLE} ${QT_LIBRARIES} )
 target_link_libraries( ${APPLICATION_EXECUTABLE} ${synclib_NAME} )
 target_link_libraries( ${APPLICATION_EXECUTABLE} updater )
 target_link_libraries( ${APPLICATION_EXECUTABLE} ${OS_SPECIFIC_LINK_LIBRARIES} )
-IF( NOT WIN32 AND NOT APPLE )
+IF( NOT WIN32 AND NOT APPLE AND LIBCLOUDPROVIDERS_FOUND)
     target_link_libraries( ${APPLICATION_EXECUTABLE} ${GLIB_LDFLAGS} ${GIO_LDFLAGS} )
     target_link_libraries( ${APPLICATION_EXECUTABLE} ${LIBCLOUDPROVIDERS_LIBRARIES} )
 ENDIF()
