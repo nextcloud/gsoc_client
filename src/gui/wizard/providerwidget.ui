@@ -212,6 +212,12 @@ padding:2px;</string>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="text">
         <string>Create an account</string>
        </property>
@@ -219,19 +225,25 @@ padding:2px;</string>
      </item>
      <item>
       <widget class="QPushButton" name="informationButton">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="font">
         <font>
-         <pointsize>8</pointsize>
+         <pointsize>10</pointsize>
         </font>
        </property>
        <property name="text">
-        <string>Get more information</string>
+        <string>Find out more</string>
        </property>
        <property name="default">
         <bool>false</bool>
        </property>
        <property name="flat">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
       </widget>
      </item>
