@@ -39,6 +39,12 @@ set(client_UI
     wizard/owncloudsetupnocredspage.ui
     wizard/owncloudwizardresultpage.ui
 )
+if(APPLICATION_PROVIDERS)
+    list(APPEND client_UI
+        wizard/owncloudproviderlistpage.ui
+        wizard/providerwidget.ui
+    )
+endif()
 
 qt_wrap_ui(client_UI_SRCS ${client_UI})
 
@@ -105,6 +111,7 @@ set(client_SRCS
     wizard/owncloudwizardcommon.cpp
     wizard/owncloudwizard.cpp
     wizard/owncloudwizardresultpage.cpp
+    wizard/owncloudprovidermodel.cpp
 )
 
 IF(NOT NO_SHIBBOLETH)
@@ -114,6 +121,13 @@ IF(NOT NO_SHIBBOLETH)
         creds/shibboleth/shibbolethuserjob.cpp
         wizard/owncloudshibbolethcredspage.cpp
     )
+endif()
+
+if(APPLICATION_PROVIDERS)
+    list(APPEND client_SRCS
+            wizard/owncloudproviderlistpage.cpp
+            wizard/providerwidget.cpp
+        )
 endif()
 
 set(updater_SRCS

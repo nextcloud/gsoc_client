@@ -60,6 +60,10 @@ public slots:
     void startSpinner();
     void stopSpinner();
     void slotCertificateAccepted();
+    void slotGotoProviderList();
+#ifdef APPLICATION_SERVERSETUP
+    void slotOpenSetupInstructions();
+#endif
 
 protected slots:
     void slotUrlChanged(const QString &);
@@ -80,6 +84,7 @@ private:
     bool _authTypeKnown;
     bool _checking;
     bool _multipleFoldersExist;
+    bool _noAccount;
     WizardCommon::AuthType _authType;
 
     QProgressIndicator *_progressIndi;
