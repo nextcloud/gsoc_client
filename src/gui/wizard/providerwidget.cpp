@@ -35,15 +35,20 @@ void ProviderWidget::updateProvider(const QListWidgetItem *item)
     _registrationUrl = model->registrationUrl();
     if(_registrationUrl.isEmpty()) {
             ui->registerButton->hide();
+            QObject::connect(ui->informationButton, SIGNAL (clicked()),
+                                     this, SLOT (openInformation()));
     } else {
+        ui->informationButton->hide();
         QObject::connect(ui->registerButton, SIGNAL (clicked()),
                          this, SLOT (openRegistration()));
     }
 
     _providerUrl = model->providerUrl();
 
-    QObject::connect(ui->informationButton, SIGNAL (clicked()),
-                             this, SLOT (openInformation()));
+    QObject::connect(ui->providerName, SIGNAL (clicked()),
+                                 this, SLOT (openInformation()));
+    QObject::connect(ui->providerLogo, SIGNAL (clicked()),
+                                     this, SLOT (openInformation()));
     QObject::connect(ui->providerLogo, SIGNAL (clicked()),
                                 this, SLOT (openInformation()));
 
