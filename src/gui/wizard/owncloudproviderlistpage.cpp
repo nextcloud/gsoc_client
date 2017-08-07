@@ -43,7 +43,7 @@ void OwncloudProviderListPage::setupCustomization()
 {
     ui->horizontalLayout->addWidget(_progressIndicator, 0, Qt::AlignLeft);
     this->setLayout(ui->verticalLayout);
-    ui->listWidget->setAlternatingRowColors(true);
+    ui->listWidget->setAlternatingRowColors(false);
     startSpinner();
 }
 
@@ -137,11 +137,11 @@ void OwncloudProviderListPage::serviceRequestFinished(QNetworkReply* reply)
             QListWidgetItem *witem = new QListWidgetItem();
             QVariant v = QVariant::fromValue(model);
             witem->setData(Qt::UserRole, v);
-
+            widget->updateProvider(witem);
+            widget->setMinimumWidth(ui->listWidget->width()-20);
+            witem->setSizeHint(QSize(ui->listWidget->width()-20, widget->sizeHint().height()));
             ui->listWidget->addItem(witem);
             ui->listWidget->setItemWidget(witem, qobject_cast<QWidget*>(widget));
-            widget->updateProvider(witem);
-            witem->setSizeHint(QSize(ui->listWidget->sizeHint().width(), widget->sizeHint().height()));
         }
 
         // Build country list

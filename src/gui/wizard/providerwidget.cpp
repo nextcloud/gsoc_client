@@ -45,19 +45,11 @@ void ProviderWidget::updateProvider(const QListWidgetItem *item)
 
     _providerUrl = model->providerUrl();
 
-    QObject::connect(ui->providerName, SIGNAL (clicked()),
-                                 this, SLOT (openInformation()));
-    QObject::connect(ui->providerLogo, SIGNAL (clicked()),
-                                     this, SLOT (openInformation()));
-    QObject::connect(ui->providerLogo, SIGNAL (clicked()),
-                                this, SLOT (openInformation()));
-
     _nam = new QNetworkAccessManager(this);
     QObject::connect(_nam, SIGNAL(finished(QNetworkReply*)),
                      this,  SLOT(finishedImageLoading(QNetworkReply*)));
     _nam->get(QNetworkRequest(model->providerLogo()));
 
-    updateGeometry();
 }
 
 void ProviderWidget::openRegistration()

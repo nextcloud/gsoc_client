@@ -227,7 +227,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Search for a hosting provider</string>
+        <string>Choose a provider</string>
        </property>
       </widget>
      </item>
