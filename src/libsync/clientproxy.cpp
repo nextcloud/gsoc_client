@@ -15,17 +15,20 @@
 #include "clientproxy.h"
 
 #include "configfile.h"
+#include <QLoggingCategory>
 #include <QUrl>
 #include <QThreadPool>
 
 namespace OCC {
 
-ClientProxy::ClientProxy(QObject *parent) :
-    QObject(parent)
+Q_LOGGING_CATEGORY(lcClientProxy, "sync.clientproxy", QtInfoMsg)
+
+ClientProxy::ClientProxy(QObject *parent)
+    : QObject(parent)
 {
 }
 
-static QNetworkProxy proxyFromConfig(const ConfigFile& cfg)
+static QNetworkProxy proxyFromConfig(const ConfigFile &cfg)
 {
     QNetworkProxy proxy;
 
@@ -41,11 +44,12 @@ static QNetworkProxy proxyFromConfig(const ConfigFile& cfg)
     return proxy;
 }
 
-bool ClientProxy::isUsingSystemDefault() {
+bool ClientProxy::isUsingSystemDefault()
+{
     OCC::ConfigFile cfg;
 
     // if there is no config file, default to system proxy.
-    if( cfg.exists() ) {
+    if (cfg.exists()) {
         return cfg.proxyType() == QNetworkProxy::DefaultProxy;
     }
 
@@ -64,30 +68,30 @@ void ClientProxy::setupQtProxyFromConfig()
     QNetworkProxy proxy;
 
     // if there is no config file, default to system proxy.
-    if( cfg.exists() ) {
+    if (cfg.exists()) {
         proxyType = cfg.proxyType();
-        proxy  = proxyFromConfig(cfg);
+        proxy = proxyFromConfig(cfg);
     }
 
-    switch(proxyType) {
+    switch (proxyType) {
     case QNetworkProxy::NoProxy:
-        qDebug() << "Set proxy configuration to use NO proxy";
+        qCInfo(lcClientProxy) << "Set proxy configuration to use NO proxy";
         QNetworkProxyFactory::setUseSystemConfiguration(false);
         QNetworkProxy::setApplicationProxy(QNetworkProxy::NoProxy);
         break;
     case QNetworkProxy::DefaultProxy:
-        qDebug() << "Set proxy configuration to use system configuration";
+        qCInfo(lcClientProxy) << "Set proxy configuration to use system configuration";
         QNetworkProxyFactory::setUseSystemConfiguration(true);
         break;
     case QNetworkProxy::Socks5Proxy:
         proxy.setType(QNetworkProxy::Socks5Proxy);
-        qDebug() << "Set proxy configuration to SOCKS5" << printQNetworkProxy(proxy);
+        qCInfo(lcClientProxy) << "Set proxy configuration to SOCKS5" << printQNetworkProxy(proxy);
         QNetworkProxyFactory::setUseSystemConfiguration(false);
         QNetworkProxy::setApplicationProxy(proxy);
         break;
     case QNetworkProxy::HttpProxy:
         proxy.setType(QNetworkProxy::HttpProxy);
-        qDebug() << "Set proxy configuration to HTTP" << printQNetworkProxy(proxy);
+        qCInfo(lcClientProxy) << "Set proxy configuration to HTTP" << printQNetworkProxy(proxy);
         QNetworkProxyFactory::setUseSystemConfiguration(false);
         QNetworkProxy::setApplicationProxy(proxy);
         break;
@@ -96,7 +100,7 @@ void ClientProxy::setupQtProxyFromConfig()
     }
 }
 
-const char* ClientProxy::proxyTypeToCStr(QNetworkProxy::ProxyType type)
+const char *ClientProxy::proxyTypeToCStr(QNetworkProxy::ProxyType type)
 {
     switch (type) {
     case QNetworkProxy::NoProxy:
@@ -123,9 +127,11 @@ void ClientProxy::lookupSystemProxyAsync(const QUrl &url, QObject *dst, const ch
     QThreadPool::globalInstance()->start(runnable); // takes ownership and deletes
 }
 
-SystemProxyRunnable::SystemProxyRunnable(const QUrl &url) : QObject(), QRunnable(), _url(url)
+SystemProxyRunnable::SystemProxyRunnable(const QUrl &url)
+    : QObject()
+    , QRunnable()
+    , _url(url)
 {
-
 }
 
 void SystemProxyRunnable::run()
@@ -140,6 +146,4 @@ void SystemProxyRunnable::run()
         // FIXME Would we really ever return more?
     }
 }
-
-
 }

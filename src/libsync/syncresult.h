@@ -22,8 +22,7 @@
 #include "owncloudlib.h"
 #include "syncfileitem.h"
 
-namespace OCC
-{
+namespace OCC {
 
 /**
  * @brief The SyncResult class
@@ -32,33 +31,32 @@ namespace OCC
 class OWNCLOUDSYNC_EXPORT SyncResult
 {
 public:
-    enum Status
-    {
-      Undefined,
-      NotYetStarted,
-      SyncPrepare,
-      SyncRunning,
-      SyncAbortRequested,
-      Success,
-      Problem,
-      Error,
-      SetupError,
-      Paused
+    enum Status {
+        Undefined,
+        NotYetStarted,
+        SyncPrepare,
+        SyncRunning,
+        SyncAbortRequested,
+        Success,
+        Problem,
+        Error,
+        SetupError,
+        Paused
     };
 
     SyncResult();
     void reset();
 
-    void    appendErrorString( const QString& );
+    void appendErrorString(const QString &);
     QString errorString() const;
     QStringList errorStrings() const;
-    void    clearErrors();
+    void clearErrors();
 
-    void setStatus( Status );
+    void setStatus(Status);
     Status status() const;
     QString statusString() const;
     QDateTime syncTime() const;
-    void setFolder(const QString& folder);
+    void setFolder(const QString &folder);
     QString folder() const;
 
     bool foundFilesNotSynced() const { return _foundFilesNotSynced; }
@@ -68,27 +66,28 @@ public:
     int numRemovedItems() const { return _numRemovedItems; }
     int numUpdatedItems() const { return _numUpdatedItems; }
     int numRenamedItems() const { return _numRenamedItems; }
-    int numConflictItems() const { return _numConflictItems; }
+    int numNewConflictItems() const { return _numNewConflictItems; }
+    int numOldConflictItems() const { return _numOldConflictItems; }
     int numErrorItems() const { return _numErrorItems; }
 
-    const SyncFileItemPtr& firstItemNew() const { return _firstItemNew; }
-    const SyncFileItemPtr& firstItemDeleted() const { return _firstItemDeleted; }
-    const SyncFileItemPtr& firstItemUpdated() const { return _firstItemUpdated; }
-    const SyncFileItemPtr& firstItemRenamed() const { return _firstItemRenamed; }
-    const SyncFileItemPtr& firstConflictItem() const { return _firstConflictItem; }
-    const SyncFileItemPtr& firstItemError() const { return _firstItemError; }
+    const SyncFileItemPtr &firstItemNew() const { return _firstItemNew; }
+    const SyncFileItemPtr &firstItemDeleted() const { return _firstItemDeleted; }
+    const SyncFileItemPtr &firstItemUpdated() const { return _firstItemUpdated; }
+    const SyncFileItemPtr &firstItemRenamed() const { return _firstItemRenamed; }
+    const SyncFileItemPtr &firstNewConflictItem() const { return _firstNewConflictItem; }
+    const SyncFileItemPtr &firstItemError() const { return _firstItemError; }
 
     void processCompletedItem(const SyncFileItemPtr &item);
 
 private:
-    Status             _status;
+    Status _status;
     SyncFileItemVector _syncItems;
-    QDateTime          _syncTime;
-    QString            _folder;
+    QDateTime _syncTime;
+    QString _folder;
     /**
      * when the sync tool support this...
      */
-    QStringList        _errors;
+    QStringList _errors;
     bool _foundFilesNotSynced;
     bool _folderStructureWasChanged;
 
@@ -97,17 +96,17 @@ private:
     int _numRemovedItems;
     int _numUpdatedItems;
     int _numRenamedItems;
-    int _numConflictItems;
+    int _numNewConflictItems;
+    int _numOldConflictItems;
     int _numErrorItems;
 
     SyncFileItemPtr _firstItemNew;
     SyncFileItemPtr _firstItemDeleted;
     SyncFileItemPtr _firstItemUpdated;
     SyncFileItemPtr _firstItemRenamed;
-    SyncFileItemPtr _firstConflictItem;
+    SyncFileItemPtr _firstNewConflictItem;
     SyncFileItemPtr _firstItemError;
 };
-
 }
 
 #endif

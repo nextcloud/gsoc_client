@@ -36,7 +36,8 @@ typedef QExplicitlySharedDataPointer<AccountState> AccountStatePtr;
  * @brief Extra info about an ownCloud server account.
  * @ingroup gui
  */
-class AccountState : public QObject, public QSharedData {
+class AccountState : public QObject, public QSharedData
+{
     Q_OBJECT
 public:
     enum State {
@@ -54,13 +55,20 @@ public:
         /// don't bother the user too much and try again.
         ServiceUnavailable,
 
+        /// Similar to ServiceUnavailable, but we know the server is down
+        /// for maintenance
+        MaintenanceMode,
+
         /// Could not communicate with the server for some reason.
         /// We assume this may resolve itself over time and will try
         /// again automatically.
         NetworkError,
 
-        /// An error like invalid credentials where retrying won't help.
-        ConfigurationError
+        /// Server configuration error. (For example: unsupported version)
+        ConfigurationError,
+
+        /// We are currently asking the user for credentials
+        AskingCredentials
     };
 
     /// The actual current connectivity status.
@@ -74,13 +82,13 @@ public:
      *
      * Use from AccountManager with a prepared QSettings object only.
      */
-    static AccountState* loadFromSettings(AccountPtr account, QSettings& settings);
+    static AccountState *loadFromSettings(AccountPtr account, QSettings &settings);
 
     /** Writes account state information to settings.
      *
      * It does not write the Account data.
      */
-    void writeToSettings(QSettings& settings);
+    void writeToSettings(QSettings &settings);
 
     AccountPtr account() const;
 
@@ -101,11 +109,6 @@ public:
     void signIn();
 
     bool isConnected() const;
-    bool isConnectedOrTemporarilyUnavailable() const;
-
-    /// Triggers a ping to the server to update state and
-    /// connection status and errors.
-    void checkConnectivity();
 
     /** Returns a new settings object for this account, already in the right groups. */
     std::unique_ptr<QSettings> settings();
@@ -123,6 +126,11 @@ public:
      */
     void tagLastSuccessfullETagRequest();
 
+public slots:
+    /// Triggers a ping to the server to update state and
+    /// connection status and errors.
+    void checkConnectivity();
+
 private:
     void setState(State state);
 
@@ -131,10 +139,10 @@ signals:
     void isConnectedChanged();
 
 protected Q_SLOTS:
-    void slotConnectionValidatorResult(ConnectionValidator::Status status, const QStringList& errors);
+    void slotConnectionValidatorResult(ConnectionValidator::Status status, const QStringList &errors);
     void slotInvalidCredentials();
-    void slotCredentialsFetched(AbstractCredentials* creds);
-    void slotCredentialsAsked(AbstractCredentials* creds);
+    void slotCredentialsFetched(AbstractCredentials *creds);
+    void slotCredentialsAsked(AbstractCredentials *creds);
 
 private:
     AccountPtr _account;
@@ -144,11 +152,22 @@ private:
     bool _waitingForNewCredentials;
     QElapsedTimer _timeSinceLastETagCheck;
     QPointer<ConnectionValidator> _connectionValidator;
-};
 
+    /**
+     * Starts counting when the server starts being back up after 503 or
+     * maintenance mode. The account will only become connected once this
+     * timer exceeds the _maintenanceToConnectedDelay value.
+     */
+    QElapsedTimer _timeSinceMaintenanceOver;
+
+    /**
+     * Milliseconds for which to delay reconnection after 503/maintenance.
+     */
+    int _maintenanceToConnectedDelay;
+};
 }
 
-Q_DECLARE_METATYPE(OCC::AccountState*)
+Q_DECLARE_METATYPE(OCC::AccountState *)
 Q_DECLARE_METATYPE(OCC::AccountStatePtr)
 
 #endif //ACCOUNTINFO_H

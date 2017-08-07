@@ -69,24 +69,33 @@ public slots:
     void slotComputeOverallSyncStatus();
     void slotShowTrayMessage(const QString &title, const QString &msg);
     void slotShowOptionalTrayMessage(const QString &title, const QString &msg);
-    void slotFolderOpenAction( const QString& alias );
+    void slotFolderOpenAction(const QString &alias);
     void slotRebuildRecentMenus();
-    void slotUpdateProgress(const QString &folder, const ProgressInfo& progress);
+    void slotUpdateProgress(const QString &folder, const ProgressInfo &progress);
     void slotShowGuiMessage(const QString &title, const QString &message);
     void slotFoldersChanged();
     void slotShowSettings();
     void slotShowSyncProtocol();
     void slotShutdown();
-    void slotSyncStateChange(Folder*);
-    void slotTrayClicked( QSystemTrayIcon::ActivationReason reason );
+    void slotSyncStateChange(Folder *);
+    void slotTrayClicked(QSystemTrayIcon::ActivationReason reason);
     void slotToggleLogBrowser();
     void slotOpenOwnCloud();
     void slotOpenSettingsDialog();
     void slotHelp();
-    void slotOpenPath(const QString& path);
+    void slotOpenPath(const QString &path);
     void slotAccountStateChanged();
     void slotTrayMessageIfServerUnsupported(Account *account);
-    void slotShowShareDialog(const QString &sharePath, const QString &localPath, bool resharingAllowed);
+
+    /**
+     * Open a share dialog for a file or folder.
+     *
+     * sharePath is the full remote path to the item,
+     * localPath is the absolute local path to it (so not relative
+     * to the folder).
+     */
+    void slotShowShareDialog(const QString &sharePath, const QString &localPath);
+
     void slotRemoveDestroyedShareDialogs();
 
 private slots:
@@ -100,7 +109,7 @@ private slots:
 private:
     void setPauseOnAllFoldersHelper(bool pause);
     void setupActions();
-    void addAccountContextMenu(AccountStatePtr accountState, QMenu* menu, bool separateMenu);
+    void addAccountContextMenu(AccountStatePtr accountState, QMenu *menu, bool separateMenu);
 
     QPointer<Systray> _tray;
 #if defined(Q_OS_MAC)
@@ -108,8 +117,8 @@ private:
 #else
     QPointer<SettingsDialog> _settingsDialog;
 #endif
-    QPointer<LogBrowser>_logBrowser;
-       // tray's menu
+    QPointer<LogBrowser> _logBrowser;
+    // tray's menu
     QScopedPointer<QMenu> _contextMenu;
 
     // Manually tracking whether the context menu is visible, but only works
@@ -117,10 +126,10 @@ private:
     bool _contextMenuVisibleOsx;
 
     QMenu *_recentActionsMenu;
-    QVector<QMenu*> _accountMenus;
+    QVector<QMenu *> _accountMenus;
     bool _qdbusmenuWorkaround;
     QTimer _workaroundBatchTrayUpdate;
-    QMap<QString, QPointer<ShareDialog> > _shareDialogs;
+    QMap<QString, QPointer<ShareDialog>> _shareDialogs;
 
     QAction *_actionLogin;
     QAction *_actionLogout;
@@ -134,7 +143,7 @@ private:
     QAction *_actionQuit;
     QAction *_actionCrash;
 
-    QList<QAction*> _recentItemsActions;
+    QList<QAction *> _recentItemsActions;
 
     QSignalMapper *_folderOpenActionMapper;
     QSignalMapper *_recentItemsMapper;

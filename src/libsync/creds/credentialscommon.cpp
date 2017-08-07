@@ -19,16 +19,13 @@
 #include <QSslCertificate>
 #include <QSslConfiguration>
 
-#include <QDebug>
-
 #include "creds/credentialscommon.h"
 
 #include "utility.h"
 #include "account.h"
 #include "syncengine.h"
 
-namespace OCC
-{
+namespace OCC {
 
 
 } // namespace OCC

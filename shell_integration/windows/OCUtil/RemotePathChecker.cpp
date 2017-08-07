@@ -111,17 +111,10 @@ void RemotePathChecker::workerThreadLoop()
             } else if (StringUtil::begins_with(response, wstring(L"STATUS:")) ||
                     StringUtil::begins_with(response, wstring(L"BROADCAST:"))) {
 
-                auto statusBegin = response.find(L':', 0);
-                assert(statusBegin != std::wstring::npos);
-
-                auto statusEnd = response.find(L':', statusBegin + 1);
-                if (statusEnd == std::wstring::npos) {
-                    // the command do not contains two colon?
+                wstring responseStatus, responsePath;
+                if (!StringUtil::extractChunks(response, responseStatus, responsePath))
                     continue;
-                }
 
-                auto responseStatus = response.substr(statusBegin+1, statusEnd - statusBegin-1);
-                auto responsePath = response.substr(statusEnd+1);
                 auto state = _StrToFileState(responseStatus);
                 bool wasAsked = asked.erase(responsePath) > 0;
 
@@ -172,9 +165,10 @@ void RemotePathChecker::workerThreadLoop()
 
 
 RemotePathChecker::RemotePathChecker()
-    : _watchedDirectories(make_shared<const vector<wstring>>())
+    : _stop(false)
+    , _watchedDirectories(make_shared<const vector<wstring>>())
     , _connected(false)
-    , _newQueries(CreateEvent(NULL, true, true, NULL))
+    , _newQueries(CreateEvent(NULL, FALSE, FALSE, NULL))
     , _thread([this]{ this->workerThreadLoop(); })
 {
 }

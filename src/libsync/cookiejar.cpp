@@ -16,16 +16,18 @@
 
 #include "configfile.h"
 
-#include <QDebug>
 #include <QFile>
 #include <QDateTime>
+#include <QLoggingCategory>
 #include <QNetworkCookie>
 #include <QDataStream>
 
 namespace OCC {
 
+Q_LOGGING_CATEGORY(lcCookieJar, "sync.cookiejar", QtInfoMsg)
+
 namespace {
-  const unsigned int JAR_VERSION = 23;
+    const unsigned int JAR_VERSION = 23;
 }
 
 QDataStream &operator<<(QDataStream &stream, const QList<QNetworkCookie> &list)
@@ -49,13 +51,12 @@ QDataStream &operator>>(QDataStream &stream, QList<QNetworkCookie> &list)
 
     quint32 count;
     stream >> count;
-    for(quint32 i = 0; i < count; ++i)
-    {
+    for (quint32 i = 0; i < count; ++i) {
         QByteArray value;
         stream >> value;
         QList<QNetworkCookie> newCookies = QNetworkCookie::parseCookies(value);
         if (newCookies.count() == 0 && value.length() != 0) {
-            qWarning() << "CookieJar: Unable to parse saved cookie:" << value;
+            qCWarning(lcCookieJar) << "CookieJar: Unable to parse saved cookie:" << value;
         }
         for (int j = 0; j < newCookies.count(); ++j)
             list.append(newCookies.at(j));
@@ -65,8 +66,8 @@ QDataStream &operator>>(QDataStream &stream, QList<QNetworkCookie> &list)
     return stream;
 }
 
-CookieJar::CookieJar(QObject *parent) :
-    QNetworkCookieJar(parent)
+CookieJar::CookieJar(QObject *parent)
+    : QNetworkCookieJar(parent)
 {
 }
 
@@ -74,20 +75,20 @@ CookieJar::~CookieJar()
 {
 }
 
-bool CookieJar::setCookiesFromUrl(const QList<QNetworkCookie>& cookieList, const QUrl& url)
+bool CookieJar::setCookiesFromUrl(const QList<QNetworkCookie> &cookieList, const QUrl &url)
 {
-  if (QNetworkCookieJar::setCookiesFromUrl(cookieList, url)) {
-    Q_EMIT newCookiesForUrl(cookieList, url);
-    return true;
-  }
+    if (QNetworkCookieJar::setCookiesFromUrl(cookieList, url)) {
+        Q_EMIT newCookiesForUrl(cookieList, url);
+        return true;
+    }
 
-  return false;
+    return false;
 }
 
 QList<QNetworkCookie> CookieJar::cookiesForUrl(const QUrl &url) const
 {
     QList<QNetworkCookie> cookies = QNetworkCookieJar::cookiesForUrl(url);
-//    qDebug() << url << "requests:" << cookies;
+    qCDebug(lcCookieJar) << url << "requests:" << cookies;
     return cookies;
 }
 
@@ -100,7 +101,7 @@ void CookieJar::save(const QString &fileName)
 {
     QFile file;
     file.setFileName(fileName);
-    qDebug() << fileName;
+    qCDebug(lcCookieJar) << fileName;
     file.open(QIODevice::WriteOnly);
     QDataStream stream(&file);
     stream << removeExpired(allCookies());
@@ -122,7 +123,7 @@ void CookieJar::restore(const QString &fileName)
 QList<QNetworkCookie> CookieJar::removeExpired(const QList<QNetworkCookie> &cookies)
 {
     QList<QNetworkCookie> updatedList;
-    foreach(const QNetworkCookie &cookie, cookies) {
+    foreach (const QNetworkCookie &cookie, cookies) {
         if (cookie.expirationDate() > QDateTime::currentDateTime() && !cookie.isSessionCookie()) {
             updatedList << cookie;
         }

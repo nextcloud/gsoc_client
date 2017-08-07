@@ -17,15 +17,23 @@
 #include "account.h"
 #include "asserts.h"
 
+#include <QLoggingCategory>
+
 namespace OCC {
 
-DeleteJob::DeleteJob(AccountPtr account, const QString& path, QObject* parent)
-    : AbstractNetworkJob(account, path, parent)
-{ }
+Q_LOGGING_CATEGORY(lcDeleteJob, "sync.networkjob.delete", QtInfoMsg)
+Q_LOGGING_CATEGORY(lcPropagateRemoteDelete, "sync.propagator.remotedelete", QtInfoMsg)
 
-DeleteJob::DeleteJob(AccountPtr account, const QUrl& url, QObject* parent)
-    : AbstractNetworkJob(account, QString(), parent), _url(url)
-{ }
+DeleteJob::DeleteJob(AccountPtr account, const QString &path, QObject *parent)
+    : AbstractNetworkJob(account, path, parent)
+{
+}
+
+DeleteJob::DeleteJob(AccountPtr account, const QUrl &url, QObject *parent)
+    : AbstractNetworkJob(account, QString(), parent)
+    , _url(url)
+{
+}
 
 void DeleteJob::start()
 {
@@ -36,14 +44,18 @@ void DeleteJob::start()
         sendRequest("DELETE", makeDavUrl(path()), req);
     }
 
-    if( reply()->error() != QNetworkReply::NoError ) {
-        qWarning() << Q_FUNC_INFO << " Network error: " << reply()->errorString();
+    if (reply()->error() != QNetworkReply::NoError) {
+        qCWarning(lcDeleteJob) << " Network error: " << reply()->errorString();
     }
     AbstractNetworkJob::start();
 }
 
 bool DeleteJob::finished()
 {
+    qCInfo(lcDeleteJob) << "DELETE of" << reply()->request().url() << "FINISHED WITH STATUS"
+                        << reply()->error()
+                        << (reply()->error() == QNetworkReply::NoError ? QLatin1String("") : errorString());
+
     emit finishedSignal();
     return true;
 }
@@ -53,11 +65,11 @@ void PropagateRemoteDelete::start()
     if (propagator()->_abortRequested.fetchAndAddRelaxed(0))
         return;
 
-    qDebug() << Q_FUNC_INFO << _item->_file;
+    qCDebug(lcPropagateRemoteDelete) << _item->_file;
 
     _job = new DeleteJob(propagator()->account(),
-                         propagator()->_remoteFolder + _item->_file,
-                         this);
+        propagator()->_remoteFolder + _item->_file,
+        this);
     connect(_job, SIGNAL(finishedSignal()), this, SLOT(slotDeleteJobFinished()));
     propagator()->_activeJobList.append(this);
     _job->start();
@@ -65,7 +77,7 @@ void PropagateRemoteDelete::start()
 
 void PropagateRemoteDelete::abort()
 {
-    if (_job &&  _job->reply())
+    if (_job && _job->reply())
         _job->reply()->abort();
 }
 
@@ -75,23 +87,18 @@ void PropagateRemoteDelete::slotDeleteJobFinished()
 
     ASSERT(_job);
 
-    qDebug() << Q_FUNC_INFO << _job->reply()->request().url() << "FINISHED WITH STATUS"
-        << _job->reply()->error()
-        << (_job->reply()->error() == QNetworkReply::NoError ? QLatin1String("") : _job->errorString());
-
     QNetworkReply::NetworkError err = _job->reply()->error();
     const int httpStatus = _job->reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     _item->_httpErrorCode = httpStatus;
 
     if (err != QNetworkReply::NoError && err != QNetworkReply::ContentNotFoundError) {
-
-        if( checkForProblemsWithShared(_item->_httpErrorCode,
-            tr("The file has been removed from a read only share. It was restored.")) ) {
+        if (checkForProblemsWithShared(_item->_httpErrorCode,
+                tr("The file has been removed from a read only share. It was restored."))) {
             return;
         }
 
         SyncFileItem::Status status = classifyError(err, _item->_httpErrorCode,
-                                                    &propagator()->_anotherSyncNeeded);
+            &propagator()->_anotherSyncNeeded);
         done(status, _job->errorString());
         return;
     }
@@ -106,8 +113,10 @@ void PropagateRemoteDelete::slotDeleteJobFinished()
         // Normally we expect "204 No Content"
         // If it is not the case, it might be because of a proxy or gateway intercepting the request, so we must
         // throw an error.
-        done(SyncFileItem::NormalError, tr("Wrong HTTP code returned by server. Expected 204, but received \"%1 %2\".")
-            .arg(_item->_httpErrorCode).arg(_job->reply()->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString()));
+        done(SyncFileItem::NormalError,
+            tr("Wrong HTTP code returned by server. Expected 204, but received \"%1 %2\".")
+                .arg(_item->_httpErrorCode)
+                .arg(_job->reply()->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString()));
         return;
     }
 
@@ -115,7 +124,4 @@ void PropagateRemoteDelete::slotDeleteJobFinished()
     propagator()->_journal->commit("Remote Remove");
     done(SyncFileItem::Success);
 }
-
-
 }
-

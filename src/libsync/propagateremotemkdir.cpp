@@ -18,16 +18,20 @@
 #include "syncjournalfilerecord.h"
 #include "propagateremotedelete.h"
 #include "asserts.h"
+
 #include <QFile>
+#include <QLoggingCategory>
 
 namespace OCC {
+
+Q_LOGGING_CATEGORY(lcPropagateRemoteMkdir, "sync.propagator.remotemkdir", QtInfoMsg)
 
 void PropagateRemoteMkdir::start()
 {
     if (propagator()->_abortRequested.fetchAndAddRelaxed(0))
         return;
 
-    qDebug() << Q_FUNC_INFO << _item->_file;
+    qCDebug(lcPropagateRemoteMkdir) << _item->_file;
 
     propagator()->_activeJobList.append(this);
 
@@ -36,8 +40,8 @@ void PropagateRemoteMkdir::start()
     }
 
     _job = new DeleteJob(propagator()->account(),
-                         propagator()->_remoteFolder + _item->_file,
-                         this);
+        propagator()->_remoteFolder + _item->_file,
+        this);
     connect(_job, SIGNAL(finishedSignal()), SLOT(slotStartMkcolJob()));
     _job->start();
 }
@@ -47,18 +51,18 @@ void PropagateRemoteMkdir::slotStartMkcolJob()
     if (propagator()->_abortRequested.fetchAndAddRelaxed(0))
         return;
 
-    qDebug() << Q_FUNC_INFO << _item->_file;
+    qCDebug(lcPropagateRemoteMkdir) << _item->_file;
 
     _job = new MkColJob(propagator()->account(),
-                        propagator()->_remoteFolder + _item->_file,
-                        this);
+        propagator()->_remoteFolder + _item->_file,
+        this);
     connect(_job, SIGNAL(finished(QNetworkReply::NetworkError)), this, SLOT(slotMkcolJobFinished()));
     _job->start();
 }
 
 void PropagateRemoteMkdir::abort()
 {
-    if (_job &&  _job->reply())
+    if (_job && _job->reply())
         _job->reply()->abort();
 }
 
@@ -73,10 +77,6 @@ void PropagateRemoteMkdir::slotMkcolJobFinished()
 
     ASSERT(_job);
 
-    qDebug() << Q_FUNC_INFO << _job->reply()->request().url() << "FINISHED WITH STATUS"
-        << _job->reply()->error()
-        << (_job->reply()->error() == QNetworkReply::NoError ? QLatin1String("") : _job->errorString());
-
     QNetworkReply::NetworkError err = _job->reply()->error();
     _item->_httpErrorCode = _job->reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
 
@@ -84,15 +84,17 @@ void PropagateRemoteMkdir::slotMkcolJobFinished()
         // This happens when the directory already exists. Nothing to do.
     } else if (err != QNetworkReply::NoError) {
         SyncFileItem::Status status = classifyError(err, _item->_httpErrorCode,
-                                                    &propagator()->_anotherSyncNeeded);
+            &propagator()->_anotherSyncNeeded);
         done(status, _job->errorString());
         return;
     } else if (_item->_httpErrorCode != 201) {
         // Normally we expect "201 Created"
         // If it is not the case, it might be because of a proxy or gateway intercepting the request, so we must
         // throw an error.
-        done(SyncFileItem::NormalError, tr("Wrong HTTP code returned by server. Expected 201, but received \"%1 %2\".")
-            .arg(_item->_httpErrorCode).arg(_job->reply()->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString()));
+        done(SyncFileItem::NormalError,
+            tr("Wrong HTTP code returned by server. Expected 201, but received \"%1 %2\".")
+                .arg(_item->_httpErrorCode)
+                .arg(_job->reply()->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString()));
         return;
     }
 
@@ -107,7 +109,8 @@ void PropagateRemoteMkdir::slotMkcolJobFinished()
         // while files are still uploading
         propagator()->_activeJobList.append(this);
         auto propfindJob = new PropfindJob(_job->account(), _job->path(), this);
-        propfindJob->setProperties(QList<QByteArray>() << "getetag" << "http://owncloud.org/ns:id");
+        propfindJob->setProperties(QList<QByteArray>() << "getetag"
+                                                       << "http://owncloud.org/ns:id");
         QObject::connect(propfindJob, SIGNAL(result(QVariantMap)), this, SLOT(propfindResult(QVariantMap)));
         QObject::connect(propfindJob, SIGNAL(finishedWithError()), this, SLOT(propfindError()));
         propfindJob->start();
@@ -147,8 +150,4 @@ void PropagateRemoteMkdir::success()
 
     done(SyncFileItem::Success);
 }
-
-
-
 }
-

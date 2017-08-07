@@ -263,7 +263,7 @@ static int _csync_detect_update(CSYNC *ctx, const char *file,
 
     if(tmp && tmp->phash == h ) { /* there is an entry in the database */
         /* we have an update! */
-        CSYNC_LOG(CSYNC_LOG_PRIORITY_TRACE, "Database entry found, compare: %" PRId64 " <-> %" PRId64
+        CSYNC_LOG(CSYNC_LOG_PRIORITY_INFO, "Database entry found, compare: %" PRId64 " <-> %" PRId64
                                             ", etag: %s <-> %s, inode: %" PRId64 " <-> %" PRId64
                                             ", size: %" PRId64 " <-> %" PRId64 ", perms: %s <-> %s, ignore: %d",
                   ((int64_t) fs->mtime), ((int64_t) tmp->modtime),
@@ -287,16 +287,15 @@ static int _csync_detect_update(CSYNC *ctx, const char *file,
             // Checksum comparison at this stage is only enabled for .eml files,
             // check #4754 #4755
             bool isEmlFile = csync_fnmatch("*.eml", file, FNM_CASEFOLD) == 0;
-            if (isEmlFile && fs->size == tmp->size && tmp->checksumTypeId) {
+            if (isEmlFile && fs->size == tmp->size && tmp->checksumHeader) {
                 if (ctx->callbacks.checksum_hook) {
-                    st->checksum = ctx->callbacks.checksum_hook(
-                                file, tmp->checksumTypeId,
-                                ctx->callbacks.checksum_userdata);
+                    st->checksumHeader = ctx->callbacks.checksum_hook(
+                        file, tmp->checksumHeader,
+                        ctx->callbacks.checksum_userdata);
                 }
                 bool checksumIdentical = false;
-                if (st->checksum) {
-                    st->checksumTypeId = tmp->checksumTypeId;
-                    checksumIdentical = strncmp(st->checksum, tmp->checksum, 1000) == 0;
+                if (st->checksumHeader) {
+                    checksumIdentical = strncmp(st->checksumHeader, tmp->checksumHeader, 1000) == 0;
                 }
                 if (checksumIdentical) {
                     CSYNC_LOG(CSYNC_LOG_PRIORITY_TRACE, "NOTE: Checksums are identical, file did not actually change: %s", path);
@@ -381,15 +380,14 @@ static int _csync_detect_update(CSYNC *ctx, const char *file,
 
 
             // Verify the checksum where possible
-            if (isRename && tmp->checksumTypeId && ctx->callbacks.checksum_hook
-                    && fs->type == CSYNC_VIO_FILE_TYPE_REGULAR) {
-                st->checksum = ctx->callbacks.checksum_hook(
-                            file, tmp->checksumTypeId,
-                            ctx->callbacks.checksum_userdata);
-                if (st->checksum) {
-                    CSYNC_LOG(CSYNC_LOG_PRIORITY_TRACE, "checking checksum of potential rename %s %s <-> %s", path, st->checksum, tmp->checksum);
-                    st->checksumTypeId = tmp->checksumTypeId;
-                    isRename = strncmp(st->checksum, tmp->checksum, 1000) == 0;
+            if (isRename && tmp->checksumHeader && ctx->callbacks.checksum_hook
+                && fs->type == CSYNC_VIO_FILE_TYPE_REGULAR) {
+                st->checksumHeader = ctx->callbacks.checksum_hook(
+                    file, tmp->checksumHeader,
+                    ctx->callbacks.checksum_userdata);
+                if (st->checksumHeader) {
+                    CSYNC_LOG(CSYNC_LOG_PRIORITY_TRACE, "checking checksum of potential rename %s %s <-> %s", path, st->checksumHeader, tmp->checksumHeader);
+                    isRename = strncmp(st->checksumHeader, tmp->checksumHeader, 1000) == 0;
                 }
             }
 
@@ -414,7 +412,7 @@ static int _csync_detect_update(CSYNC *ctx, const char *file,
             }
             if(tmp ) {                           /* tmp existing at all */
                 if ( _csync_filetype_different(tmp, fs)) {
-                    CSYNC_LOG(CSYNC_LOG_PRIORITY_DEBUG, "WARN: file types different is not!");
+                    CSYNC_LOG(CSYNC_LOG_PRIORITY_WARN, "file types different is not!");
                     st->instruction = CSYNC_INSTRUCTION_NEW;
                     goto out;
                 }
@@ -446,7 +444,7 @@ static int _csync_detect_update(CSYNC *ctx, const char *file,
         }
     }
   } else  {
-      CSYNC_LOG(CSYNC_LOG_PRIORITY_DEBUG, "Unable to open statedb" );
+      CSYNC_LOG(CSYNC_LOG_PRIORITY_WARN, "Unable to open statedb" );
       csync_file_stat_free(st);
       ctx->status_code = CSYNC_STATUS_UNSUCCESSFUL;
       return -1;
@@ -471,6 +469,8 @@ out:
               st->error_status = CSYNC_STATUS_INDIVIDUAL_EXCLUDE_HIDDEN;
           } else if (excluded == CSYNC_FILE_EXCLUDE_STAT_FAILED) {
               st->error_status = CSYNC_STATUS_INDIVIDUAL_STAT_FAILED;
+          } else if (excluded == CSYNC_FILE_EXCLUDE_CONFLICT) {
+              st->error_status = CSYNC_STATUS_INDIVIDUAL_IS_CONFLICT_FILE;
           }
       }
   }
@@ -506,6 +506,11 @@ out:
       strncpy(st->remotePerm, fs->remotePerm, REMOTE_PERM_BUF_SIZE);
   }
 
+  // For the remote: propagate the discovered checksum
+  if (fs->checksumHeader && ctx->current == REMOTE_REPLICA) {
+      st->checksumHeader = c_strdup(fs->checksumHeader);
+  }
+
   st->phash = h;
   st->pathlen = len;
   memcpy(st->path, (len ? path : ""), len + 1);
@@ -528,7 +533,7 @@ out:
     default:
       break;
   }
-  CSYNC_LOG(CSYNC_LOG_PRIORITY_DEBUG, "file: %s, instruction: %s <<=", st->path,
+  CSYNC_LOG(CSYNC_LOG_PRIORITY_INFO, "file: %s, instruction: %s <<=", st->path,
       csync_instruction_str(st->instruction));
 
   return 0;

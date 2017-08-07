@@ -18,36 +18,44 @@
 
 #include <QBuffer>
 #include <QFile>
-#include <QDebug>
 #include <QElapsedTimer>
 
 
 namespace OCC {
+
+Q_DECLARE_LOGGING_CATEGORY(lcPutJob)
+Q_DECLARE_LOGGING_CATEGORY(lcPropagateUpload)
+
 class BandwidthManager;
 
 /**
  * @brief The UploadDevice class
  * @ingroup libsync
  */
-class UploadDevice : public QIODevice {
+class UploadDevice : public QIODevice
+{
     Q_OBJECT
 public:
     UploadDevice(BandwidthManager *bwm);
     ~UploadDevice();
 
     /** Reads the data from the file and opens the device */
-    bool prepareAndOpen(const QString& fileName, qint64 start, qint64 size);
+    bool prepareAndOpen(const QString &fileName, qint64 start, qint64 size);
 
-    qint64 writeData(const char* , qint64 ) Q_DECL_OVERRIDE;
-    qint64 readData(char* data, qint64 maxlen) Q_DECL_OVERRIDE;
+    qint64 writeData(const char *, qint64) Q_DECL_OVERRIDE;
+    qint64 readData(char *data, qint64 maxlen) Q_DECL_OVERRIDE;
     bool atEnd() const Q_DECL_OVERRIDE;
     qint64 size() const Q_DECL_OVERRIDE;
     qint64 bytesAvailable() const Q_DECL_OVERRIDE;
     bool isSequential() const Q_DECL_OVERRIDE;
-    bool seek ( qint64 pos ) Q_DECL_OVERRIDE;
+    bool seek(qint64 pos) Q_DECL_OVERRIDE;
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 4, 2)
-    bool reset() Q_DECL_OVERRIDE { emit wasReset(); return QIODevice::reset(); }
+    bool reset() Q_DECL_OVERRIDE
+    {
+        emit wasReset();
+        return QIODevice::reset();
+    }
 #endif
 
     void setBandwidthLimited(bool);
@@ -62,7 +70,6 @@ signals:
 #endif
 
 private:
-
     // The file data
     QByteArray _data;
     // Position in the data
@@ -83,11 +90,12 @@ protected slots:
  * @brief The PUTFileJob class
  * @ingroup libsync
  */
-class PUTFileJob : public AbstractNetworkJob {
+class PUTFileJob : public AbstractNetworkJob
+{
     Q_OBJECT
 
 private:
-    QIODevice* _device;
+    QIODevice *_device;
     QMap<QByteArray, QByteArray> _headers;
     QString _errorString;
     QUrl _url;
@@ -95,16 +103,22 @@ private:
 
 public:
     // Takes ownership of the device
-    explicit PUTFileJob(AccountPtr account, const QString& path, QIODevice *device,
-                        const QMap<QByteArray, QByteArray> &headers, int chunk, QObject* parent = 0)
-        : AbstractNetworkJob(account, path, parent), _device(device), _headers(headers), _chunk(chunk)
+    explicit PUTFileJob(AccountPtr account, const QString &path, QIODevice *device,
+        const QMap<QByteArray, QByteArray> &headers, int chunk, QObject *parent = 0)
+        : AbstractNetworkJob(account, path, parent)
+        , _device(device)
+        , _headers(headers)
+        , _chunk(chunk)
     {
         _device->setParent(this);
     }
-    explicit PUTFileJob(AccountPtr account, const QUrl& url, QIODevice *device,
-                        const QMap<QByteArray, QByteArray> &headers, int chunk, QObject* parent = 0)
-        : AbstractNetworkJob(account, QString(), parent), _device(device), _headers(headers)
-        , _url(url), _chunk(chunk)
+    explicit PUTFileJob(AccountPtr account, const QUrl &url, QIODevice *device,
+        const QMap<QByteArray, QByteArray> &headers, int chunk, QObject *parent = 0)
+        : AbstractNetworkJob(account, QString(), parent)
+        , _device(device)
+        , _headers(headers)
+        , _url(url)
+        , _chunk(chunk)
     {
         _device->setParent(this);
     }
@@ -114,27 +128,32 @@ public:
 
     virtual void start() Q_DECL_OVERRIDE;
 
-    virtual bool finished() Q_DECL_OVERRIDE {
+    virtual bool finished() Q_DECL_OVERRIDE
+    {
+        qCInfo(lcPutJob) << "PUT of" << reply()->request().url().toString() << "FINISHED WITH STATUS"
+                         << reply()->error()
+                         << (reply()->error() == QNetworkReply::NoError ? QLatin1String("") : errorString())
+                         << reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute)
+                         << reply()->attribute(QNetworkRequest::HttpReasonPhraseAttribute);
+
         emit finishedSignal();
         return true;
     }
 
-    QString errorString() {
+    QString errorString()
+    {
         return _errorString.isEmpty() ? AbstractNetworkJob::errorString() : _errorString;
     }
 
-    quint64 msSinceStart() const {
+    quint64 msSinceStart() const
+    {
         return _requestTimer.elapsed();
     }
 
 signals:
     void finishedSignal();
-    void uploadProgress(qint64,qint64);
+    void uploadProgress(qint64, qint64);
 
-private slots:
-#if QT_VERSION < 0x050402
-    void slotSoftAbort();
-#endif
 };
 
 /**
@@ -144,16 +163,23 @@ private slots:
  * replies with an etag. https://github.com/owncloud/core/issues/12097
  * @ingroup libsync
  */
-class PollJob : public AbstractNetworkJob {
+class PollJob : public AbstractNetworkJob
+{
     Q_OBJECT
     SyncJournalDb *_journal;
     QString _localPath;
+
 public:
     SyncFileItemPtr _item;
     // Takes ownership of the device
     explicit PollJob(AccountPtr account, const QString &path, const SyncFileItemPtr &item,
-                     SyncJournalDb *journal, const QString &localPath, QObject *parent)
-        : AbstractNetworkJob(account, path, parent), _journal(journal), _localPath(localPath), _item(item) {}
+        SyncJournalDb *journal, const QString &localPath, QObject *parent)
+        : AbstractNetworkJob(account, path, parent)
+        , _journal(journal)
+        , _localPath(localPath)
+        , _item(item)
+    {
+    }
 
     void start() Q_DECL_OVERRIDE;
     bool finished() Q_DECL_OVERRIDE;
@@ -182,25 +208,29 @@ signals:
  *                                  v
  *        finalize() or abortWithError()  or startPollJob()
  */
-class PropagateUploadFileCommon : public PropagateItemJob {
+class PropagateUploadFileCommon : public PropagateItemJob
+{
     Q_OBJECT
 
 protected:
-    QVector<AbstractNetworkJob*> _jobs; /// network jobs that are currently in transit
+    QVector<AbstractNetworkJob *> _jobs; /// network jobs that are currently in transit
     bool _finished BITFIELD(1); /// Tells that all the jobs have been finished
     bool _deleteExisting BITFIELD(1);
 
-    // measure the performance of checksum calc and upload
+// measure the performance of checksum calc and upload
 #ifdef WITH_TESTING
     Utility::StopWatch _stopWatch;
 #endif
 
-    QByteArray _transmissionChecksum;
-    QByteArray _transmissionChecksumType;
+    QByteArray _transmissionChecksumHeader;
 
 public:
-    PropagateUploadFileCommon(OwncloudPropagator* propagator,const SyncFileItemPtr& item)
-        : PropagateItemJob(propagator, item), _finished(false), _deleteExisting(false) {}
+    PropagateUploadFileCommon(OwncloudPropagator *propagator, const SyncFileItemPtr &item)
+        : PropagateItemJob(propagator, item)
+        , _finished(false)
+        , _deleteExisting(false)
+    {
+    }
 
     /**
      * Whether an existing entity with the same name may be deleted before
@@ -217,13 +247,14 @@ public:
 private slots:
     void slotComputeContentChecksum();
     // Content checksum computed, compute the transmission checksum
-    void slotComputeTransmissionChecksum(const QByteArray& contentChecksumType, const QByteArray& contentChecksum);
+    void slotComputeTransmissionChecksum(const QByteArray &contentChecksumType, const QByteArray &contentChecksum);
     // transmission checksum computed, prepare the upload
-    void slotStartUpload(const QByteArray& transmissionChecksumType, const QByteArray& transmissionChecksum);
+    void slotStartUpload(const QByteArray &transmissionChecksumType, const QByteArray &transmissionChecksum);
+
 public:
     virtual void doStartUpload() = 0;
 
-    void startPollJob(const QString& path);
+    void startPollJob(const QString &path);
     void finalize();
     void abortWithError(SyncFileItem::Status status, const QString &error);
 
@@ -242,9 +273,13 @@ protected:
      */
     void checkResettingErrors();
 
+    /**
+     * Error handling functionality that is shared between jobs.
+     */
+    void commonErrorHandling(AbstractNetworkJob *job);
+
     // Bases headers that need to be sent with every chunk
     QMap<QByteArray, QByteArray> headers();
-
 };
 
 /**
@@ -253,7 +288,8 @@ protected:
  * Propagation job, impementing the old chunking agorithm
  *
  */
-class PropagateUploadFileV1 : public PropagateUploadFileCommon {
+class PropagateUploadFileV1 : public PropagateUploadFileCommon
+{
     Q_OBJECT
 
 private:
@@ -272,19 +308,25 @@ private:
     int _chunkCount; /// Total number of chunks for this file
     int _transferId; /// transfer id (part of the url)
 
-    quint64 chunkSize() const { return propagator()->syncOptions()._initialChunkSize; }
+    quint64 chunkSize() const {
+        // Old chunking does not use dynamic chunking algorithm, and does not adjusts the chunk size respectively,
+        // thus this value should be used as the one classifing item to be chunked
+        return propagator()->syncOptions()._initialChunkSize;
+    }
 
 
 public:
-    PropagateUploadFileV1(OwncloudPropagator* propagator,const SyncFileItemPtr& item) :
-        PropagateUploadFileCommon(propagator,item) {}
+    PropagateUploadFileV1(OwncloudPropagator *propagator, const SyncFileItemPtr &item)
+        : PropagateUploadFileCommon(propagator, item)
+    {
+    }
 
     void doStartUpload() Q_DECL_OVERRIDE;
 
 private slots:
     void startNextChunk();
     void slotPutFinished();
-    void slotUploadProgress(qint64,qint64);
+    void slotUploadProgress(qint64, qint64);
 };
 
 /**
@@ -293,7 +335,8 @@ private slots:
  * Propagation job, impementing the new chunking agorithm
  *
  */
-class PropagateUploadFileNG : public PropagateUploadFileCommon {
+class PropagateUploadFileNG : public PropagateUploadFileCommon
+{
     Q_OBJECT
 private:
     quint64 _sent; /// amount of data (bytes) that was already sent
@@ -304,7 +347,11 @@ private:
 
     // Map chunk number with its size  from the PROPFIND on resume.
     // (Only used from slotPropfindIterate/slotPropfindFinished because the LsColJob use signals to report data.)
-    struct ServerChunkInfo { quint64 size; QString originalName; };
+    struct ServerChunkInfo
+    {
+        quint64 size;
+        QString originalName;
+    };
     QMap<int, ServerChunkInfo> _serverChunks;
 
     /**
@@ -314,8 +361,11 @@ private:
     QUrl chunkUrl(int chunk = -1);
 
 public:
-    PropagateUploadFileNG(OwncloudPropagator* propagator,const SyncFileItemPtr& item) :
-        PropagateUploadFileCommon(propagator,item), _currentChunkSize(0) {}
+    PropagateUploadFileNG(OwncloudPropagator *propagator, const SyncFileItemPtr &item)
+        : PropagateUploadFileCommon(propagator, item)
+        , _currentChunkSize(0)
+    {
+    }
 
     void doStartUpload() Q_DECL_OVERRIDE;
 
@@ -325,14 +375,11 @@ private:
 private slots:
     void slotPropfindFinished();
     void slotPropfindFinishedWithError();
-    void slotPropfindIterate(const QString &name, const QMap<QString,QString> &properties);
+    void slotPropfindIterate(const QString &name, const QMap<QString, QString> &properties);
     void slotDeleteJobFinished();
     void slotMkColFinished(QNetworkReply::NetworkError);
     void slotPutFinished();
     void slotMoveJobFinished();
-    void slotUploadProgress(qint64,qint64);
+    void slotUploadProgress(qint64, qint64);
 };
-
-
 }
-

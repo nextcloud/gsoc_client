@@ -22,10 +22,10 @@
 
 #include "utility.h"
 #include "ownsql.h"
+#include "syncjournalfilerecord.h"
 
 namespace OCC {
 class SyncJournalFileRecord;
-class SyncJournalErrorBlacklistRecord;
 
 /**
  * @brief Class that handles the sync database
@@ -37,53 +37,68 @@ class OWNCLOUDSYNC_EXPORT SyncJournalDb : public QObject
 {
     Q_OBJECT
 public:
-    explicit SyncJournalDb(const QString& dbFilePath, QObject *parent = 0);
+    explicit SyncJournalDb(const QString &dbFilePath, QObject *parent = 0);
     virtual ~SyncJournalDb();
 
     /// Create a journal path for a specific configuration
-    static QString makeDbName(const QUrl& remoteUrl,
-                              const QString& remotePath,
-                              const QString& user);
+    static QString makeDbName(const QString &localPath,
+        const QUrl &remoteUrl,
+        const QString &remotePath,
+        const QString &user);
 
     /// Migrate a csync_journal to the new path, if necessary. Returns false on error
-    static bool maybeMigrateDb(const QString& localPath, const QString& absoluteJournalPath);
+    static bool maybeMigrateDb(const QString &localPath, const QString &absoluteJournalPath);
 
     // to verify that the record could be queried successfully check
     // with SyncJournalFileRecord::isValid()
-    SyncJournalFileRecord getFileRecord(const QString& filename);
-    bool setFileRecord( const SyncJournalFileRecord& record );
+    SyncJournalFileRecord getFileRecord(const QString &filename);
+    bool setFileRecord(const SyncJournalFileRecord &record);
 
     /// Like setFileRecord, but preserves checksums
-    bool setFileRecordMetadata( const SyncJournalFileRecord& record );
+    bool setFileRecordMetadata(const SyncJournalFileRecord &record);
 
-    bool deleteFileRecord( const QString& filename, bool recursively = false );
+    bool deleteFileRecord(const QString &filename, bool recursively = false);
     int getFileRecordCount();
-    bool updateFileRecordChecksum(const QString& filename,
-                                  const QByteArray& contentChecksum,
-                                  const QByteArray& contentChecksumType);
-    bool updateLocalMetadata(const QString& filename,
-                             qint64 modtime, quint64 size, quint64 inode);
+    bool updateFileRecordChecksum(const QString &filename,
+        const QByteArray &contentChecksum,
+        const QByteArray &contentChecksumType);
+    bool updateLocalMetadata(const QString &filename,
+        qint64 modtime, quint64 size, quint64 inode);
     bool exists();
     void walCheckpoint();
 
     QString databaseFilePath() const;
 
-    static qint64 getPHash(const QString& );
+    static qint64 getPHash(const QString &);
 
-    void updateErrorBlacklistEntry( const SyncJournalErrorBlacklistRecord& item );
-    void wipeErrorBlacklistEntry(const QString& file);
+    void setErrorBlacklistEntry(const SyncJournalErrorBlacklistRecord &item);
+    void wipeErrorBlacklistEntry(const QString &file);
+    void wipeErrorBlacklistCategory(SyncJournalErrorBlacklistRecord::Category category);
     int wipeErrorBlacklist();
     int errorBlackListEntryCount();
 
-    struct DownloadInfo {
-        DownloadInfo() : _errorCount(0), _valid(false) {}
+    struct DownloadInfo
+    {
+        DownloadInfo()
+            : _errorCount(0)
+            , _valid(false)
+        {
+        }
         QString _tmpfile;
         QByteArray _etag;
         int _errorCount;
         bool _valid;
     };
-    struct UploadInfo {
-        UploadInfo() : _chunk(0), _transferid(0), _size(0), _errorCount(0), _valid(false) {}
+    struct UploadInfo
+    {
+        UploadInfo()
+            : _chunk(0)
+            , _transferid(0)
+            , _size(0)
+            , _errorCount(0)
+            , _valid(false)
+        {
+        }
         int _chunk;
         int _transferid;
         quint64 _size; //currently unused
@@ -92,7 +107,8 @@ public:
         bool _valid;
     };
 
-    struct PollInfo {
+    struct PollInfo
+    {
         QString _file;
         QString _url;
         time_t _modtime;
@@ -100,16 +116,16 @@ public:
 
     DownloadInfo getDownloadInfo(const QString &file);
     void setDownloadInfo(const QString &file, const DownloadInfo &i);
-    QVector<DownloadInfo> getAndDeleteStaleDownloadInfos(const QSet<QString>& keep);
+    QVector<DownloadInfo> getAndDeleteStaleDownloadInfos(const QSet<QString> &keep);
     int downloadInfoCount();
 
     UploadInfo getUploadInfo(const QString &file);
     void setUploadInfo(const QString &file, const UploadInfo &i);
     // Return the list of transfer ids that were removed.
-    QVector<uint> deleteStaleUploadInfos(const QSet<QString>& keep);
+    QVector<uint> deleteStaleUploadInfos(const QSet<QString> &keep);
 
-    SyncJournalErrorBlacklistRecord errorBlacklistEntry( const QString& );
-    bool deleteStaleErrorBlacklistEntries(const QSet<QString>& keep);
+    SyncJournalErrorBlacklistRecord errorBlacklistEntry(const QString &);
+    bool deleteStaleErrorBlacklistEntries(const QSet<QString> &keep);
 
     void avoidRenamesOnNextSync(const QString &path);
     void setPollInfo(const PollInfo &);
@@ -136,8 +152,16 @@ public:
     /**
      * Make sure that on the next sync, fileName is not read from the DB but uses the PROPFIND to
      * get the info from the server
+     *
+     * Specifically, this sets the md5 field of fileName and all its parents to _invalid_.
+     * That causes a metadata difference and a resulting discovery from the remote for the
+     * affected folders.
+     *
+     * Since folders in the selective sync list will not be rediscovered (csync_ftw,
+     * _csync_detect_update skip them), the _invalid_ marker will stay and it. And any
+     * child items in the db will be ignored when reading a remote tree from the database.
      */
-    void avoidReadFromDbOnNextSync(const QString& fileName);
+    void avoidReadFromDbOnNextSync(const QString &fileName);
 
     /**
      * Ensures full remote discovery happens on the next sync.
@@ -146,8 +170,8 @@ public:
      */
     void forceRemoteDiscoveryNextSync();
 
-    bool postSyncCleanup(const QSet<QString>& filepathsToKeep,
-                         const QSet<QString>& prefixesToKeep);
+    bool postSyncCleanup(const QSet<QString> &filepathsToKeep,
+        const QSet<QString> &prefixesToKeep);
 
     /* Because sqlite transactions are really slow, we encapsulate everything in big transactions
      * Commit will actually commit the transaction and create a new one.
@@ -184,11 +208,11 @@ private:
     bool updateDatabaseStructure();
     bool updateMetadataTableStructure();
     bool updateErrorBlacklistTableStructure();
-    bool sqlFail(const QString& log, const SqlQuery &query );
+    bool sqlFail(const QString &log, const SqlQuery &query);
     void commitInternal(const QString &context, bool startTrans = true);
     void startTransaction();
     void commitTransaction();
-    QStringList tableColumns( const QString& table );
+    QStringList tableColumns(const QString &table);
     bool checkConnect();
 
     // Same as forceRemoteDiscoveryNextSync but without acquiring the lock
@@ -197,7 +221,7 @@ private:
     // Returns the integer id of the checksum type
     //
     // Returns 0 on failure and for empty checksum types.
-    int mapChecksumType(const QByteArray& checksumType);
+    int mapChecksumType(const QByteArray &checksumType);
 
     SqlDatabase _db;
     QString _dbFile;
@@ -235,11 +259,11 @@ private:
 };
 
 bool OWNCLOUDSYNC_EXPORT
-operator==(const SyncJournalDb::DownloadInfo & lhs,
-           const SyncJournalDb::DownloadInfo & rhs);
+operator==(const SyncJournalDb::DownloadInfo &lhs,
+    const SyncJournalDb::DownloadInfo &rhs);
 bool OWNCLOUDSYNC_EXPORT
-operator==(const SyncJournalDb::UploadInfo & lhs,
-           const SyncJournalDb::UploadInfo & rhs);
+operator==(const SyncJournalDb::UploadInfo &lhs,
+    const SyncJournalDb::UploadInfo &rhs);
 
-}  // namespace OCC
+} // namespace OCC
 #endif // SYNCJOURNALDB_H

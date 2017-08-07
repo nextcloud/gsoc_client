@@ -23,6 +23,7 @@
 #include "asserts.h"
 
 #include <QSettings>
+#include <QLoggingCategory>
 #include <QMutex>
 #include <QNetworkReply>
 #include <QNetworkAccessManager>
@@ -30,16 +31,16 @@
 #include <QNetworkCookieJar>
 #include <QFileInfo>
 #include <QDir>
-#include <QDebug>
 #include <QSslKey>
 
 namespace OCC {
 
+Q_LOGGING_CATEGORY(lcAccount, "sync.account", QtInfoMsg)
 
 Account::Account(QObject *parent)
     : QObject(parent)
     , _capabilities(QVariantMap())
-    , _davPath( Theme::instance()->webDavPath() )
+    , _davPath(Theme::instance()->webDavPath())
 {
     qRegisterMetaType<AccountPtr>("AccountPtr");
 }
@@ -63,7 +64,7 @@ QString Account::davPath() const
     }
 
     // make sure to have a trailing slash
-    if( !_davPath.endsWith('/') ) {
+    if (!_davPath.endsWith('/')) {
         QString dp(_davPath);
         dp.append('/');
         return dp;
@@ -135,23 +136,25 @@ void Account::setCredentials(AbstractCredentials *cred)
 
     // The order for these two is important! Reading the credential's
     // settings accesses the account as well as account->_credentials,
-    // so deleteLater must be used.
-    _credentials = QSharedPointer<AbstractCredentials>(cred, &QObject::deleteLater);
+    _credentials.reset(cred);
     cred->setAccount(this);
 
-    _am = QSharedPointer<QNetworkAccessManager>(_credentials->getQNAM(), &QObject::deleteLater);
+    // Note: This way the QNAM can outlive the Account and Credentials.
+    // This is necessary to avoid issues with the QNAM being deleted while
+    // processing slotHandleSslErrors().
+    _am = QSharedPointer<QNetworkAccessManager>(_credentials->createQNAM(), &QObject::deleteLater);
 
     if (jar) {
         _am->setCookieJar(jar);
     }
-    connect(_am.data(), SIGNAL(sslErrors(QNetworkReply*,QList<QSslError>)),
-            SLOT(slotHandleSslErrors(QNetworkReply*,QList<QSslError>)));
-    connect(_am.data(), SIGNAL(proxyAuthenticationRequired(QNetworkProxy,QAuthenticator*)),
-            SIGNAL(proxyAuthenticationRequired(QNetworkProxy,QAuthenticator*)));
+    connect(_am.data(), SIGNAL(sslErrors(QNetworkReply *, QList<QSslError>)),
+        SLOT(slotHandleSslErrors(QNetworkReply *, QList<QSslError>)));
+    connect(_am.data(), SIGNAL(proxyAuthenticationRequired(QNetworkProxy, QAuthenticator *)),
+        SIGNAL(proxyAuthenticationRequired(QNetworkProxy, QAuthenticator *)));
     connect(_credentials.data(), SIGNAL(fetched()),
-            SLOT(slotCredentialsFetched()));
+        SLOT(slotCredentialsFetched()));
     connect(_credentials.data(), SIGNAL(asked()),
-            SLOT(slotCredentialsAsked()));
+        SLOT(slotCredentialsAsked()));
 }
 
 QUrl Account::davUrl() const
@@ -159,12 +162,18 @@ QUrl Account::davUrl() const
     return Utility::concatUrlPath(url(), davPath());
 }
 
+QUrl Account::filePermalinkUrl(const QByteArray &numericFileId) const
+{
+    return Utility::concatUrlPath(url(),
+        QLatin1String("/index.php/f/") + QUrl::toPercentEncoding(QString::fromLatin1(numericFileId)));
+}
+
 /**
  * clear all cookies. (Session cookies or not)
  */
 void Account::clearCookieJar()
 {
-    auto jar = qobject_cast<CookieJar*>(_am->cookieJar());
+    auto jar = qobject_cast<CookieJar *>(_am->cookieJar());
     ASSERT(jar);
     jar->setAllCookies(QList<QNetworkCookie>());
     emit wantsAccountSaved(this);
@@ -193,18 +202,18 @@ void Account::resetNetworkAccessManager()
         return;
     }
 
-    qDebug() << "Resetting QNAM";
-    QNetworkCookieJar* jar = _am->cookieJar();
+    qCDebug(lcAccount) << "Resetting QNAM";
+    QNetworkCookieJar *jar = _am->cookieJar();
 
     // Use a QSharedPointer to allow locking the life of the QNAM on the stack.
     // Make it call deleteLater to make sure that we can return to any QNAM stack frames safely.
-    _am = QSharedPointer<QNetworkAccessManager>(_credentials->getQNAM(), &QObject::deleteLater);
+    _am = QSharedPointer<QNetworkAccessManager>(_credentials->createQNAM(), &QObject::deleteLater);
 
     _am->setCookieJar(jar); // takes ownership of the old cookie jar
-    connect(_am.data(), SIGNAL(sslErrors(QNetworkReply*,QList<QSslError>)),
-            SLOT(slotHandleSslErrors(QNetworkReply*,QList<QSslError>)));
-    connect(_am.data(), SIGNAL(proxyAuthenticationRequired(QNetworkProxy,QAuthenticator*)),
-            SIGNAL(proxyAuthenticationRequired(QNetworkProxy,QAuthenticator*)));
+    connect(_am.data(), SIGNAL(sslErrors(QNetworkReply *, QList<QSslError>)),
+        SLOT(slotHandleSslErrors(QNetworkReply *, QList<QSslError>)));
+    connect(_am.data(), SIGNAL(proxyAuthenticationRequired(QNetworkProxy, QAuthenticator *)),
+        SIGNAL(proxyAuthenticationRequired(QNetworkProxy, QAuthenticator *)));
 }
 
 QNetworkAccessManager *Account::networkAccessManager()
@@ -291,7 +300,7 @@ QVariant Account::credentialSetting(const QString &key) const
 {
     if (_credentials) {
         QString prefix = _credentials->authType();
-        QString value = _settingsMap.value(prefix+"_"+key).toString();
+        QString value = _settingsMap.value(prefix + "_" + key).toString();
         if (value.isEmpty()) {
             value = _settingsMap.value(key).toString();
         }
@@ -304,18 +313,19 @@ void Account::setCredentialSetting(const QString &key, const QVariant &value)
 {
     if (_credentials) {
         QString prefix = _credentials->authType();
-        _settingsMap.insert(prefix+"_"+key, value);
+        _settingsMap.insert(prefix + "_" + key, value);
     }
 }
 
-void Account::slotHandleSslErrors(QNetworkReply *reply , QList<QSslError> errors)
+void Account::slotHandleSslErrors(QNetworkReply *reply, QList<QSslError> errors)
 {
     NetworkJobTimeoutPauser pauser(reply);
     QString out;
     QDebug(&out) << "SSL-Errors happened for url " << reply->url().toString();
-    foreach(const QSslError &error, errors) {
+    foreach (const QSslError &error, errors) {
         QDebug(&out) << "\tError in " << error.certificate() << ":"
-                     << error.errorString() << "("<< error.error() << ")" << "\n";
+                     << error.errorString() << "(" << error.error() << ")"
+                     << "\n";
     }
 
     bool allPreviouslyRejected = true;
@@ -326,14 +336,14 @@ void Account::slotHandleSslErrors(QNetworkReply *reply , QList<QSslError> errors
     }
 
     // If all certs have previously been rejected by the user, don't ask again.
-    if( allPreviouslyRejected ) {
-        qDebug() << out << "Certs not trusted by user decision, returning.";
+    if (allPreviouslyRejected) {
+        qCInfo(lcAccount) << out << "Certs not trusted by user decision, returning.";
         return;
     }
 
     QList<QSslCertificate> approvedCerts;
-    if (_sslErrorHandler.isNull() ) {
-        qDebug() << out << Q_FUNC_INFO << "called without valid SSL error handler for account" << url();
+    if (_sslErrorHandler.isNull()) {
+        qCWarning(lcAccount) << out << "called without valid SSL error handler for account" << url();
         return;
     }
 
@@ -345,20 +355,22 @@ void Account::slotHandleSslErrors(QNetworkReply *reply , QList<QSslError> errors
     QPointer<QObject> guard = reply;
 
     if (_sslErrorHandler->handleErrors(errors, reply->sslConfiguration(), &approvedCerts, sharedFromThis())) {
-        if (!guard) return;
+        if (!guard)
+            return;
 
         QSslSocket::addDefaultCaCertificates(approvedCerts);
         addApprovedCerts(approvedCerts);
         emit wantsAccountSaved(this);
         // all ssl certs are known and accepted. We can ignore the problems right away.
-//         qDebug() << out << "Certs are known and trusted! This is not an actual error.";
+        qCInfo(lcAccount) << out << "Certs are known and trusted! This is not an actual error.";
 
         // Warning: Do *not* use ignoreSslErrors() (without args) here:
         // it permanently ignores all SSL errors for this host, even
         // certificate changes.
         reply->ignoreSslErrors(errors);
     } else {
-        if (!guard) return;
+        if (!guard)
+            return;
 
         // Mark all involved certificates as rejected, so we don't ask the user again.
         foreach (const QSslError &error, errors) {
@@ -387,6 +399,11 @@ void Account::handleInvalidCredentials()
     emit invalidCredentials();
 }
 
+void Account::clearQNAMCache()
+{
+    _am->clearAccessCache();
+}
+
 const Capabilities &Account::capabilities() const
 {
     return _capabilities;
@@ -407,8 +424,8 @@ int Account::serverVersionInt() const
     // FIXME: Use Qt 5.5 QVersionNumber
     auto components = serverVersion().split('.');
     return makeServerVersion(components.value(0).toInt(),
-                             components.value(1).toInt(),
-                             components.value(2).toInt());
+        components.value(1).toInt(),
+        components.value(2).toInt());
 }
 
 int Account::makeServerVersion(int majorVersion, int minorVersion, int patchVersion)
@@ -425,7 +442,7 @@ bool Account::serverVersionUnsupported() const
     return serverVersionInt() < makeServerVersion(7, 0, 0);
 }
 
-void Account::setServerVersion(const QString& version)
+void Account::setServerVersion(const QString &version)
 {
     if (version == _serverVersion) {
         return;
@@ -443,13 +460,12 @@ bool Account::rootEtagChangesNotOnlySubFolderEtags()
 
 void Account::setNonShib(bool nonShib)
 {
-    if( nonShib ) {
+    if (nonShib) {
         _davPath = Theme::instance()->webDavPathNonShib();
     } else {
         _davPath = Theme::instance()->webDavPath();
     }
 }
-
 
 
 } // namespace OCC

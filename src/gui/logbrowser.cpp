@@ -27,7 +27,6 @@
 #include <QTextStream>
 #include <QMessageBox>
 #include <QCoreApplication>
-#include <QDebug>
 #include <QSettings>
 #include <QAction>
 
@@ -39,20 +38,20 @@ namespace OCC {
 // ==============================================================================
 
 LogWidget::LogWidget(QWidget *parent)
-    :QPlainTextEdit(parent)
+    : QPlainTextEdit(parent)
 {
-    setReadOnly( true );
+    setReadOnly(true);
     QFont font;
     font.setFamily(QLatin1String("Courier New"));
     font.setFixedPitch(true);
-    document()->setDefaultFont( font );
+    document()->setDefaultFont(font);
 }
 
 // ==============================================================================
 
-LogBrowser::LogBrowser(QWidget *parent) :
-    QDialog(parent),
-    _logWidget( new LogWidget(parent) )
+LogBrowser::LogBrowser(QWidget *parent)
+    : QDialog(parent)
+    , _logWidget(new LogWidget(parent))
 {
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     setObjectName("LogBrowser"); // for save/restoreGeometry()
@@ -62,57 +61,62 @@ LogBrowser::LogBrowser(QWidget *parent) :
     QVBoxLayout *mainLayout = new QVBoxLayout;
     // mainLayout->setMargin(0);
 
-    mainLayout->addWidget( _logWidget );
+    mainLayout->addWidget(_logWidget);
 
     QHBoxLayout *toolLayout = new QHBoxLayout;
-    mainLayout->addLayout( toolLayout );
+    mainLayout->addLayout(toolLayout);
 
     // Search input field
     QLabel *lab = new QLabel(tr("&Search:") + " ");
     _findTermEdit = new QLineEdit;
-    lab->setBuddy( _findTermEdit );
+    lab->setBuddy(_findTermEdit);
     toolLayout->addWidget(lab);
-    toolLayout->addWidget( _findTermEdit );
+    toolLayout->addWidget(_findTermEdit);
 
     // find button
     QPushButton *findBtn = new QPushButton;
-    findBtn->setText( tr("&Find") );
-    connect( findBtn, SIGNAL(clicked()), this, SLOT(slotFind()));
-    toolLayout->addWidget( findBtn );
+    findBtn->setText(tr("&Find"));
+    connect(findBtn, SIGNAL(clicked()), this, SLOT(slotFind()));
+    toolLayout->addWidget(findBtn);
 
     // stretch
     toolLayout->addStretch(1);
     _statusLabel = new QLabel;
-    toolLayout->addWidget( _statusLabel );
+    toolLayout->addWidget(_statusLabel);
     toolLayout->addStretch(5);
 
-    QDialogButtonBox *btnbox = new QDialogButtonBox;
-    QPushButton *closeBtn = btnbox->addButton( QDialogButtonBox::Close );
-    connect(closeBtn,SIGNAL(clicked()),this,SLOT(close()));
+    // Debug logging
+    _logDebugCheckBox = new QCheckBox(tr("&Capture debug messages") + " ");
+    connect(_logDebugCheckBox, SIGNAL(stateChanged(int)), SLOT(slotDebugCheckStateChanged(int)));
+    toolLayout->addWidget(_logDebugCheckBox);
 
-    mainLayout->addWidget( btnbox );
+    QDialogButtonBox *btnbox = new QDialogButtonBox;
+    QPushButton *closeBtn = btnbox->addButton(QDialogButtonBox::Close);
+    connect(closeBtn, SIGNAL(clicked()), this, SLOT(close()));
+
+    mainLayout->addWidget(btnbox);
 
     // clear button
     _clearBtn = new QPushButton;
-    _clearBtn->setText( tr("Clear") );
-    _clearBtn->setToolTip( tr("Clear the log display.") );
+    _clearBtn->setText(tr("Clear"));
+    _clearBtn->setToolTip(tr("Clear the log display."));
     btnbox->addButton(_clearBtn, QDialogButtonBox::ActionRole);
-    connect( _clearBtn, SIGNAL(clicked()), this, SLOT(slotClearLog()));
+    connect(_clearBtn, SIGNAL(clicked()), this, SLOT(slotClearLog()));
 
     // save Button
     _saveBtn = new QPushButton;
-    _saveBtn->setText( tr("S&ave") );
+    _saveBtn->setText(tr("S&ave"));
     _saveBtn->setToolTip(tr("Save the log file to a file on disk for debugging."));
     btnbox->addButton(_saveBtn, QDialogButtonBox::ActionRole);
-    connect( _saveBtn, SIGNAL(clicked()),this, SLOT(slotSave()));
+    connect(_saveBtn, SIGNAL(clicked()), this, SLOT(slotSave()));
 
-    setLayout( mainLayout );
+    setLayout(mainLayout);
 
     setModal(false);
 
     Logger::instance()->setLogWindowActivated(true);
     // Direct connection for log coming from this thread, and queued for the one in a different thread
-    connect(Logger::instance(), SIGNAL(logWindowLog(QString)),this,SLOT(slotNewLog(QString)), Qt::AutoConnection);
+    connect(Logger::instance(), SIGNAL(logWindowLog(QString)), this, SLOT(slotNewLog(QString)), Qt::AutoConnection);
 
     QAction *showLogWindow = new QAction(this);
     showLogWindow->setShortcut(QKeySequence("F12"));
@@ -122,13 +126,17 @@ LogBrowser::LogBrowser(QWidget *parent) :
     ConfigFile cfg;
     cfg.restoreGeometry(this);
     int lines = cfg.maxLogLines();
-    // qDebug() << "#        ##  Have " << lines << " Loglines!";
-    _logWidget->document()->setMaximumBlockCount( lines );
-
+    _logWidget->document()->setMaximumBlockCount(lines);
 }
 
 LogBrowser::~LogBrowser()
 {
+}
+
+void LogBrowser::showEvent(QShowEvent *)
+{
+    // This could have been changed through the --logdebug argument passed through the single application.
+    _logDebugCheckBox->setCheckState(Logger::instance()->logDebug() ? Qt::Checked : Qt::Unchecked);
 }
 
 void LogBrowser::closeEvent(QCloseEvent *)
@@ -138,10 +146,10 @@ void LogBrowser::closeEvent(QCloseEvent *)
 }
 
 
-void LogBrowser::slotNewLog( const QString& msg )
+void LogBrowser::slotNewLog(const QString &msg)
 {
-    if( _logWidget->isVisible() ) {
-        _logWidget->appendPlainText( msg );
+    if (_logWidget->isVisible()) {
+        _logWidget->appendPlainText(msg);
     }
 }
 
@@ -150,12 +158,18 @@ void LogBrowser::slotFind()
 {
     QString searchText = _findTermEdit->text();
 
-    if( searchText.isEmpty() ) return;
+    if (searchText.isEmpty())
+        return;
 
-    search( searchText );
+    search(searchText);
 }
 
-void LogBrowser::search( const QString& str )
+void LogBrowser::slotDebugCheckStateChanged(int checkState)
+{
+    Logger::instance()->setLogDebug(checkState == Qt::Checked);
+}
+
+void LogBrowser::search(const QString &str)
 {
     QList<QTextEdit::ExtraSelection> extraSelections;
 
@@ -163,8 +177,7 @@ void LogBrowser::search( const QString& str )
     QColor color = QColor(Qt::gray).lighter(130);
     _statusLabel->clear();
 
-    while(_logWidget->find(str))
-    {
+    while (_logWidget->find(str)) {
         QTextEdit::ExtraSelection extra;
         extra.format.setBackground(color);
 
@@ -182,9 +195,9 @@ void LogBrowser::slotSave()
 {
     _saveBtn->setEnabled(false);
 
-    QString saveFile = QFileDialog::getSaveFileName( this, tr("Save log file"), QDir::homePath() );
+    QString saveFile = QFileDialog::getSaveFileName(this, tr("Save log file"), QDir::homePath());
 
-    if( ! saveFile.isEmpty() ) {
+    if (!saveFile.isEmpty()) {
         QFile file(saveFile);
 
         if (file.open(QIODevice::WriteOnly)) {
@@ -196,7 +209,6 @@ void LogBrowser::slotSave()
         }
     }
     _saveBtn->setEnabled(true);
-
 }
 
 void LogBrowser::slotClearLog()

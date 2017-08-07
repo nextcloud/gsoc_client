@@ -34,7 +34,7 @@ public:
     SyncJournalFileRecord();
 
     /// Creates a record from an existing item while updating the inode
-    SyncJournalFileRecord(const SyncFileItem&, const QString &localFileName);
+    SyncJournalFileRecord(const SyncFileItem &, const QString &localFileName);
 
     /** Creates a basic SyncFileItem from the record
      *
@@ -43,58 +43,79 @@ public:
      */
     SyncFileItem toSyncFileItem();
 
-    bool isValid() {
+    bool isValid()
+    {
         return !_path.isEmpty();
     }
 
-    QString    _path;
-    quint64    _inode;
-    QDateTime  _modtime;
-    int        _type;
+    /** Returns the numeric part of the full id in _fileId.
+     *
+     * On the server this is sometimes known as the internal file id.
+     *
+     * It is used in the construction of private links.
+     */
+    QByteArray numericFileId() const;
+
+    QString _path;
+    quint64 _inode;
+    QDateTime _modtime;
+    int _type;
     QByteArray _etag;
     QByteArray _fileId;
-    qint64     _fileSize;
+    qint64 _fileSize;
     QByteArray _remotePerm;
-    bool       _serverHasIgnoredFiles;
-    QByteArray _contentChecksum;
-    QByteArray _contentChecksumType;
+    bool _serverHasIgnoredFiles;
+    QByteArray _checksumHeader;
 };
 
 bool OWNCLOUDSYNC_EXPORT
-operator==(const SyncJournalFileRecord & lhs,
-           const SyncJournalFileRecord & rhs);
+operator==(const SyncJournalFileRecord &lhs,
+    const SyncJournalFileRecord &rhs);
 
 class SyncJournalErrorBlacklistRecord
 {
 public:
+    enum Category {
+        /// Normal errors have no special behavior
+        Normal = 0,
+        /// These get a special summary message
+        InsufficientRemoteStorage
+    };
+
     SyncJournalErrorBlacklistRecord()
         : _retryCount(0)
+        , _errorCategory(Category::Normal)
         , _lastTryModtime(0)
         , _lastTryTime(0)
         , _ignoreDuration(0)
-    {}
+    {
+    }
+
+    /// Create a record based on an item.
+    static SyncJournalErrorBlacklistRecord fromSyncFileItem(const SyncFileItem &item);
 
     /// The number of times the operation was unsuccessful so far.
-    int        _retryCount;
+    int _retryCount;
 
     /// The last error string.
-    QString    _errorString;
+    QString _errorString;
+    /// The error category. Sometimes used for special actions.
+    Category _errorCategory;
 
-    time_t     _lastTryModtime;
+    time_t _lastTryModtime;
     QByteArray _lastTryEtag;
 
     /// The last time the operation was attempted (in s since epoch).
-    time_t     _lastTryTime;
+    time_t _lastTryTime;
 
     /// The number of seconds the file shall be ignored.
-    time_t     _ignoreDuration;
+    time_t _ignoreDuration;
 
-    QString    _file;
-    QString    _renameTarget;
+    QString _file;
+    QString _renameTarget;
 
     bool isValid() const;
 };
-
 }
 
 #endif // SYNCJOURNALFILERECORD_H

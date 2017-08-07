@@ -21,6 +21,7 @@ set(client_UI
     ignorelisteditor.ui
     networksettings.ui
     protocolwidget.ui
+    issueswidget.ui
     activitywidget.ui
     synclogdialog.ui
     settingsdialog.ui
@@ -35,6 +36,7 @@ set(client_UI
     wizard/owncloudadvancedsetuppage.ui
     wizard/owncloudconnectionmethoddialog.ui
     wizard/owncloudhttpcredspage.ui
+    wizard/owncloudoauthcredspage.ui
     wizard/owncloudsetupnocredspage.ui
     wizard/owncloudwizardresultpage.ui
 )
@@ -63,6 +65,7 @@ set(client_SRCS
     owncloudgui.cpp
     owncloudsetupwizard.cpp
     protocolwidget.cpp
+    issueswidget.cpp
     activitydata.cpp
     activitylistmodel.cpp
     activitywidget.cpp
@@ -91,13 +94,17 @@ set(client_SRCS
     notificationwidget.cpp
     notificationconfirmjob.cpp
     servernotificationhandler.cpp
+    guiutility.cpp
+    elidedlabel.cpp
     creds/credentialsfactory.cpp
     creds/httpcredentialsgui.cpp
+    creds/oauth.cpp
     wizard/postfixlineedit.cpp
     wizard/abstractcredswizardpage.cpp
     wizard/owncloudadvancedsetuppage.cpp
     wizard/owncloudconnectionmethoddialog.cpp
     wizard/owncloudhttpcredspage.cpp
+    wizard/owncloudoauthcredspage.cpp
     wizard/owncloudsetuppage.cpp
     wizard/owncloudwizardcommon.cpp
     wizard/owncloudwizard.cpp
@@ -124,7 +131,6 @@ IF( APPLE )
     list(APPEND client_SRCS settingsdialogmac.cpp)
     list(APPEND client_SRCS socketapisocket_mac.mm)
     list(APPEND client_SRCS systray.mm)
-    list(APPEND client_SRCS clipboard.mm)
 
     if(SPARKLE_FOUND)
        # Define this, we need to check in updater.cpp
@@ -173,7 +179,6 @@ set(3rdparty_INC
     )
 
 include_directories(${3rdparty_INC})
-include_directories(${OPENSSL_INCLUDE_DIR})
 
 # csync is required.
 include_directories(${CMAKE_SOURCE_DIR}/csync/src
@@ -221,15 +226,13 @@ endif()
 include( AddAppIconMacro )
 set(ownCloud_old ${ownCloud})
 
-# set an icon_app_name. For historical reasons we can not use the
-# application_shortname for ownCloud but must rather set it manually.
-if ( EXISTS ${OEM_THEME_DIR}/OEM.cmake )
-    set(ICON_APP_NAME ${APPLICATION_SHORTNAME})
-else()
-    set(ICON_APP_NAME "owncloud")
+# For historical reasons we can not use the application_shortname
+# for ownCloud but must rather set it manually.
+if (NOT DEFINED APPLICATION_ICON_NAME)
+    set(APPLICATION_ICON_NAME ${APPLICATION_SHORTNAME})
 endif()
 
-kde4_add_app_icon( ownCloud "${theme_dir}/colored/${ICON_APP_NAME}-icon*.png")
+kde4_add_app_icon( ownCloud "${theme_dir}/colored/${APPLICATION_ICON_NAME}-*.png")
 list(APPEND final_src ${ownCloud})
 set(ownCloud ${ownCloud_old})
 
@@ -243,11 +246,11 @@ endif()
 if(NOT BUILD_OWNCLOUD_OSX_BUNDLE)
 
     if(NOT WIN32)
-        file( GLOB _icons "${theme_dir}/colored/${ICON_APP_NAME}-icon-*.png" )
+        file( GLOB _icons "${theme_dir}/colored/${APPLICATION_ICON_NAME}-icon-*.png" )
         foreach( _file ${_icons} )
-            string( REPLACE "${theme_dir}/colored/${ICON_APP_NAME}-icon-" "" _res ${_file} )
+            string( REPLACE "${theme_dir}/colored/${APPLICATION_ICON_NAME}-icon-" "" _res ${_file} )
             string( REPLACE ".png" "" _res ${_res} )
-        install( FILES ${_file} RENAME ${ICON_APP_NAME}.png DESTINATION ${DATADIR}/icons/hicolor/${_res}x${_res}/apps )
+        install( FILES ${_file} RENAME ${APPLICATION_ICON_NAME}.png DESTINATION ${DATADIR}/icons/hicolor/${_res}x${_res}/apps )
         endforeach( _file )
     endif(NOT WIN32)
 

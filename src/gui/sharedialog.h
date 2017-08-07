@@ -28,7 +28,7 @@ class QProgressIndicator;
 namespace OCC {
 
 namespace Ui {
-class ShareDialog;
+    class ShareDialog;
 }
 
 class ShareLinkWidget;
@@ -40,35 +40,34 @@ class ShareDialog : public QDialog
 
 public:
     explicit ShareDialog(QPointer<AccountState> accountState,
-                         const QString &sharePath,
-                         const QString &localPath,
-                         SharePermissions maxSharingPermissions,
-                         QWidget *parent = 0);
+        const QString &sharePath,
+        const QString &localPath,
+        SharePermissions maxSharingPermissions,
+        const QByteArray &numericFileId,
+        QWidget *parent = 0);
     ~ShareDialog();
 
 private slots:
-    void done( int r );
+    void done(int r);
     void slotMaxSharingPermissionsReceived(const QVariantMap &result);
     void slotMaxSharingPermissionsError();
     void slotThumbnailFetched(const int &statusCode, const QByteArray &reply);
     void slotAccountStateChanged(int state);
 
 private:
-
     void showSharingUi();
 
     Ui::ShareDialog *_ui;
     QPointer<AccountState> _accountState;
     QString _sharePath;
     QString _localPath;
-
     SharePermissions _maxSharingPermissions;
+    QByteArray _numericFileId;
 
     ShareLinkWidget *_linkWidget;
     ShareUserGroupWidget *_userGroupWidget;
     QProgressIndicator *_progressIndicator;
 };
-
 }
 
 #endif // SHAREDIALOG_H

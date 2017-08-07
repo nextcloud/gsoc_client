@@ -22,8 +22,10 @@
 
 namespace OCC {
 
+Q_LOGGING_CATEGORY(lcOcs, "gui.sharing.ocs", QtInfoMsg)
+
 OcsJob::OcsJob(AccountPtr account)
-: AbstractNetworkJob(account, "")
+    : AbstractNetworkJob(account, "")
 {
     _passStatusCodes.append(OCS_SUCCESS_STATUS_CODE);
     setIgnoreCredentialFailure(true);
@@ -51,10 +53,10 @@ void OcsJob::appendPath(const QString &id)
 
 static QList<QPair<QByteArray, QByteArray>>
 percentEncodeQueryItems(
-        const QList<QPair<QString, QString>> & items)
+    const QList<QPair<QString, QString>> &items)
 {
     QList<QPair<QByteArray, QByteArray>> result;
-    foreach (const auto& item, items) {
+    foreach (const auto &item, items) {
         result.append(qMakePair(
             QUrl::toPercentEncoding(item.first),
             QUrl::toPercentEncoding(item.second)));
@@ -78,7 +80,7 @@ void OcsJob::start()
     } else if (_verb == "POST" || _verb == "PUT") {
         // Url encode the _postParams and put them in a buffer.
         QByteArray postData;
-        Q_FOREACH(auto tmp, _params) {
+        Q_FOREACH (auto tmp, _params) {
             if (!postData.isEmpty()) {
                 postData.append("&");
             }
@@ -105,22 +107,22 @@ bool OcsJob::finished()
     QJsonParseError error;
     auto json = QJsonDocument::fromJson(replyData, &error);
     if (error.error != QJsonParseError::NoError) {
-        qDebug() << "Could not parse reply to" 
-                 << _verb 
-                 << Utility::concatUrlPath(account()->url(), path())
-                 << _params
-                 << error.errorString()
-                 << ":" << replyData;
+        qCWarning(lcOcs) << "Could not parse reply to"
+                         << _verb
+                         << Utility::concatUrlPath(account()->url(), path())
+                         << _params
+                         << error.errorString()
+                         << ":" << replyData;
     }
 
     QString message;
     const int statusCode = getJsonReturnCode(json, message);
     if (!_passStatusCodes.contains(statusCode)) {
-        qDebug() << "Reply to"
-                 << _verb
-                 << Utility::concatUrlPath(account()->url(), path())
-                 << _params
-                 << "has unexpected status code:" << statusCode << replyData;
+        qCWarning(lcOcs) << "Reply to"
+                         << _verb
+                         << Utility::concatUrlPath(account()->url(), path())
+                         << _params
+                         << "has unexpected status code:" << statusCode << replyData;
         emit ocsError(statusCode, message);
     } else {
         emit jobFinished(json);
@@ -137,5 +139,4 @@ int OcsJob::getJsonReturnCode(const QJsonDocument &json, QString &message)
 
     return code;
 }
-
 }

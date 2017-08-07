@@ -100,7 +100,8 @@ enum csync_status_codes_e {
     CSYNC_STATUS_INVALID_CHARACTERS,
     CSYNC_STATUS_INDIVIDUAL_STAT_FAILED,
     CSYNC_STATUS_FORBIDDEN,
-    CSYNC_STATUS_INDIVIDUAL_TOO_DEEP
+    CSYNC_STATUS_INDIVIDUAL_TOO_DEEP,
+    CSYNC_STATUS_INDIVIDUAL_IS_CONFLICT_FILE
 };
 
 typedef enum csync_status_codes_e CSYNC_STATUS;
@@ -223,6 +224,10 @@ struct csync_vio_file_stat_s {
   enum csync_vio_file_flags_e flags;
 
   char *original_name; // only set if locale conversion fails
+
+  // For remote file stats: the highest quality checksum the server provided
+  // in the "SHA1:324315da2143" form.
+  char *checksumHeader;
 };
 
 csync_vio_file_stat_t OCSYNC_EXPORT *csync_vio_file_stat_new(void);
@@ -262,8 +267,7 @@ struct csync_tree_walk_file_s {
     char *directDownloadUrl;
     char *directDownloadCookies;
 
-    const char *checksum;
-    uint32_t checksumTypeId;
+    const char *checksumHeader;
 
     struct {
         int64_t     size;
@@ -287,8 +291,7 @@ typedef int (*csync_auth_callback) (const char *prompt, char *buf, size_t len,
 
 typedef void (*csync_log_callback) (int verbosity,
                                     const char *function,
-                                    const char *buffer,
-                                    void *userdata);
+                                    const char *buffer);
 
 typedef void (*csync_update_callback) (bool local,
                                     const char *dirUrl,
@@ -305,8 +308,8 @@ typedef int (*csync_vio_stat_hook) (csync_vio_handle_t *dhhandle,
                                                               void *userdata);
 
 /* Compute the checksum of the given \a checksumTypeId for \a path. */
-typedef const char* (*csync_checksum_hook) (
-        const char *path, uint32_t checksumTypeId, void *userdata);
+typedef const char *(*csync_checksum_hook)(
+    const char *path, const char *otherChecksumHeader, void *userdata);
 
 /**
  * @brief Allocate a csync context.
@@ -438,22 +441,6 @@ csync_log_callback OCSYNC_EXPORT csync_get_log_callback(void);
  */
 int OCSYNC_EXPORT csync_set_log_callback(csync_log_callback cb);
 
-/**
- * @brief get the userdata set for the logging callback.
- *
- * @return              The userdata or NULL.
- */
-void OCSYNC_EXPORT *csync_get_log_userdata(void);
-
-/**
- * @brief Set the userdata passed to the logging callback.
- *
- * @param[in]  data     The userdata to set.
- *
- * @return              0 on success, less than 0 if an error occurred.
- */
-int OCSYNC_EXPORT csync_set_log_userdata(void *data);
-
 /* Used for special modes or debugging */
 CSYNC_STATUS OCSYNC_EXPORT csync_get_status(CSYNC *ctx);
 
@@ -492,17 +479,6 @@ int OCSYNC_EXPORT csync_walk_remote_tree(CSYNC *ctx, csync_treewalk_visit_func *
  * @return               A const pointer to a string with more precise status info.
  */
 const char OCSYNC_EXPORT *csync_get_status_string(CSYNC *ctx);
-
-#ifdef WITH_ICONV
-/**
- * @brief Set iconv source codec for filenames.
- *
- * @param from          Source codec.
- *
- * @return              0 on success, or an iconv error number.
- */
-int OCSYNC_EXPORT csync_set_iconv_codec(const char *from);
-#endif
 
 /**
  * @brief Aborts the current sync run as soon as possible. Can be called from another thread.

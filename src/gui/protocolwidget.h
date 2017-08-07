@@ -30,7 +30,7 @@ namespace OCC {
 class SyncResult;
 
 namespace Ui {
-  class ProtocolWidget;
+    class ProtocolWidget;
 }
 class Application;
 
@@ -46,14 +46,15 @@ public:
     ~ProtocolWidget();
     QSize sizeHint() const { return ownCloudGui::settingsDialogSize(); }
 
-    QTreeWidget *issueWidget() { return _issueItemView; }
-    void storeSyncActivity(QTextStream& ts);
-    void storeSyncIssues(QTextStream& ts);
+    void storeSyncActivity(QTextStream &ts);
+
+    // Shared with IssueWidget
+    static QTreeWidgetItem *createCompletedTreewidgetItem(const QString &folder, const SyncFileItem &item);
+    static QString timeString(QDateTime dt, QLocale::FormatType format = QLocale::NarrowFormat);
 
 public slots:
-    void slotProgressInfo( const QString& folder, const ProgressInfo& progress );
-    void slotItemCompleted( const QString& folder, const SyncFileItemPtr& item);
-    void slotOpenFile( QTreeWidgetItem* item, int );
+    void slotItemCompleted(const QString &folder, const SyncFileItemPtr &item);
+    void slotOpenFile(QTreeWidgetItem *item, int);
 
 protected:
     void showEvent(QShowEvent *);
@@ -61,20 +62,9 @@ protected:
 
 signals:
     void copyToClipboard();
-    void issueItemCountUpdated(int);
 
 private:
-    void setSyncResultStatus(const SyncResult& result );
-    void cleanItems( const QString& folder );
-
-    QTreeWidgetItem* createCompletedTreewidgetItem(const QString &folder, const SyncFileItem &item );
-
-    QString timeString(QDateTime dt, QLocale::FormatType format = QLocale::NarrowFormat) const;
-
-    const int IgnoredIndicatorRole;
     Ui::ProtocolWidget *_ui;
-    QTreeWidget *_issueItemView;
 };
-
 }
 #endif // PROTOCOLWIDGET_H

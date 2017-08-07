@@ -25,22 +25,30 @@
 
 namespace OCC {
 
-MoveJob::MoveJob(AccountPtr account, const QString& path,
-                 const QString &destination, QObject* parent)
-    : AbstractNetworkJob(account, path, parent), _destination(destination)
-{ }
+Q_LOGGING_CATEGORY(lcMoveJob, "sync.networkjob.move", QtInfoMsg)
+Q_LOGGING_CATEGORY(lcPropagateRemoteMove, "sync.propagator.remotemove", QtInfoMsg)
 
-MoveJob::MoveJob(AccountPtr account, const QUrl& url, const QString &destination,
-                 QMap<QByteArray, QByteArray> extraHeaders, QObject* parent)
-    : AbstractNetworkJob(account, QString(), parent), _destination(destination), _url(url)
+MoveJob::MoveJob(AccountPtr account, const QString &path,
+    const QString &destination, QObject *parent)
+    : AbstractNetworkJob(account, path, parent)
+    , _destination(destination)
+{
+}
+
+MoveJob::MoveJob(AccountPtr account, const QUrl &url, const QString &destination,
+    QMap<QByteArray, QByteArray> extraHeaders, QObject *parent)
+    : AbstractNetworkJob(account, QString(), parent)
+    , _destination(destination)
+    , _url(url)
     , _extraHeaders(extraHeaders)
-{ }
+{
+}
 
 void MoveJob::start()
 {
     QNetworkRequest req;
     req.setRawHeader("Destination", QUrl::toPercentEncoding(_destination, "/"));
-    for(auto it = _extraHeaders.constBegin(); it != _extraHeaders.constEnd(); ++it) {
+    for (auto it = _extraHeaders.constBegin(); it != _extraHeaders.constEnd(); ++it) {
         req.setRawHeader(it.key(), it.value());
     }
     if (_url.isValid()) {
@@ -49,8 +57,8 @@ void MoveJob::start()
         sendRequest("MOVE", makeDavUrl(path()), req);
     }
 
-    if( reply()->error() != QNetworkReply::NoError ) {
-        qWarning() << Q_FUNC_INFO << " Network error: " << reply()->errorString();
+    if (reply()->error() != QNetworkReply::NoError) {
+        qCWarning(lcPropagateRemoteMove) << " Network error: " << reply()->errorString();
     }
     AbstractNetworkJob::start();
 }
@@ -58,6 +66,10 @@ void MoveJob::start()
 
 bool MoveJob::finished()
 {
+    qCInfo(lcMoveJob) << "MOVE of" << reply()->request().url() << "FINISHED WITH STATUS"
+                      << reply()->error()
+                      << (reply()->error() == QNetworkReply::NoError ? QLatin1String("") : errorString());
+
     emit finishedSignal();
     return true;
 }
@@ -67,7 +79,7 @@ void PropagateRemoteMove::start()
     if (propagator()->_abortRequested.fetchAndAddRelaxed(0))
         return;
 
-    qDebug() << Q_FUNC_INFO << _item->_file << _item->_renameTarget;
+    qCDebug(lcPropagateRemoteMove) << _item->_file << _item->_renameTarget;
 
     QString targetFile(propagator()->getFilePath(_item->_renameTarget));
 
@@ -76,7 +88,7 @@ void PropagateRemoteMove::start()
         finalize();
         return;
     }
-    if (_item->_file == QLatin1String("Shared") ) {
+    if (_item->_file == QLatin1String("Shared")) {
         // Before owncloud 7, there was no permissions system. At the time all the shared files were
         // in a directory called "Shared" and were not supposed to be moved, otherwise bad things happened
 
@@ -86,7 +98,7 @@ void PropagateRemoteMove::start()
             emit propagator()->touchedFile(originalFile);
             emit propagator()->touchedFile(targetFile);
             QString renameError;
-            if( FileSystem::rename(targetFile, originalFile, &renameError) ) {
+            if (FileSystem::rename(targetFile, originalFile, &renameError)) {
                 done(SyncFileItem::NormalError, tr("This folder must not be renamed. It is renamed back to its original name."));
             } else {
                 done(SyncFileItem::NormalError, tr("This folder must not be renamed. Please name it back to Shared."));
@@ -96,19 +108,18 @@ void PropagateRemoteMove::start()
     }
 
     QString destination = QDir::cleanPath(propagator()->account()->url().path() + QLatin1Char('/')
-            + propagator()->account()->davPath() + propagator()->_remoteFolder + _item->_renameTarget);
+        + propagator()->account()->davPath() + propagator()->_remoteFolder + _item->_renameTarget);
     _job = new MoveJob(propagator()->account(),
-                        propagator()->_remoteFolder + _item->_file,
-                        destination, this);
+        propagator()->_remoteFolder + _item->_file,
+        destination, this);
     connect(_job, SIGNAL(finishedSignal()), this, SLOT(slotMoveJobFinished()));
     propagator()->_activeJobList.append(this);
     _job->start();
-
 }
 
 void PropagateRemoteMove::abort()
 {
-    if (_job &&  _job->reply())
+    if (_job && _job->reply())
         _job->reply()->abort();
 }
 
@@ -118,45 +129,41 @@ void PropagateRemoteMove::slotMoveJobFinished()
 
     ASSERT(_job);
 
-    qDebug() << Q_FUNC_INFO << _job->reply()->request().url() << "FINISHED WITH STATUS"
-        << _job->reply()->error()
-        << (_job->reply()->error() == QNetworkReply::NoError ? QLatin1String("") : _job->errorString());
-
     QNetworkReply::NetworkError err = _job->reply()->error();
     _item->_httpErrorCode = _job->reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
 
     if (err != QNetworkReply::NoError) {
-
-        if( checkForProblemsWithShared(_item->_httpErrorCode,
+        if (checkForProblemsWithShared(_item->_httpErrorCode,
                 tr("The file was renamed but is part of a read only share. The original file was restored."))) {
             return;
         }
 
         SyncFileItem::Status status = classifyError(err, _item->_httpErrorCode,
-                                                    &propagator()->_anotherSyncNeeded);
+            &propagator()->_anotherSyncNeeded);
         done(status, _job->errorString());
         return;
     }
 
     _item->_responseTimeStamp = _job->responseTimestamp();
 
-    if (_item->_httpErrorCode != 201 ) {
+    if (_item->_httpErrorCode != 201) {
         // Normally we expect "201 Created"
         // If it is not the case, it might be because of a proxy or gateway intercepting the request, so we must
         // throw an error.
-        done(SyncFileItem::NormalError, tr("Wrong HTTP code returned by server. Expected 201, but received \"%1 %2\".")
-            .arg(_item->_httpErrorCode).arg(_job->reply()->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString()));
+        done(SyncFileItem::NormalError,
+            tr("Wrong HTTP code returned by server. Expected 201, but received \"%1 %2\".")
+                .arg(_item->_httpErrorCode)
+                .arg(_job->reply()->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString()));
         return;
     }
 
     finalize();
-
 }
 
 void PropagateRemoteMove::finalize()
 {
     SyncJournalFileRecord oldRecord =
-            propagator()->_journal->getFileRecord(_item->_originalFile);
+        propagator()->_journal->getFileRecord(_item->_originalFile);
     // if reading from db failed still continue hoping that deleteFileRecord
     // reopens the db successfully.
     // The db is only queried to transfer the content checksum from the old
@@ -166,11 +173,12 @@ void PropagateRemoteMove::finalize()
     SyncJournalFileRecord record(*_item, propagator()->getFilePath(_item->_renameTarget));
     record._path = _item->_renameTarget;
     if (oldRecord.isValid()) {
-        record._contentChecksum = oldRecord._contentChecksum;
-        record._contentChecksumType = oldRecord._contentChecksumType;
+        record._checksumHeader = oldRecord._checksumHeader;
         if (record._fileSize != oldRecord._fileSize) {
-            qDebug() << "Warning: file sizes differ on server vs sync journal: " << record._fileSize << oldRecord._fileSize;
-            record._fileSize = oldRecord._fileSize; // server might have claimed different size, we take the old one from the DB
+            qCWarning(lcPropagateRemoteMove) << "File sizes differ on server vs sync journal: " << record._fileSize << oldRecord._fileSize;
+
+            // the server might have claimed a different size, we take the old one from the DB
+            record._fileSize = oldRecord._fileSize;
         }
     }
 
@@ -217,6 +225,4 @@ bool PropagateRemoteMove::adjustSelectiveSync(SyncJournalDb *journal, const QStr
     }
     return true;
 }
-
 }
-

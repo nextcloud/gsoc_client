@@ -168,7 +168,7 @@ int csync_statedb_load(CSYNC *ctx, const char *statedb, sqlite3 **pdb) {
   //
   result = csync_statedb_query(db, "SELECT sqlite_version();");
   if (result && result->count >= 1) {
-      CSYNC_LOG(CSYNC_LOG_PRIORITY_NOTICE, "sqlite3 version \"%s\"", *result->vector);
+      CSYNC_LOG(CSYNC_LOG_PRIORITY_DEBUG, "sqlite3 version \"%s\"", *result->vector);
   }
   c_strlist_destroy(result);
 
@@ -186,7 +186,7 @@ int csync_statedb_load(CSYNC *ctx, const char *statedb, sqlite3 **pdb) {
 #endif
   *pdb = db;
 
-   CSYNC_LOG(CSYNC_LOG_PRIORITY_NOTICE, "Success");
+  CSYNC_LOG(CSYNC_LOG_PRIORITY_DEBUG, "Success");
 
   return 0;
 out:
@@ -218,14 +218,19 @@ int csync_statedb_close(CSYNC *ctx) {
   ctx->statedb.lastReturnValue = SQLITE_OK;
 
   int sr = sqlite3_close(ctx->statedb.db);
-  CSYNC_LOG(CSYNC_LOG_PRIORITY_NOTICE, "sqlite3_close=%d", sr);
+  CSYNC_LOG(CSYNC_LOG_PRIORITY_DEBUG, "sqlite3_close=%d", sr);
 
   ctx->statedb.db = 0;
 
   return rc;
 }
 
-#define METADATA_COLUMNS "phash, pathlen, path, inode, uid, gid, mode, modtime, type, md5, fileid, remotePerm, filesize, ignoredChildrenRemote, contentChecksum, contentChecksumTypeId"
+#define METADATA_QUERY                                                                      \
+    "phash, pathlen, path, inode, uid, gid, mode, modtime, type, md5, fileid, remotePerm, " \
+    "filesize, ignoredChildrenRemote, "                                                     \
+    "contentchecksumtype.name || ':' || contentChecksum "                                   \
+    "FROM metadata "                                                                        \
+    "LEFT JOIN checksumtype as contentchecksumtype ON metadata.contentChecksumTypeId == contentchecksumtype.id"
 
 // This funciton parses a line from the metadata table into the given csync_file_stat
 // structure which it is also allocating.
@@ -287,15 +292,14 @@ static int _csync_file_stat_from_metadata_table( csync_file_stat_t **st, sqlite3
             if(column_count > 13) {
                 (*st)->has_ignored_files = sqlite3_column_int(stmt, 13);
             }
-            if(column_count > 15 && sqlite3_column_int(stmt, 15)) {
-                (*st)->checksum = c_strdup( (char*) sqlite3_column_text(stmt, 14));
-                (*st)->checksumTypeId = sqlite3_column_int(stmt, 15);
+            if (column_count > 14 && sqlite3_column_text(stmt, 14)) {
+                (*st)->checksumHeader = c_strdup((char *)sqlite3_column_text(stmt, 14));
             }
 
         }
     } else {
         if( rc != SQLITE_DONE ) {
-            CSYNC_LOG(CSYNC_LOG_PRIORITY_DEBUG, "WARN: Query results in %d", rc);
+            CSYNC_LOG(CSYNC_LOG_PRIORITY_WARN, "Query results in %d", rc);
         }
     }
     return rc;
@@ -313,7 +317,7 @@ csync_file_stat_t *csync_statedb_get_stat_by_hash(CSYNC *ctx,
   }
 
   if( ctx->statedb.by_hash_stmt == NULL ) {
-      const char *hash_query = "SELECT " METADATA_COLUMNS " FROM metadata WHERE phash=?1";
+      const char *hash_query = "SELECT " METADATA_QUERY " WHERE phash=?1";
 
       SQLITE_BUSY_HANDLED(sqlite3_prepare_v2(ctx->statedb.db, hash_query, strlen(hash_query), &ctx->statedb.by_hash_stmt, NULL));
       ctx->statedb.lastReturnValue = rc;
@@ -356,7 +360,7 @@ csync_file_stat_t *csync_statedb_get_stat_by_file_id(CSYNC *ctx,
     }
 
     if( ctx->statedb.by_fileid_stmt == NULL ) {
-        const char *query = "SELECT " METADATA_COLUMNS " FROM metadata WHERE fileid=?1";
+        const char *query = "SELECT " METADATA_QUERY " WHERE fileid=?1";
 
         SQLITE_BUSY_HANDLED(sqlite3_prepare_v2(ctx->statedb.db, query, strlen(query), &ctx->statedb.by_fileid_stmt, NULL));
         ctx->statedb.lastReturnValue = rc;
@@ -396,7 +400,7 @@ csync_file_stat_t *csync_statedb_get_stat_by_inode(CSYNC *ctx,
   }
 
   if( ctx->statedb.by_inode_stmt == NULL ) {
-      const char *inode_query = "SELECT " METADATA_COLUMNS " FROM metadata WHERE inode=?1";
+      const char *inode_query = "SELECT " METADATA_QUERY " WHERE inode=?1";
 
       SQLITE_BUSY_HANDLED(sqlite3_prepare_v2(ctx->statedb.db, inode_query, strlen(inode_query), &ctx->statedb.by_inode_stmt, NULL));
       ctx->statedb.lastReturnValue = rc;
@@ -439,7 +443,7 @@ int csync_statedb_get_below_path( CSYNC *ctx, const char *path ) {
      * In other words, anything that is between  path+'/' and path+'0',
      * (because '0' follows '/' in ascii)
      */
-    const char *below_path_query = "SELECT " METADATA_COLUMNS " FROM metadata WHERE path > (?||'/') AND path < (?||'0')";
+    const char *below_path_query = "SELECT " METADATA_QUERY " WHERE path > (?||'/') AND path < (?||'0') ORDER BY path||'/' ASC";
     SQLITE_BUSY_HANDLED(sqlite3_prepare_v2(ctx->statedb.db, below_path_query, -1, &stmt, NULL));
     ctx->statedb.lastReturnValue = rc;
     if( rc != SQLITE_OK ) {
@@ -462,6 +466,36 @@ int csync_statedb_get_below_path( CSYNC *ctx, const char *path ) {
 
         rc = _csync_file_stat_from_metadata_table( &st, stmt);
         if( st ) {
+            /* When selective sync is used, the database may have subtrees with a parent
+             * whose etag (md5) is _invalid_. These are ignored and shall not appear in the
+             * remote tree.
+             * Sometimes folders that are not ignored by selective sync get marked as
+             * _invalid_, but that is not a problem as the next discovery will retrieve
+             * their correct etags again and we don't run into this case.
+             */
+            if( c_streq(st->etag, "_invalid_") ) {
+                CSYNC_LOG(CSYNC_LOG_PRIORITY_TRACE, "%s selective sync excluded", st->path);
+                char *skipbase = c_strdup(st->path);
+                skipbase[st->pathlen] = '/';
+                int skiplen = st->pathlen + 1;
+
+                /* Skip over all entries with the same base path. Note that this depends
+                 * strongly on the ordering of the retrieved items. */
+                do {
+                    csync_file_stat_free(st);
+                    rc = _csync_file_stat_from_metadata_table( &st, stmt);
+                    if( st && strncmp(st->path, skipbase, skiplen) != 0 ) {
+                        break;
+                    }
+                    CSYNC_LOG(CSYNC_LOG_PRIORITY_TRACE, "%s selective sync excluded because the parent is", st->path);
+                } while( rc == SQLITE_ROW );
+
+                /* End of data? */
+                if( rc != SQLITE_ROW || !st ) {
+                    continue;
+                }
+            }
+
             /* Check for exclusion from the tree.
              * Note that this is only a safety net in case the ignore list changes
              * without a full remote discovery being triggered. */

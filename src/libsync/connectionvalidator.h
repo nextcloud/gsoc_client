@@ -85,16 +85,17 @@ public:
         Undefined,
         Connected,
         NotConfigured,
-        ServerVersionMismatch,
-        CredentialsMissingOrWrong,
-        StatusNotFound,
-        UserCanceledCredentials,
-        ServiceUnavailable,
-        // actually also used for other errors on the authed request
-        Timeout
+        ServerVersionMismatch, // The server version is too old
+        CredentialsNotReady, // Credentials aren't ready
+        CredentialsWrong, // AuthenticationRequiredError
+        SslError, // SSL handshake error, certificate rejected by user?
+        StatusNotFound, // Error retrieving status.php
+        ServiceUnavailable, // 503 on authed request
+        MaintenanceMode, // maintenance enabled in status.php
+        Timeout // actually also used for other errors on the authed request
     };
 
-    static QString statusString( Status );
+    static QString statusString(Status);
 
     // How often should the Application ask this object to check for the connection?
     enum { DefaultCallingIntervalMsec = 32 * 1000 };
@@ -108,19 +109,19 @@ public slots:
     void checkAuthentication();
 
 signals:
-    void connectionResult( ConnectionValidator::Status status, QStringList errors );
+    void connectionResult(ConnectionValidator::Status status, QStringList errors);
 
 protected slots:
     void slotCheckServerAndAuth();
 
-    void slotStatusFound(const QUrl&url, const QJsonObject &info);
+    void slotStatusFound(const QUrl &url, const QJsonObject &info);
     void slotNoStatusFound(QNetworkReply *reply);
-    void slotJobTimeout(const QUrl& url);
+    void slotJobTimeout(const QUrl &url);
 
     void slotAuthFailed(QNetworkReply *reply);
     void slotAuthSuccess();
 
-    void slotCapabilitiesRecieved(const QJsonDocument&);
+    void slotCapabilitiesRecieved(const QJsonDocument &);
     void slotUserFetched(const QJsonDocument &);
     void slotAvatarImage(const QImage &img);
 
@@ -133,13 +134,12 @@ private:
      *
      * Returns false and reports ServerVersionMismatch for very old servers.
      */
-    bool setAndCheckServerVersion(const QString& version);
+    bool setAndCheckServerVersion(const QString &version);
 
     QStringList _errors;
-    AccountPtr   _account;
+    AccountPtr _account;
     bool _isCheckingServerAndAuth;
 };
-
 }
 
 #endif // CONNECTIONVALIDATOR_H

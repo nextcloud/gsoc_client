@@ -29,7 +29,7 @@ class QTableWidgetItem;
 namespace OCC {
 
 namespace Ui {
-class ShareLinkWidget;
+    class ShareLinkWidget;
 }
 
 class AbstractCredentials;
@@ -49,10 +49,10 @@ class ShareLinkWidget : public QWidget
 
 public:
     explicit ShareLinkWidget(AccountPtr account,
-                             const QString &sharePath,
-                             const QString &localPath,
-                             SharePermissions maxSharingPermissions,
-                             QWidget *parent = 0);
+        const QString &sharePath,
+        const QString &localPath,
+        SharePermissions maxSharingPermissions,
+        QWidget *parent = 0);
     ~ShareLinkWidget();
     void getShares();
 
@@ -65,25 +65,26 @@ private slots:
     void slotCheckBoxPasswordClicked();
     void slotCheckBoxExpireClicked();
     void slotPasswordReturnPressed();
-    void slotCheckBoxEditingClicked();
+    void slotPermissionsCheckboxClicked();
     void slotExpireDateChanged(const QDate &date);
-    void slotPasswordChanged(const QString& newText);
-    void slotNameEdited(QTableWidgetItem* item);
+    void slotPasswordChanged(const QString &newText);
+    void slotNameEdited(QTableWidgetItem *item);
 
-    void slotShareLinkButtonTriggered(QAction* action);
+    void slotShareLinkButtonClicked();
+    void slotShareLinkActionTriggered(QAction *action);
 
     void slotDeleteShareFetched();
     void slotCreateShareFetched(const QSharedPointer<LinkShare> share);
-    void slotCreateShareRequiresPassword(const QString& message);
+    void slotCreateShareRequiresPassword(const QString &message);
     void slotPasswordSet();
     void slotExpireSet();
-    void slotPublicUploadSet();
+    void slotPermissionsSet();
 
     void slotServerError(int code, const QString &message);
     void slotPasswordSetError(int code, const QString &message);
 
 private:
-    void displayError(const QString& errMsg);
+    void displayError(const QString &errMsg);
 
     void setPassword(const QString &password);
     void setExpireDate(const QDate &date);
@@ -126,7 +127,6 @@ private:
     QAction *_emailLinkAction;
     QAction *_emailDirectLinkAction;
 };
-
 }
 
 #endif // SHARELINKWIDGET_H

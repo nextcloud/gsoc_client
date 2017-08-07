@@ -18,6 +18,7 @@
 #include <QObject>
 #include <QFlags>
 #include <QAbstractListModel>
+#include <QLoggingCategory>
 #include <QModelIndex>
 #include <QVariant>
 #include <QSharedPointer>
@@ -30,9 +31,11 @@ class QJsonObject;
 
 namespace OCC {
 
-class Sharee {
+Q_DECLARE_LOGGING_CATEGORY(lcSharing)
+
+class Sharee
+{
 public:
-    
     // Keep in sync with Share::ShareType
     enum Type {
         User = 0,
@@ -41,8 +44,8 @@ public:
     };
 
     explicit Sharee(const QString shareWith,
-                    const QString displayName,
-                    const Type type);
+        const QString displayName,
+        const Type type);
 
     QString format() const;
     QString shareWith() const;
@@ -56,7 +59,8 @@ private:
 };
 
 
-class ShareeModel : public QAbstractListModel {
+class ShareeModel : public QAbstractListModel
+{
     Q_OBJECT
 public:
     explicit ShareeModel(const AccountPtr &account, const QString &type, QObject *parent = 0);
@@ -88,9 +92,8 @@ private:
     QVector<QSharedPointer<Sharee>> _sharees;
     QVector<QSharedPointer<Sharee>> _shareeBlacklist;
 };
-
 }
 
 Q_DECLARE_METATYPE(QSharedPointer<OCC::Sharee>)
 
-#endif  //SHAREE_H
+#endif //SHAREE_H

@@ -32,7 +32,6 @@
 #include <QLabel>
 #include <QStandardItemModel>
 #include <QPushButton>
-#include <QDebug>
 #include <QSettings>
 #include <QPainter>
 #include <QPainterPath>
@@ -40,7 +39,7 @@
 namespace OCC {
 
 // Duplicate in settingsdialog.cpp
-static QIcon circleMask( const QImage& avatar )
+static QIcon circleMask(const QImage &avatar)
 {
     int dim = avatar.width();
 
@@ -62,12 +61,12 @@ static QIcon circleMask( const QImage& avatar )
 // Whenever you change something here check both settingsdialog.cpp and settingsdialogmac.cpp !
 //
 SettingsDialogMac::SettingsDialogMac(ownCloudGui *gui, QWidget *parent)
-    : MacPreferencesWindow(parent), _gui(gui)
+    : MacPreferencesWindow(parent)
+    , _gui(gui)
 {
     // do not show minimize button. There is no use, and restoring the
     // dialog from minimize is broken in MacPreferencesWindow
-    setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::CustomizeWindowHint |
-                   Qt::WindowCloseButtonHint | Qt::WindowMaximizeButtonHint);
+    setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::CustomizeWindowHint | Qt::WindowCloseButtonHint | Qt::WindowMaximizeButtonHint);
 
 
     // Emulate dialog behavior: Escape means close
@@ -93,14 +92,14 @@ SettingsDialogMac::SettingsDialogMac(ownCloudGui *gui, QWidget *parent)
     QIcon activityIcon(QLatin1String(":/client/resources/activity.png"));
     _activitySettings = new ActivitySettings;
     addPreferencesPanel(activityIcon, tr("Activity"), _activitySettings);
-    connect( _activitySettings, SIGNAL(guiLog(QString,QString)), _gui,
-        SLOT(slotShowOptionalTrayMessage(QString,QString)) );
+    connect(_activitySettings, SIGNAL(guiLog(QString, QString)), _gui,
+        SLOT(slotShowOptionalTrayMessage(QString, QString)));
 
     connect(AccountManager::instance(), &AccountManager::accountAdded,
-            this, &SettingsDialogMac::accountAdded);
+        this, &SettingsDialogMac::accountAdded);
     connect(AccountManager::instance(), &AccountManager::accountRemoved,
-            this, &SettingsDialogMac::accountRemoved);
-    foreach (auto ai , AccountManager::instance()->accounts()) {
+        this, &SettingsDialogMac::accountRemoved);
+    foreach (auto ai, AccountManager::instance()->accounts()) {
         accountAdded(ai.data());
     }
 
@@ -134,6 +133,14 @@ void SettingsDialogMac::showActivityPage()
     setCurrentPanelIndex(preferencePanelCount() - 1 - 2);
 }
 
+void SettingsDialogMac::showIssuesList(const QString &folderAlias)
+{
+    // Count backwards (0-based) from the last panel (multiple accounts can be on the left)
+    setCurrentPanelIndex(preferencePanelCount() - 1 - 2);
+    _activitySettings->slotShowIssuesTab(folderAlias);
+}
+
+
 void SettingsDialogMac::accountAdded(AccountState *s)
 {
     QIcon accountIcon = MacStandardIcon::icon(MacStandardIcon::UserAccounts);
@@ -143,8 +150,9 @@ void SettingsDialogMac::accountAdded(AccountState *s)
 
     insertPreferencesPanel(0, accountIcon, displayName, accountSettings);
 
-    connect( accountSettings, &AccountSettings::folderChanged, _gui,  &ownCloudGui::slotFoldersChanged);
-    connect( accountSettings, &AccountSettings::openFolderAlias, _gui, &ownCloudGui::slotFolderOpenAction);
+    connect(accountSettings, &AccountSettings::folderChanged, _gui, &ownCloudGui::slotFoldersChanged);
+    connect(accountSettings, &AccountSettings::openFolderAlias, _gui, &ownCloudGui::slotFolderOpenAction);
+    connect(accountSettings, &AccountSettings::showIssuesList, this, &SettingsDialogMac::showIssuesList);
 
     connect(s->account().data(), SIGNAL(accountChangedAvatar()), this, SLOT(slotAccountAvatarChanged()));
 
@@ -153,8 +161,8 @@ void SettingsDialogMac::accountAdded(AccountState *s)
 
 void SettingsDialogMac::accountRemoved(AccountState *s)
 {
-    auto list = findChildren<AccountSettings*>(QString());
-    foreach(auto p, list) {
+    auto list = findChildren<AccountSettings *>(QString());
+    foreach (auto p, list) {
         if (p->accountsState() == s) {
             removePreferencesPanel(p);
         }
@@ -163,7 +171,7 @@ void SettingsDialogMac::accountRemoved(AccountState *s)
     _activitySettings->slotRemoveAccount(s);
 }
 
-void SettingsDialogMac::slotRefreshActivity( AccountState* accountState )
+void SettingsDialogMac::slotRefreshActivity(AccountState *accountState)
 {
     if (accountState) {
         _activitySettings->slotRefresh(accountState);
@@ -172,9 +180,9 @@ void SettingsDialogMac::slotRefreshActivity( AccountState* accountState )
 
 void SettingsDialogMac::slotAccountAvatarChanged()
 {
-    Account *account = static_cast<Account*>(sender());
-    auto list = findChildren<AccountSettings*>(QString());
-    foreach(auto p, list) {
+    Account *account = static_cast<Account *>(sender());
+    auto list = findChildren<AccountSettings *>(QString());
+    foreach (auto p, list) {
         if (p->accountsState()->account() == account) {
             int idx = indexForPanel(p);
             QImage pix = account->avatar();
@@ -184,5 +192,4 @@ void SettingsDialogMac::slotAccountAvatarChanged()
         }
     }
 }
-
 }

@@ -44,21 +44,23 @@ public:
     void set(SyncFileStatusTag tag);
     SyncFileStatusTag tag() const;
 
-    void setSharedWithMe( bool isShared );
-    bool sharedWithMe() const;
+    void setShared(bool isShared);
+    bool shared() const;
 
     QString toSocketAPIString() const;
+
 private:
     SyncFileStatusTag _tag;
-    bool _sharedWithMe;
-
+    bool _shared;
 };
 
-inline bool operator==(const SyncFileStatus &a, const SyncFileStatus &b) {
-    return a.tag() == b.tag() && a.sharedWithMe() == b.sharedWithMe();
+inline bool operator==(const SyncFileStatus &a, const SyncFileStatus &b)
+{
+    return a.tag() == b.tag() && a.shared() == b.shared();
 }
 
-inline bool operator!=(const SyncFileStatus &a, const SyncFileStatus &b) {
+inline bool operator!=(const SyncFileStatus &a, const SyncFileStatus &b)
+{
     return !(a == b);
 }
 }

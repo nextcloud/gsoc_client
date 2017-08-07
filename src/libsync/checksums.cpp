@@ -18,6 +18,7 @@
 #include "propagatorjobs.h"
 #include "account.h"
 
+#include <QLoggingCategory>
 #include <qtconcurrentrun.h>
 
 /** \file checksums.cpp
@@ -76,15 +77,19 @@
 
 namespace OCC {
 
-QByteArray makeChecksumHeader(const QByteArray& checksumType, const QByteArray& checksum)
+Q_LOGGING_CATEGORY(lcChecksums, "sync.checksums", QtInfoMsg)
+
+QByteArray makeChecksumHeader(const QByteArray &checksumType, const QByteArray &checksum)
 {
+    if (checksumType.isEmpty() || checksum.isEmpty())
+        return QByteArray();
     QByteArray header = checksumType;
     header.append(':');
     header.append(checksum);
     return header;
 }
 
-bool parseChecksumHeader(const QByteArray& header, QByteArray* type, QByteArray* checksum)
+bool parseChecksumHeader(const QByteArray &header, QByteArray *type, QByteArray *checksum)
 {
     if (header.isEmpty()) {
         type->clear();
@@ -102,6 +107,16 @@ bool parseChecksumHeader(const QByteArray& header, QByteArray* type, QByteArray*
     return true;
 }
 
+
+QByteArray parseChecksumHeaderType(const QByteArray &header)
+{
+    const auto idx = header.indexOf(':');
+    if (idx < 0) {
+        return QByteArray();
+    }
+    return header.left(idx);
+}
+
 bool uploadChecksumEnabled()
 {
     static bool enabled = qgetenv("OWNCLOUD_DISABLE_CHECKSUM_UPLOAD").isEmpty();
@@ -117,12 +132,12 @@ QByteArray contentChecksumType()
     return type;
 }
 
-ComputeChecksum::ComputeChecksum(QObject* parent)
+ComputeChecksum::ComputeChecksum(QObject *parent)
     : QObject(parent)
 {
 }
 
-void ComputeChecksum::setChecksumType(const QByteArray& type)
+void ComputeChecksum::setChecksumType(const QByteArray &type)
 {
     _checksumType = type;
 }
@@ -132,30 +147,30 @@ QByteArray ComputeChecksum::checksumType() const
     return _checksumType;
 }
 
-void ComputeChecksum::start(const QString& filePath)
+void ComputeChecksum::start(const QString &filePath)
 {
     // Calculate the checksum in a different thread first.
-    connect( &_watcher, SIGNAL(finished()),
-             this, SLOT(slotCalculationDone()),
-             Qt::UniqueConnection );
+    connect(&_watcher, SIGNAL(finished()),
+        this, SLOT(slotCalculationDone()),
+        Qt::UniqueConnection);
     _watcher.setFuture(QtConcurrent::run(ComputeChecksum::computeNow, filePath, checksumType()));
 }
 
-QByteArray ComputeChecksum::computeNow(const QString& filePath, const QByteArray& checksumType)
+QByteArray ComputeChecksum::computeNow(const QString &filePath, const QByteArray &checksumType)
 {
-    if( checksumType == checkSumMD5C ) {
+    if (checksumType == checkSumMD5C) {
         return FileSystem::calcMd5(filePath);
-    } else if( checksumType == checkSumSHA1C ) {
+    } else if (checksumType == checkSumSHA1C) {
         return FileSystem::calcSha1(filePath);
     }
 #ifdef ZLIB_FOUND
-    else if( checksumType == checkSumAdlerC) {
+    else if (checksumType == checkSumAdlerC) {
         return FileSystem::calcAdler32(filePath);
     }
 #endif
     // for an unknown checksum or no checksum, we're done right now
-    if( !checksumType.isEmpty() ) {
-        qDebug() << "Unknown checksum type:" << checksumType;
+    if (!checksumType.isEmpty()) {
+        qCWarning(lcChecksums) << "Unknown checksum type:" << checksumType;
     }
     return QByteArray();
 }
@@ -176,77 +191,62 @@ ValidateChecksumHeader::ValidateChecksumHeader(QObject *parent)
 {
 }
 
-void ValidateChecksumHeader::start(const QString& filePath, const QByteArray& checksumHeader)
+void ValidateChecksumHeader::start(const QString &filePath, const QByteArray &checksumHeader)
 {
     // If the incoming header is empty no validation can happen. Just continue.
-    if( checksumHeader.isEmpty() ) {
+    if (checksumHeader.isEmpty()) {
         emit validated(QByteArray(), QByteArray());
         return;
     }
 
-    if( !parseChecksumHeader(checksumHeader, &_expectedChecksumType, &_expectedChecksum) ) {
-        qDebug() << "Checksum header malformed:" << checksumHeader;
+    if (!parseChecksumHeader(checksumHeader, &_expectedChecksumType, &_expectedChecksum)) {
+        qCWarning(lcChecksums) << "Checksum header malformed:" << checksumHeader;
         emit validationFailed(tr("The checksum header is malformed."));
         return;
     }
 
     auto calculator = new ComputeChecksum(this);
     calculator->setChecksumType(_expectedChecksumType);
-    connect(calculator, SIGNAL(done(QByteArray,QByteArray)),
-            SLOT(slotChecksumCalculated(QByteArray,QByteArray)));
+    connect(calculator, SIGNAL(done(QByteArray, QByteArray)),
+        SLOT(slotChecksumCalculated(QByteArray, QByteArray)));
     calculator->start(filePath);
 }
 
-void ValidateChecksumHeader::slotChecksumCalculated(const QByteArray& checksumType,
-                                                    const QByteArray& checksum)
+void ValidateChecksumHeader::slotChecksumCalculated(const QByteArray &checksumType,
+    const QByteArray &checksum)
 {
-    if( checksumType != _expectedChecksumType ) {
-        emit validationFailed(tr("The checksum header contained an unknown checksum type '%1'").arg(
-                                  QString::fromLatin1(_expectedChecksumType)));
+    if (checksumType != _expectedChecksumType) {
+        emit validationFailed(tr("The checksum header contained an unknown checksum type '%1'").arg(QString::fromLatin1(_expectedChecksumType)));
         return;
     }
-    if( checksum != _expectedChecksum ) {
+    if (checksum != _expectedChecksum) {
         emit validationFailed(tr("The downloaded file does not match the checksum, it will be resumed."));
         return;
     }
     emit validated(checksumType, checksum);
 }
 
-CSyncChecksumHook::CSyncChecksumHook(SyncJournalDb *journal)
-    : _journal(journal)
+CSyncChecksumHook::CSyncChecksumHook()
 {
 }
 
-const char* CSyncChecksumHook::hook(const char* path, uint32_t checksumTypeId, void *this_obj)
+const char *CSyncChecksumHook::hook(const char *path, const char *otherChecksumHeader, void * /*this_obj*/)
 {
-    CSyncChecksumHook* checksumHook = static_cast<CSyncChecksumHook*>(this_obj);
-    QByteArray checksum = checksumHook->compute(QString::fromUtf8(path), checksumTypeId);
+    QByteArray type = parseChecksumHeaderType(QByteArray(otherChecksumHeader));
+    if (type.isEmpty())
+        return NULL;
+
+    QByteArray checksum = ComputeChecksum::computeNow(path, type);
     if (checksum.isNull()) {
+        qCWarning(lcChecksums) << "Failed to compute checksum" << type << "for" << path;
         return NULL;
     }
 
-    char* result = (char*)malloc(checksum.size() + 1);
-    memcpy(result, checksum.constData(), checksum.size());
-    result[checksum.size()] = 0;
+    QByteArray checksumHeader = makeChecksumHeader(type, checksum);
+    char *result = (char *)malloc(checksumHeader.size() + 1);
+    memcpy(result, checksumHeader.constData(), checksumHeader.size());
+    result[checksumHeader.size()] = 0;
     return result;
 }
-
-QByteArray CSyncChecksumHook::compute(const QString& path, int checksumTypeId)
-{
-    QByteArray checksumType = _journal->getChecksumType(checksumTypeId);
-    if (checksumType.isEmpty()) {
-        qDebug() << "Checksum type" << checksumTypeId << "not found";
-        return QByteArray();
-    }
-
-    QByteArray checksum = ComputeChecksum::computeNow(path, checksumType);
-    if (checksum.isNull()) {
-        qDebug() << "Failed to compute checksum" << checksumType << "for" << path;
-        return QByteArray();
-    }
-
-    return checksum;
-}
-
 
 }

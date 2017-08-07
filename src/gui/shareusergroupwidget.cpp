@@ -22,7 +22,7 @@
 #include "theme.h"
 #include "configfile.h"
 #include "capabilities.h"
-
+#include "guiutility.h"
 #include "thumbnailjob.h"
 #include "sharee.h"
 #include "sharemanager.h"
@@ -39,21 +39,25 @@
 #include <QPropertyAnimation>
 #include <QMenu>
 #include <QAction>
+#include <QDesktopServices>
+#include <QMessageBox>
 
 namespace OCC {
 
 ShareUserGroupWidget::ShareUserGroupWidget(AccountPtr account,
-                                           const QString &sharePath,
-                                           const QString &localPath,
-                                           SharePermissions maxSharingPermissions,
-                                           QWidget *parent) :
-   QWidget(parent),
-    _ui(new Ui::ShareUserGroupWidget),
-    _account(account),
-    _sharePath(sharePath),
-    _localPath(localPath),
-    _maxSharingPermissions(maxSharingPermissions),
-    _disableCompleterActivated(false)
+    const QString &sharePath,
+    const QString &localPath,
+    SharePermissions maxSharingPermissions,
+    const QByteArray &numericFileId,
+    QWidget *parent)
+    : QWidget(parent)
+    , _ui(new Ui::ShareUserGroupWidget)
+    , _account(account)
+    , _sharePath(sharePath)
+    , _localPath(localPath)
+    , _maxSharingPermissions(maxSharingPermissions)
+    , _numericFileId(numericFileId)
+    , _disableCompleterActivated(false)
 {
     setAttribute(Qt::WA_DeleteOnClose);
     setObjectName("SharingDialogUG"); // required as group for saveGeometry call
@@ -65,10 +69,10 @@ ShareUserGroupWidget::ShareUserGroupWidget(AccountPtr account,
 
     _completer = new QCompleter(this);
     _completerModel = new ShareeModel(_account,
-                                      _isFile ? QLatin1String("file") : QLatin1String("folder"),
-                                      _completer);
+        _isFile ? QLatin1String("file") : QLatin1String("folder"),
+        _completer);
     connect(_completerModel, SIGNAL(shareesReady()), this, SLOT(slotShareesReady()));
-    connect(_completerModel, SIGNAL(displayErrorMessage(int,QString)), this, SLOT(displayError(int,QString)));
+    connect(_completerModel, SIGNAL(displayErrorMessage(int, QString)), this, SLOT(displayError(int, QString)));
 
     _completer->setModel(_completerModel);
     _completer->setCaseSensitivity(Qt::CaseInsensitive);
@@ -78,19 +82,20 @@ ShareUserGroupWidget::ShareUserGroupWidget(AccountPtr account,
     _manager = new ShareManager(_account, this);
     connect(_manager, SIGNAL(sharesFetched(QList<QSharedPointer<Share>>)), SLOT(slotSharesFetched(QList<QSharedPointer<Share>>)));
     connect(_manager, SIGNAL(shareCreated(QSharedPointer<Share>)), SLOT(getShares()));
-    connect(_manager, SIGNAL(serverError(int,QString)), this, SLOT(displayError(int,QString)));
+    connect(_manager, SIGNAL(serverError(int, QString)), this, SLOT(displayError(int, QString)));
     connect(_ui->shareeLineEdit, SIGNAL(returnPressed()), SLOT(slotLineEditReturn()));
+    connect(_ui->privateLinkText, SIGNAL(linkActivated(QString)), SLOT(slotPrivateLinkShare()));
 
     // By making the next two QueuedConnections we can override
     // the strings the completer sets on the line edit.
     connect(_completer, SIGNAL(activated(QModelIndex)), SLOT(slotCompleterActivated(QModelIndex)),
-            Qt::QueuedConnection);
+        Qt::QueuedConnection);
     connect(_completer, SIGNAL(highlighted(QModelIndex)), SLOT(slotCompleterHighlighted(QModelIndex)),
-            Qt::QueuedConnection);
+        Qt::QueuedConnection);
 
     // Queued connection so this signal is recieved after textChanged
     connect(_ui->shareeLineEdit, SIGNAL(textEdited(QString)),
-            this, SLOT(slotLineEditTextEdited(QString)), Qt::QueuedConnection);
+        this, SLOT(slotLineEditTextEdited(QString)), Qt::QueuedConnection);
     connect(&_completionTimer, SIGNAL(timeout()), this, SLOT(searchForSharees()));
     _completionTimer.setSingleShot(true);
     _completionTimer.setInterval(600);
@@ -112,7 +117,7 @@ void ShareUserGroupWidget::on_shareeLineEdit_textChanged(const QString &)
     _completionTimer.stop();
 }
 
-void ShareUserGroupWidget::slotLineEditTextEdited(const QString& text)
+void ShareUserGroupWidget::slotLineEditTextEdited(const QString &text)
 {
     _disableCompleterActivated = false;
     // First textChanged is called first and we stopped the timer when the text is changed, programatically or not
@@ -130,8 +135,8 @@ void ShareUserGroupWidget::slotLineEditReturn()
     for (int i = 0; i < _completerModel->rowCount(); ++i) {
         const auto sharee = _completerModel->getSharee(i);
         if (sharee->format() == text
-                || sharee->displayName() == text
-                || sharee->shareWith() == text) {
+            || sharee->displayName() == text
+            || sharee->shareWith() == text) {
             slotCompleterActivated(_completerModel->index(i));
             // make sure we do not send the same item twice (because return is called when we press
             // return to activate an item inthe completer)
@@ -155,7 +160,7 @@ void ShareUserGroupWidget::searchForSharees()
     QSharedPointer<Sharee> currentUser(new Sharee(_account->credentials()->user(), "", Sharee::Type::User));
     blacklist << currentUser;
 
-    foreach (auto sw, _ui->scrollArea->findChildren<ShareUserLine*>()) {
+    foreach (auto sw, _ui->scrollArea->findChildren<ShareUserLine *>()) {
         blacklist << sw->share()->getShareWith();
     }
     _ui->errorLabel->hide();
@@ -180,7 +185,7 @@ void ShareUserGroupWidget::slotSharesFetched(const QList<QSharedPointer<Share>> 
     if (shares.isEmpty()) {
         layout->addWidget(new QLabel(tr("The item is not shared with any users or groups")));
     } else {
-        foreach(const auto &share, shares) {
+        foreach (const auto &share, shares) {
             // We don't handle link shares
             if (share->getShareType() == Share::TypeLink) {
                 continue;
@@ -213,13 +218,28 @@ void ShareUserGroupWidget::slotSharesFetched(const QList<QSharedPointer<Share>> 
 void ShareUserGroupWidget::slotAdjustScrollWidgetSize()
 {
     QScrollArea *scrollArea = _ui->scrollArea;
-    if (scrollArea->findChildren<ShareUserLine*>().count() <= 3) {
+    if (scrollArea->findChildren<ShareUserLine *>().count() <= 3) {
         auto minimumSize = scrollArea->widget()->sizeHint();
         auto spacing = scrollArea->widget()->layout()->spacing();
         minimumSize.rwidth() += spacing;
         minimumSize.rheight() += spacing;
         scrollArea->setMinimumSize(minimumSize);
     }
+}
+
+void ShareUserGroupWidget::slotPrivateLinkShare()
+{
+    auto menu = new QMenu(this);
+    menu->setAttribute(Qt::WA_DeleteOnClose);
+
+    menu->addAction(tr("Open link in browser"),
+        this, SLOT(slotPrivateLinkOpenBrowser()));
+    menu->addAction(tr("Copy link to clipboard"),
+        this, SLOT(slotPrivateLinkCopy()));
+    menu->addAction(tr("Send link by email"),
+        this, SLOT(slotPrivateLinkEmail()));
+
+    menu->exec(QCursor::pos());
 }
 
 void ShareUserGroupWidget::slotShareesReady()
@@ -232,7 +252,7 @@ void ShareUserGroupWidget::slotShareesReady()
     _completer->complete();
 }
 
-void ShareUserGroupWidget::slotCompleterActivated(const QModelIndex & index)
+void ShareUserGroupWidget::slotCompleterActivated(const QModelIndex &index)
 {
     if (_disableCompleterActivated)
         return;
@@ -247,7 +267,7 @@ void ShareUserGroupWidget::slotCompleterActivated(const QModelIndex & index)
      * Add spinner to the bottom of the widget list
      */
     auto viewPort = _ui->scrollArea->widget();
-    auto layout = qobject_cast<QVBoxLayout*>(viewPort->layout());
+    auto layout = qobject_cast<QVBoxLayout *>(viewPort->layout());
     auto indicator = new QProgressIndicator(viewPort);
     indicator->startAnimation();
     if (layout->count() == 1) {
@@ -263,57 +283,75 @@ void ShareUserGroupWidget::slotCompleterActivated(const QModelIndex & index)
      * https://github.com/owncloud/client/issues/4996
      */
     if (sharee->type() == Sharee::Federated
-            && _account->serverVersionInt() < Account::makeServerVersion(9, 1, 0)) {
+        && _account->serverVersionInt() < Account::makeServerVersion(9, 1, 0)) {
         int permissions = SharePermissionRead | SharePermissionUpdate;
         if (!_isFile) {
             permissions |= SharePermissionCreate | SharePermissionDelete;
         }
         _manager->createShare(_sharePath, Share::ShareType(sharee->type()),
-                              sharee->shareWith(), SharePermission(permissions));
+            sharee->shareWith(), SharePermission(permissions));
     } else {
         _manager->createShare(_sharePath, Share::ShareType(sharee->type()),
-                              sharee->shareWith(), SharePermissionDefault);
+            sharee->shareWith(), SharePermissionDefault);
     }
 
     _ui->shareeLineEdit->setEnabled(false);
     _ui->shareeLineEdit->setText(QString());
 }
 
-void ShareUserGroupWidget::slotCompleterHighlighted(const QModelIndex & index)
+void ShareUserGroupWidget::slotCompleterHighlighted(const QModelIndex &index)
 {
     // By default the completer would set the text to EditRole,
     // override that here.
     _ui->shareeLineEdit->setText(index.data(Qt::DisplayRole).toString());
 }
 
-void ShareUserGroupWidget::displayError(int code, const QString& message)
+void ShareUserGroupWidget::displayError(int code, const QString &message)
 {
     _pi_sharee.stopAnimation();
 
     // Also remove the spinner in the widget list, if any
-    foreach (auto pi, _ui->scrollArea->findChildren<QProgressIndicator*>()) {
+    foreach (auto pi, _ui->scrollArea->findChildren<QProgressIndicator *>()) {
         delete pi;
     }
 
-    qDebug() << "Error from server" << code << message;
+    qCWarning(lcSharing) << "Sharing error from server" << code << message;
     _ui->errorLabel->setText(message);
     _ui->errorLabel->show();
     _ui->shareeLineEdit->setEnabled(true);
 }
 
+void ShareUserGroupWidget::slotPrivateLinkOpenBrowser()
+{
+    Utility::openBrowser(_account->filePermalinkUrl(_numericFileId), this);
+}
+
+void ShareUserGroupWidget::slotPrivateLinkCopy()
+{
+    QApplication::clipboard()->setText(_account->filePermalinkUrl(_numericFileId).toString());
+}
+
+void ShareUserGroupWidget::slotPrivateLinkEmail()
+{
+    Utility::openEmailComposer(
+        tr("I shared something with you"),
+        _account->filePermalinkUrl(_numericFileId).toString(),
+        this);
+}
+
 ShareUserLine::ShareUserLine(QSharedPointer<Share> share,
-                             SharePermissions maxSharingPermissions,
-                             bool isFile,
-                             QWidget *parent) :
-  QWidget(parent),
-  _ui(new Ui::ShareUserLine),
-  _share(share),
-  _isFile(isFile)
+    SharePermissions maxSharingPermissions,
+    bool isFile,
+    QWidget *parent)
+    : QWidget(parent)
+    , _ui(new Ui::ShareUserLine)
+    , _share(share)
+    , _isFile(isFile)
 {
     _ui->setupUi(this);
 
     _ui->sharedWith->setText(share->getShareWith()->format());
- 
+
     // Create detailed permissions menu
     QMenu *menu = new QMenu(this);
     _permissionCreate = new QAction(tr("create"), this);
@@ -350,13 +388,13 @@ ShareUserLine::ShareUserLine(QSharedPointer<Share> share,
 
     _ui->permissionShare->setEnabled(maxSharingPermissions & SharePermissionShare);
     _ui->permissionsEdit->setEnabled(maxSharingPermissions
-            & (SharePermissionCreate | SharePermissionUpdate | SharePermissionDelete));
+        & (SharePermissionCreate | SharePermissionUpdate | SharePermissionDelete));
 
     connect(_permissionUpdate, SIGNAL(triggered(bool)), SLOT(slotPermissionsChanged()));
     connect(_permissionCreate, SIGNAL(triggered(bool)), SLOT(slotPermissionsChanged()));
     connect(_permissionDelete, SIGNAL(triggered(bool)), SLOT(slotPermissionsChanged()));
-    connect(_ui->permissionShare,  SIGNAL(clicked(bool)), SLOT(slotPermissionsChanged()));
-    connect(_ui->permissionsEdit,  SIGNAL(clicked(bool)), SLOT(slotEditPermissionsChanged()));
+    connect(_ui->permissionShare, SIGNAL(clicked(bool)), SLOT(slotPermissionsChanged()));
+    connect(_ui->permissionsEdit, SIGNAL(clicked(bool)), SLOT(slotEditPermissionsChanged()));
 
     /*
      * We don't show permssion share for federated shares with server <9.1
@@ -364,7 +402,7 @@ ShareUserLine::ShareUserLine(QSharedPointer<Share> share,
      * https://github.com/owncloud/client/issues/4996
      */
     if (share->getShareType() == Share::TypeRemote
-            && share->account()->serverVersionInt() < Account::makeServerVersion(9, 1, 0)) {
+        && share->account()->serverVersionInt() < Account::makeServerVersion(9, 1, 0)) {
         _ui->permissionShare->setVisible(false);
         _ui->permissionToolButton->setVisible(false);
     }
@@ -373,7 +411,7 @@ ShareUserLine::ShareUserLine(QSharedPointer<Share> share,
     connect(share.data(), SIGNAL(shareDeleted()), SLOT(slotShareDeleted()));
 
     _ui->deleteShareButton->setIcon(QIcon::fromTheme(QLatin1String("user-trash"),
-                                                     QIcon(QLatin1String(":/client/resources/delete.png"))));
+        QIcon(QLatin1String(":/client/resources/delete.png"))));
 
     if (!share->account()->capabilities().shareResharing()) {
         _ui->permissionShare->hide();
@@ -429,7 +467,7 @@ void ShareUserLine::slotEditPermissionsChanged()
 void ShareUserLine::slotPermissionsChanged()
 {
     setEnabled(false);
-    
+
     Share::Permissions permissions = SharePermissionRead;
 
     if (_permissionUpdate->isChecked()) {
@@ -460,7 +498,7 @@ void ShareUserLine::slotDeleteAnimationFinished()
     // There is a painting bug where a small line of this widget isn't
     // properly cleared. This explicit repaint() call makes sure any trace of
     // the share widget is removed once it's destroyed. #4189
-    connect(this, SIGNAL(destroyed(QObject*)), parentWidget(), SLOT(repaint()));
+    connect(this, SIGNAL(destroyed(QObject *)), parentWidget(), SLOT(repaint()));
 }
 
 void ShareUserLine::slotShareDeleted()
@@ -506,9 +544,9 @@ void ShareUserLine::displayPermissions()
     }
 
     if (perm & SharePermissionUpdate
-            && (_isFile
-                || (perm & SharePermissionCreate
-                    && perm & SharePermissionDelete))) {
+        && (_isFile
+               || (perm & SharePermissionCreate
+                      && perm & SharePermissionDelete))) {
         _ui->permissionsEdit->setCheckState(Qt::Checked);
     } else if (perm & (SharePermissionUpdate | SharePermissionCreate | SharePermissionDelete)) {
         _ui->permissionsEdit->setCheckState(Qt::PartiallyChecked);
@@ -521,5 +559,4 @@ void ShareUserLine::displayPermissions()
         _ui->permissionShare->setCheckState(Qt::Checked);
     }
 }
-
 }

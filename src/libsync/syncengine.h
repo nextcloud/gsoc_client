@@ -48,8 +48,7 @@ class SyncJournalFileRecord;
 class SyncJournalDb;
 class OwncloudPropagator;
 
-enum AnotherSyncNeeded
-{
+enum AnotherSyncNeeded {
     NoFollowUpSync,
     ImmediateFollowUp, // schedule this again immediately (limited amount of times)
     DelayedFollowUp // regularly schedule this folder again (around 1/minute, unlimited)
@@ -64,10 +63,10 @@ class OWNCLOUDSYNC_EXPORT SyncEngine : public QObject
     Q_OBJECT
 public:
     SyncEngine(AccountPtr account, const QString &localPath,
-               const QString &remotePath, SyncJournalDb *journal);
+        const QString &remotePath, SyncJournalDb *journal);
     ~SyncEngine();
 
-    static QString csyncErrorToString( CSYNC_STATUS);
+    static QString csyncErrorToString(CSYNC_STATUS);
 
     Q_INVOKABLE void startSync();
     void setNetworkLimits(int upload, int download);
@@ -88,11 +87,7 @@ public:
     /* Returns whether another sync is needed to complete the sync */
     AnotherSyncNeeded isAnotherSyncNeeded() { return _anotherSyncNeeded; }
 
-    /** Get the ms since a file was touched, or -1 if it wasn't.
-     *
-     * Thread-safe.
-     */
-    qint64 timeSinceFileTouched(const QString& fn) const;
+    bool wasFileTouched(const QString &fn) const;
 
     AccountPtr account() const;
     SyncJournalDb *journal() const { return _journal; }
@@ -105,22 +100,23 @@ public:
     static qint64 minimumFileAgeForUpload; // in ms
 
 signals:
-    void csyncError( const QString& );
     void csyncUnavailable();
 
     // During update, before reconcile
     void rootEtag(QString);
-    void folderDiscovered(bool local, const QString &folderUrl);
 
     // before actual syncing (after update+reconcile) for each item
-    void syncItemDiscovered(const SyncFileItem&);
+    void syncItemDiscovered(const SyncFileItem &);
     // after the above signals. with the items that actually need propagating
-    void aboutToPropagate(SyncFileItemVector&);
+    void aboutToPropagate(SyncFileItemVector &);
 
     // after each item completed by a job (successful or not)
-    void itemCompleted(const SyncFileItemPtr&);
+    void itemCompleted(const SyncFileItemPtr &);
 
-    void transmissionProgress( const ProgressInfo& progress );
+    void transmissionProgress(const ProgressInfo &progress);
+
+    /// We've produced a new sync error of a type.
+    void syncError(const QString &message, ErrorCategory category);
 
     void finished(bool success);
     void started();
@@ -148,28 +144,36 @@ signals:
     void seenLockedFile(const QString &fileName);
 
 private slots:
+    void slotFolderDiscovered(bool local, const QString &folder);
     void slotRootEtagReceived(const QString &);
-    void slotItemCompleted(const SyncFileItemPtr& item);
+    void slotItemCompleted(const SyncFileItemPtr &item);
     void slotFinished(bool success);
-    void slotProgress(const SyncFileItem& item, quint64 curent);
+    void slotProgress(const SyncFileItem &item, quint64 curent);
     void slotDiscoveryJobFinished(int updateResult);
     void slotCleanPollsJobAborted(const QString &error);
 
     /** Records that a file was touched by a job. */
-    void slotAddTouchedFile(const QString& fn);
+    void slotAddTouchedFile(const QString &fn);
 
     /** Wipes the _touchedFiles hash */
     void slotClearTouchedFiles();
 
+    /** Emit a summary error, unless it was seen before */
+    void slotSummaryError(const QString &message);
+
+    void slotInsufficientLocalStorage();
+    void slotInsufficientRemoteStorage();
+
 private:
     void handleSyncError(CSYNC *ctx, const char *state);
+    void csyncError(const QString &message);
 
     QString journalDbFilePath() const;
 
-    static int treewalkLocal( TREE_WALK_FILE*, void *);
-    static int treewalkRemote( TREE_WALK_FILE*, void *);
-    int treewalkFile( TREE_WALK_FILE*, bool );
-    bool checkErrorBlacklisting( SyncFileItem &item );
+    static int treewalkLocal(TREE_WALK_FILE *, void *);
+    static int treewalkRemote(TREE_WALK_FILE *, void *);
+    int treewalkFile(TREE_WALK_FILE *, bool);
+    bool checkErrorBlacklisting(SyncFileItem &item);
 
     // Cleans up unnecessary downloadinfo entries in the journal as well
     // as their temporary files.
@@ -198,7 +202,7 @@ private:
     QString _remoteRootEtag;
     SyncJournalDb *_journal;
     QPointer<DiscoveryMainThread> _discoveryMainThread;
-    QSharedPointer <OwncloudPropagator> _propagator;
+    QSharedPointer<OwncloudPropagator> _propagator;
 
     // After a sync, only the syncdb entries whose filenames appear in this
     // set will be kept. See _temporarilyUnavailablePaths.
@@ -231,17 +235,24 @@ private:
      * to recover
      */
     void checkForPermission(SyncFileItemVector &syncItems);
-    QByteArray getPermissions(const QString& file) const;
+    QByteArray getPermissions(const QString &file) const;
 
     /**
      * Instead of downloading files from the server, upload the files to the server
      */
     void restoreOldFiles(SyncFileItemVector &syncItems);
 
-    bool _hasNoneFiles; // true if there is at least one file which was not changed on the server
-    bool _hasRemoveFile; // true if there is at leasr one file with instruction REMOVE
-    bool _hasForwardInTimeFiles; // true if there is at least one file from the server that goes forward in time
-    int _backInTimeFiles; // number of files which goes back in time from the server
+    // true if there is at least one file which was not changed on the server
+    bool _hasNoneFiles;
+
+    // true if there is at leasr one file with instruction REMOVE
+    bool _hasRemoveFile;
+
+    // true if there is at least one file from the server that goes forward in time
+    bool _hasForwardInTimeFiles;
+
+    // number of files which goes back in time from the server
+    int _backInTimeFiles;
 
 
     int _uploadLimit;
@@ -257,12 +268,14 @@ private:
     AnotherSyncNeeded _anotherSyncNeeded;
 
     /** Stores the time since a job touched a file. */
-    QHash<QString, QElapsedTimer> _touchedFiles;
+    QMultiMap<QElapsedTimer, QString> _touchedFiles;
 
     /** For clearing the _touchedFiles variable after sync finished */
     QTimer _clearTouchedFilesTimer;
-};
 
+    /** List of unique errors that occurred in a sync run. */
+    QSet<QString> _uniqueErrors;
+};
 }
 
 #endif // CSYNCTHREAD_H

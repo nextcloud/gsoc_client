@@ -13,7 +13,6 @@
  * for more details.
  */
 
-#include <QDebug>
 #include <QDesktopServices>
 #include <QDir>
 #include <QUrl>
@@ -22,22 +21,21 @@
 #include "wizard/owncloudwizardcommon.h"
 #include "theme.h"
 
-namespace OCC
-{
+namespace OCC {
 
 OwncloudWizardResultPage::OwncloudWizardResultPage()
-  : QWizardPage(),
-    _localFolder(),
-    _remoteFolder(),
-    _complete(false),
-    _ui()
+    : QWizardPage()
+    , _localFolder()
+    , _remoteFolder()
+    , _complete(false)
+    , _ui()
 {
     _ui.setupUi(this);
     // no fields to register.
 
     setTitle(WizardCommon::subTitleTemplate().arg(tr("Everything set up!")));
     // required to show header in QWizard's modern style
-    setSubTitle( QLatin1String(" ") );
+    setSubTitle(QLatin1String(" "));
 
     _ui.pbOpenLocal->setText(tr("Open Local Folder"));
     _ui.pbOpenLocal->setIcon(QIcon(QLatin1String(":/client/resources/folder-sync.png")));
@@ -45,7 +43,7 @@ OwncloudWizardResultPage::OwncloudWizardResultPage()
     _ui.pbOpenLocal->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     connect(_ui.pbOpenLocal, SIGNAL(clicked()), SLOT(slotOpenLocal()));
 
-    Theme* theme = Theme::instance();
+    Theme *theme = Theme::instance();
     QIcon appIcon = theme->applicationIcon();
     _ui.pbOpenServer->setText(tr("Open %1 in Browser").arg(theme->appNameGUI()));
     _ui.pbOpenServer->setIcon(appIcon.pixmap(48));
@@ -56,7 +54,8 @@ OwncloudWizardResultPage::OwncloudWizardResultPage()
 }
 
 OwncloudWizardResultPage::~OwncloudWizardResultPage()
-{}
+{
+}
 
 void OwncloudWizardResultPage::setComplete(bool complete)
 {
@@ -71,7 +70,7 @@ bool OwncloudWizardResultPage::isComplete() const
 
 void OwncloudWizardResultPage::initializePage()
 {
-    _ui.localFolderLabel->setText( QString::null );
+    _ui.localFolderLabel->setText(QString::null);
 }
 
 void OwncloudWizardResultPage::setRemoteFolder(const QString &remoteFolder)
@@ -82,11 +81,11 @@ void OwncloudWizardResultPage::setRemoteFolder(const QString &remoteFolder)
 void OwncloudWizardResultPage::setupCustomization()
 {
     // set defaults for the customize labels.
-    _ui.topLabel->setText( QString::null );
+    _ui.topLabel->setText(QString::null);
     _ui.topLabel->hide();
 
-    QVariant variant = Theme::instance()->customMedia( Theme::oCSetupResultTop );
-    WizardCommon::setupCustomMedia( variant, _ui.topLabel );
+    QVariant variant = Theme::instance()->customMedia(Theme::oCSetupResultTop);
+    WizardCommon::setupCustomMedia(variant, _ui.topLabel);
 }
 
 void OwncloudWizardResultPage::slotOpenLocal()
@@ -97,9 +96,8 @@ void OwncloudWizardResultPage::slotOpenLocal()
 
 void OwncloudWizardResultPage::slotOpenServer()
 {
-    Theme* theme = Theme::instance();
+    Theme *theme = Theme::instance();
     QUrl url = QUrl(field("OCUrl").toString() + theme->wizardUrlPostfix());
-    qDebug() << Q_FUNC_INFO << url;
     QDesktopServices::openUrl(url);
 }
 

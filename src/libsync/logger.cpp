@@ -20,42 +20,61 @@
 #include <qmetaobject.h>
 
 #include "csync.h"
+#include "csync_log.h"
 
 namespace OCC {
+
+Q_LOGGING_CATEGORY(lcCsync, "sync.csync", QtInfoMsg)
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 // logging handler.
 static void mirallLogCatcher(QtMsgType type, const char *msg)
 {
-  Q_UNUSED(type)
-  // qDebug() exports to local8Bit, which is not always UTF-8
-  Logger::instance()->mirallLog( QString::fromLocal8Bit(msg) );
+    Q_UNUSED(type)
+    // qDebug() exports to local8Bit, which is not always UTF-8
+    Logger::instance()->mirallLog(QString::fromLocal8Bit(msg));
 }
-static void qInstallMessageHandler(QtMsgHandler h) {
+static void qInstallMessageHandler(QtMsgHandler h)
+{
     qInstallMsgHandler(h);
 }
 #elif QT_VERSION < QT_VERSION_CHECK(5, 4, 0)
-static void mirallLogCatcher(QtMsgType, const QMessageLogContext &ctx, const QString &message) {
+static void mirallLogCatcher(QtMsgType, const QMessageLogContext &ctx, const QString &message)
+{
     QByteArray file = ctx.file;
     file = file.mid(file.lastIndexOf('/') + 1);
-    Logger::instance()->mirallLog( QString::fromLocal8Bit(file) + QLatin1Char(':') + QString::number(ctx.line)
-                                    + QLatin1Char(' ')  + message) ;
+    Logger::instance()->mirallLog(QString::fromLocal8Bit(file) + QLatin1Char(':') + QString::number(ctx.line)
+        + QLatin1Char(' ') + message);
 }
 #else
-static void mirallLogCatcher(QtMsgType type, const QMessageLogContext &ctx, const QString &message) {
+static void mirallLogCatcher(QtMsgType type, const QMessageLogContext &ctx, const QString &message)
+{
     auto logger = Logger::instance();
     if (!logger->isNoop()) {
-        logger->doLog( qFormatLogMessage(type, ctx, message) ) ;
+        logger->doLog(qFormatLogMessage(type, ctx, message));
     }
 }
 #endif
 
-static void csyncLogCatcher(int /*verbosity*/,
-                        const char * /*function*/,
-                        const char *buffer,
-                        void * /*userdata*/)
+static void csyncLogCatcher(int verbosity,
+    const char *function,
+    const char *buffer)
 {
-    Logger::instance()->csyncLog( QString::fromUtf8(buffer) );
+    if (verbosity <= CSYNC_LOG_PRIORITY_FATAL) {
+        QMessageLogger(0, 0, function, lcCsync().categoryName()).fatal("%s", buffer);
+    } else if (verbosity <= CSYNC_LOG_PRIORITY_CRIT) {
+        if (lcCsync().isCriticalEnabled())
+            QMessageLogger(0, 0, function, lcCsync().categoryName()).critical("%s", buffer);
+    } else if (verbosity <= CSYNC_LOG_PRIORITY_WARN) {
+        if (lcCsync().isWarningEnabled())
+            QMessageLogger(0, 0, function, lcCsync().categoryName()).warning("%s", buffer);
+    } else if (verbosity <= CSYNC_LOG_PRIORITY_INFO) {
+        if (lcCsync().isInfoEnabled())
+            QMessageLogger(0, 0, function, lcCsync().categoryName()).info("%s", buffer);
+    } else if (verbosity <= CSYNC_LOG_PRIORITY_NOTSET) {
+        if (lcCsync().isDebugEnabled())
+            QMessageLogger(0, 0, function, lcCsync().categoryName()).debug("%s", buffer);
+    }
 }
 
 Logger *Logger::instance()
@@ -64,20 +83,31 @@ Logger *Logger::instance()
     return &log;
 }
 
-Logger::Logger( QObject* parent) : QObject(parent),
-  _showTime(true), _logWindowActivated(false), _doFileFlush(false), _logExpire(0)
+Logger::Logger(QObject *parent)
+    : QObject(parent)
+    , _showTime(true)
+    , _logWindowActivated(false)
+    , _doFileFlush(false)
+    , _logExpire(0)
+    , _logDebug(false)
 {
-#ifndef NO_MSG_HANDLER
 #if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
-    qSetMessagePattern("%{time MM-dd hh:mm:ss:zzz} %{threadid} %{function}: %{message}");
+    qSetMessagePattern("%{time MM-dd hh:mm:ss:zzz} [ %{type} %{category} ]%{if-debug}\t[ %{function} ]%{endif}:\t%{message}");
 #endif
+#ifndef NO_MSG_HANDLER
     qInstallMessageHandler(mirallLogCatcher);
 #else
     Q_UNUSED(mirallLogCatcher)
+    // Always get logging from csync in that case.
+    csync_set_log_level(11);
 #endif
+
+    // Setup CSYNC logging to forward to our own logger
+    csync_set_log_callback(csyncLogCatcher);
 }
 
-Logger::~Logger() {
+Logger::~Logger()
+{
 #ifndef NO_MSG_HANDLER
     qInstallMessageHandler(0);
 #endif
@@ -102,16 +132,16 @@ void Logger::postGuiMessage(const QString &title, const QString &message)
 void Logger::log(Log log)
 {
     QString msg;
-    if( _showTime ) {
+    if (_showTime) {
         msg = log.timeStamp.toString(QLatin1String("MM-dd hh:mm:ss:zzz")) + QLatin1Char(' ');
     }
 
-    if( log.source == Log::CSync ) {
+    if (log.source == Log::CSync) {
         // msg += "csync - ";
     } else {
         // msg += "ownCloud - ";
     }
-    msg += QString().sprintf("%p ", (void*)QThread::currentThread());
+    msg += QString().sprintf("%p ", (void *)QThread::currentThread());
     msg += log.message;
     // _logs.append(log);
     // std::cout << qPrintable(log.message) << std::endl;
@@ -133,68 +163,50 @@ bool Logger::isNoop() const
 }
 
 
-void Logger::doLog(const QString& msg)
+void Logger::doLog(const QString &msg)
 {
     {
         QMutexLocker lock(&_mutex);
-        if( _logstream ) {
+        if (_logstream) {
             (*_logstream) << msg << endl;
-            if( _doFileFlush ) _logstream->flush();
+            if (_doFileFlush)
+                _logstream->flush();
         }
     }
     emit logWindowLog(msg);
 }
 
-void Logger::csyncLog( const QString& message )
-{
-    auto logger = Logger::instance();
-    if (logger->isNoop()) {
-        return;
-    }
-
-    Log log;
-    log.source = Log::CSync;
-    log.timeStamp = QDateTime::currentDateTime();
-    log.message = message;
-
-    logger->log(log);
-}
-
-void Logger::mirallLog( const QString& message )
+void Logger::mirallLog(const QString &message)
 {
     Log log_;
     log_.source = Log::Occ;
     log_.timeStamp = QDateTime::currentDateTime();
     log_.message = message;
 
-    Logger::instance()->log( log_ );
+    Logger::instance()->log(log_);
 }
 
 void Logger::setLogWindowActivated(bool activated)
 {
     QMutexLocker locker(&_mutex);
 
-    // Setup CSYNC logging to forward to our own logger
-    csync_set_log_callback(csyncLogCatcher);
     csync_set_log_level(11);
 
     _logWindowActivated = activated;
 }
 
-void Logger::setLogFile(const QString & name)
+void Logger::setLogFile(const QString &name)
 {
     QMutexLocker locker(&_mutex);
 
-    // Setup CSYNC logging to forward to our own logger
-    csync_set_log_callback(csyncLogCatcher);
     csync_set_log_level(11);
 
-    if( _logstream ) {
+    if (_logstream) {
         _logstream.reset(0);
         _logFile.close();
     }
 
-    if( name.isEmpty() ) {
+    if (name.isEmpty()) {
         return;
     }
 
@@ -202,35 +214,41 @@ void Logger::setLogFile(const QString & name)
     if (name == QLatin1String("-")) {
         openSucceeded = _logFile.open(1, QIODevice::WriteOnly);
     } else {
-        _logFile.setFileName( name );
+        _logFile.setFileName(name);
         openSucceeded = _logFile.open(QIODevice::WriteOnly);
     }
 
-    if(!openSucceeded) {
+    if (!openSucceeded) {
         locker.unlock(); // Just in case postGuiMessage has a qDebug()
-        postGuiMessage( tr("Error"),
-                        QString(tr("<nobr>File '%1'<br/>cannot be opened for writing.<br/><br/>"
-                                   "The log output can <b>not</b> be saved!</nobr>"))
-                        .arg(name));
+        postGuiMessage(tr("Error"),
+            QString(tr("<nobr>File '%1'<br/>cannot be opened for writing.<br/><br/>"
+                       "The log output can <b>not</b> be saved!</nobr>"))
+                .arg(name));
         return;
     }
 
-    _logstream.reset(new QTextStream( &_logFile ));
+    _logstream.reset(new QTextStream(&_logFile));
 }
 
-void Logger::setLogExpire( int expire )
+void Logger::setLogExpire(int expire)
 {
     _logExpire = expire;
 }
 
-void Logger::setLogDir( const QString& dir )
+void Logger::setLogDir(const QString &dir)
 {
     _logDirectory = dir;
 }
 
-void Logger::setLogFlush( bool flush )
+void Logger::setLogFlush(bool flush)
 {
     _doFileFlush = flush;
+}
+
+void Logger::setLogDebug(bool debug)
+{
+    QLoggingCategory::setFilterRules(debug ? QStringLiteral("qt.*=true\n*.debug=true") : QString());
+    _logDebug = debug;
 }
 
 void Logger::enterNextLogFile()
@@ -243,23 +261,23 @@ void Logger::enterNextLogFile()
 
         // Find out what is the file with the highest number if any
         QStringList files = dir.entryList(QStringList("owncloud.log.*"),
-                                    QDir::Files);
+            QDir::Files);
         QRegExp rx("owncloud.log.(\\d+)");
         uint maxNumber = 0;
         QDateTime now = QDateTime::currentDateTime();
-        foreach(const QString &s, files) {
+        foreach (const QString &s, files) {
             if (rx.exactMatch(s)) {
                 maxNumber = qMax(maxNumber, rx.cap(1).toUInt());
                 if (_logExpire > 0) {
                     QFileInfo fileInfo = dir.absoluteFilePath(s);
-                    if (fileInfo.lastModified().addSecs(60*60 * _logExpire) < now) {
+                    if (fileInfo.lastModified().addSecs(60 * 60 * _logExpire) < now) {
                         dir.remove(s);
                     }
                 }
             }
         }
 
-        QString filename = _logDirectory + "/owncloud.log." + QString::number(maxNumber+1);
+        QString filename = _logDirectory + "/owncloud.log." + QString::number(maxNumber + 1);
         setLogFile(filename);
     }
 }
