@@ -1,7 +1,7 @@
+clone:
+    image: plugins/git
+    depth: 1
 pipeline:
-    clone:
-        image: plugins/git
-        depth: 1
     qt-5.6:
         image: nextcloudci/client-5.6:latest
         commands:
