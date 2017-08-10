@@ -393,6 +393,18 @@ void Application::slotParseMessage(const QString &msg, QObject *)
             return;
         }
         showSettingsDialog();
+    } else if (msg.startsWith(QLatin1String("MSG_SHOWWIZARD"))) {
+        qCInfo(lcApplication) << "Running for" << _startedAt.elapsed() / 1000.0 << "sec";
+        if (_startedAt.elapsed() < 10 * 1000) {
+            // This call is mirrored with the one in int main()
+            qCWarning(lcApplication) << "Ignoring MSG_SHOWWIZARD, possibly double-invocation of client via session restore and auto start";
+            return;
+        }
+        if (AccountManager::instance()->accounts().isEmpty()) {
+            // allow to add a new account if there is non any more. Always think
+            // about single account theming!
+            OwncloudSetupWizard::runWizard(this, SLOT(slotownCloudWizardDone(int)));
+        }
     }
 }
 
