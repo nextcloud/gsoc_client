@@ -11,6 +11,8 @@ struct _CloudProviderAccount1;
 typedef _CloudProviderAccount1 CloudProviderAccount1;
 struct _GMenuModel;
 typedef _GMenuModel GMenuModel;
+struct _GMenu;
+typedef _GMenu GMenu;
 struct _GActionGroup;
 typedef _GActionGroup GActionGroup;
 typedef char gchar;
@@ -51,11 +53,12 @@ private:
     gchar *_accountName;
     CloudProviderAccount1 *_cloudProviderAccount1;
     uint _syncStatus;
-    QList<QString> *_recentlyChanged;
+    QList<QPair<QString, QString>> *_recentlyChanged;
     QString _statusText;
     bool paused;
-    guint export_id_menu;
-    guint export_id_actions;
+    GMenuModel* _menuModel;
+    GMenu* mainMenu = NULL;
+    GMenu* recentMenu = NULL;
 };
 
 #endif // CLOUDPROVIDER_H
