@@ -169,7 +169,7 @@ void help()
     std::cout << "  --nonshib              Use Non Shibboleth WebDAV authentication" << std::endl;
     std::cout << "  --davpath [path]       Custom themed dav path, overrides --nonshib" << std::endl;
     std::cout << "  --max-sync-retries [n] Retries maximum n times (default to 3)" << std::endl;
-    std::cout << "  -h                     Sync hidden files,do not ignore them" << std::endl;
+    std::cout << "  -h                     Sync hidden files, do not ignore them" << std::endl;
     std::cout << "  --version, -v          Display version and exit" << std::endl;
     std::cout << "" << std::endl;
     exit(0);
