@@ -34,12 +34,20 @@ set(client_UI
     proxyauthdialog.ui
     notificationwidget.ui
     wizard/owncloudadvancedsetuppage.ui
+    wizard/owncloudproviderregistrationpage.ui
+    wizard/owncloudregistrationfinishedpage.ui
     wizard/owncloudconnectionmethoddialog.ui
     wizard/owncloudhttpcredspage.ui
     wizard/owncloudoauthcredspage.ui
     wizard/owncloudsetupnocredspage.ui
     wizard/owncloudwizardresultpage.ui
 )
+if(APPLICATION_PROVIDERS)
+    list(APPEND client_UI
+        wizard/owncloudproviderlistpage.ui
+        wizard/providerwidget.ui
+    )
+endif()
 
 qt_wrap_ui(client_UI_SRCS ${client_UI})
 
@@ -61,6 +69,7 @@ set(client_SRCS
     ocsjob.cpp
     ocssharejob.cpp
     ocsshareejob.cpp
+    ocsregistrationjob.cpp
     openfilemanager.cpp
     owncloudgui.cpp
     owncloudsetupwizard.cpp
@@ -102,6 +111,8 @@ set(client_SRCS
     wizard/postfixlineedit.cpp
     wizard/abstractcredswizardpage.cpp
     wizard/owncloudadvancedsetuppage.cpp
+    wizard/owncloudproviderregistrationpage.cpp
+    wizard/owncloudregistrationfinishedpage.cpp
     wizard/owncloudconnectionmethoddialog.cpp
     wizard/owncloudhttpcredspage.cpp
     wizard/owncloudoauthcredspage.cpp
@@ -109,6 +120,7 @@ set(client_SRCS
     wizard/owncloudwizardcommon.cpp
     wizard/owncloudwizard.cpp
     wizard/owncloudwizardresultpage.cpp
+    wizard/owncloudprovidermodel.cpp
 )
 
 IF(NOT NO_SHIBBOLETH)
@@ -118,6 +130,13 @@ IF(NOT NO_SHIBBOLETH)
         creds/shibboleth/shibbolethuserjob.cpp
         wizard/owncloudshibbolethcredspage.cpp
     )
+endif()
+
+if(APPLICATION_PROVIDERS)
+    list(APPEND client_SRCS
+            wizard/owncloudproviderlistpage.cpp
+            wizard/providerwidget.cpp
+        )
 endif()
 
 set(updater_SRCS
