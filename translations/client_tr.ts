@@ -248,17 +248,17 @@
     <message>
         <location filename="../src/gui/accountsettings.cpp" line="683"/>
         <source>There are folders that were not synchronized because they are too big: </source>
-        <translation type="unfinished"/>
+        <translation>Çok büyük oldukları için eşitlenmeyen klasörler var:</translation>
     </message>
     <message>
         <location filename="../src/gui/accountsettings.cpp" line="684"/>
         <source>There are folders that were not synchronized because they are external storages: </source>
-        <translation type="unfinished"/>
+        <translation>Harici depolama diskinde oldukları için eşitlenmeyen klasörler var:</translation>
     </message>
     <message>
         <location filename="../src/gui/accountsettings.cpp" line="685"/>
         <source>There are folders that were not synchronized because they are too big or external storages: </source>
-        <translation type="unfinished"/>
+        <translation>Çok büyük oldukları için ya da harici depolama alanında oldukları için eşitlenmeyen klasörler var:</translation>
     </message>
     <message>
         <location filename="../src/gui/accountsettings.cpp" line="728"/>
@@ -546,7 +546,7 @@
     <message>
         <location filename="../src/gui/application.cpp" line="174"/>
         <source>Quit ownCloud</source>
-        <translation type="unfinished"/>
+        <translation>ownCloud&apos;dan çık</translation>
     </message>
 </context>
 <context>
@@ -803,112 +803,112 @@ Continuing the sync as normal will cause all your files to be overwritten by an 
 <context>
     <name>OCC::FolderMan</name>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="295"/>
+        <location filename="../src/gui/folderman.cpp" line="306"/>
         <source>Could not reset folder state</source>
         <translation>Klasör durumu sıfırılanamadı</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="296"/>
+        <location filename="../src/gui/folderman.cpp" line="307"/>
         <source>An old sync journal &apos;%1&apos; was found, but could not be removed. Please make sure that no application is currently using it.</source>
         <translation>Eski eşitleme günlüğü &apos;%1&apos; bulundu ancak kaldırılamadı. Başka bir uygulama tarafından kullanılmadığından emin olun.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1032"/>
+        <location filename="../src/gui/folderman.cpp" line="1043"/>
         <source> (backup)</source>
         <translation> (yedek)</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1037"/>
+        <location filename="../src/gui/folderman.cpp" line="1048"/>
         <source> (backup %1)</source>
         <translation> (yedek %1)</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1244"/>
+        <location filename="../src/gui/folderman.cpp" line="1255"/>
         <source>Undefined State.</source>
         <translation>Tanımlanmamış Durum.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1247"/>
+        <location filename="../src/gui/folderman.cpp" line="1258"/>
         <source>Waiting to start syncing.</source>
         <translation>Eşitlemenin başlanması bekleniyor.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1250"/>
+        <location filename="../src/gui/folderman.cpp" line="1261"/>
         <source>Preparing for sync.</source>
         <translation>Eşitleme için hazırlanıyor.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1253"/>
+        <location filename="../src/gui/folderman.cpp" line="1264"/>
         <source>Sync is running.</source>
         <translation>Eşitleme çalışıyor.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1256"/>
+        <location filename="../src/gui/folderman.cpp" line="1267"/>
         <source>Last Sync was successful.</source>
         <translation>Son Eşitleme başarılı oldu.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1261"/>
+        <location filename="../src/gui/folderman.cpp" line="1272"/>
         <source>Last Sync was successful, but with warnings on individual files.</source>
         <translation>Son eşitleme başarılıydı, ancak tekil dosyalarda uyarılar vardı.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1264"/>
+        <location filename="../src/gui/folderman.cpp" line="1275"/>
         <source>Setup Error.</source>
         <translation>Kurulum Hatası.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1267"/>
+        <location filename="../src/gui/folderman.cpp" line="1278"/>
         <source>User Abort.</source>
         <translation>Kullanıcı İptal Etti.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1270"/>
+        <location filename="../src/gui/folderman.cpp" line="1281"/>
         <source>Sync is paused.</source>
         <translation>Eşitleme duraklatıldı.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1276"/>
+        <location filename="../src/gui/folderman.cpp" line="1287"/>
         <source>%1 (Sync is paused)</source>
         <translation>%1 (Eşitleme duraklatıldı)</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1284"/>
+        <location filename="../src/gui/folderman.cpp" line="1295"/>
         <source>No valid folder selected!</source>
         <translation>Geçerli klasör seçilmedi!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1294"/>
+        <location filename="../src/gui/folderman.cpp" line="1305"/>
         <source>The selected path is not a folder!</source>
         <translation>Seçilen yol bir klasör değil!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1298"/>
+        <location filename="../src/gui/folderman.cpp" line="1309"/>
         <source>You have no permission to write to the selected folder!</source>
         <translation>Seçilen klasöre yazma izniniz yok!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1349"/>
+        <location filename="../src/gui/folderman.cpp" line="1360"/>
         <source>The local folder %1 contains a symbolic link. The link target contains an already synced folder Please pick another one!</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1364"/>
+        <location filename="../src/gui/folderman.cpp" line="1375"/>
         <source>There is already a sync from the server to this local folder. Please pick another local folder!</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1322"/>
+        <location filename="../src/gui/folderman.cpp" line="1333"/>
         <source>The local folder %1 already contains a folder used in a folder sync connection. Please pick another one!</source>
         <translation>%1 yerel klasörü zaten bir eşitleme klasörü içermektedir. Lütfen farklı bir seçim yapın!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1332"/>
+        <location filename="../src/gui/folderman.cpp" line="1343"/>
         <source>The local folder %1 is already contained in a folder used in a folder sync connection. Please pick another one!</source>
         <translation>%1 yerel klasörü zaten bir eşitleme klasörü içindedir. Lütfen farklı bir seçim yapın!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1341"/>
+        <location filename="../src/gui/folderman.cpp" line="1352"/>
         <source>The local folder %1 is a symbolic link. The link target is already contained in a folder used in a folder sync connection. Please pick another one!</source>
         <translation>%1 yerel klasörü sembolik bağlantıdır. Bu bağlantının işaretlediği klasör zaten yapılandırılmış bir klasör içindedir. Lütfen farklı bir seçim yapın!</translation>
     </message>
@@ -1211,7 +1211,7 @@ Continuing the sync as normal will cause all your files to be overwritten by an 
     <message>
         <location filename="../src/gui/generalsettings.ui" line="85"/>
         <source>Ask for confirmation before synchronizing folders larger than</source>
-        <translation type="unfinished"/>
+        <translation>senkronizasyon dosyaları </translation>
     </message>
     <message>
         <location filename="../src/gui/generalsettings.ui" line="105"/>
@@ -1341,22 +1341,22 @@ Items where deletion is allowed will be deleted if they prevent a directory from
 Bir dizinin silinmesine engel oluyorsa silmeye izin verilen yerlerdeki ögeler silinecektir. Bu ham veriler için kullanışlıdır.</translation>
     </message>
     <message>
-        <location filename="../src/gui/ignorelisteditor.cpp" line="112"/>
+        <location filename="../src/gui/ignorelisteditor.cpp" line="115"/>
         <source>Could not open file</source>
         <translation>Dosya açılamadı</translation>
     </message>
     <message>
-        <location filename="../src/gui/ignorelisteditor.cpp" line="113"/>
+        <location filename="../src/gui/ignorelisteditor.cpp" line="116"/>
         <source>Cannot write changes to &apos;%1&apos;.</source>
         <translation>Değişiklikler &apos;%1&apos; üzerine yazılamıyor.</translation>
     </message>
     <message>
-        <location filename="../src/gui/ignorelisteditor.cpp" line="140"/>
+        <location filename="../src/gui/ignorelisteditor.cpp" line="143"/>
         <source>Add Ignore Pattern</source>
         <translation>Yoksayma Deseni Ekle</translation>
     </message>
     <message>
-        <location filename="../src/gui/ignorelisteditor.cpp" line="141"/>
+        <location filename="../src/gui/ignorelisteditor.cpp" line="144"/>
         <source>Add a new ignore pattern:</source>
         <translation>Yeni bir yoksayma deseni ekle:</translation>
     </message>
@@ -2547,7 +2547,7 @@ Kullanmanız önerilmez.</translation>
     <message>
         <location filename="../src/gui/sharelinkwidget.ui" line="267"/>
         <source>Anyone with the link has access to the file/folder</source>
-        <translation type="unfinished"/>
+        <translation>Dosya/klasör linkine sahip Herkes erişebilir </translation>
     </message>
     <message>
         <location filename="../src/gui/sharelinkwidget.cpp" line="95"/>
@@ -2583,7 +2583,7 @@ Kullanmanız önerilmez.</translation>
     <message>
         <location filename="../src/gui/sharelinkwidget.cpp" line="505"/>
         <source>There was an error when launching the email client to create a new message. Maybe no default email client is configured?</source>
-        <translation type="unfinished"/>
+        <translation>Yeni mesaj oluşturmak için eposta istemcisini çalıştırıken bir hata oluştu. Belki varsayılan eposta istemcisi ayarlanmamıştır? </translation>
     </message>
     <message>
         <location filename="../src/gui/sharelinkwidget.cpp" line="533"/>
@@ -2986,23 +2986,23 @@ Kullanmanız önerilmez.</translation>
         <translation>Klasör okunurken hata oluştu.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="479"/>
+        <location filename="../src/libsync/syncengine.cpp" line="481"/>
         <source>File/Folder is ignored because it&apos;s hidden.</source>
         <translation>Dosya/Klasör gizli olduğu için yoksayıldı.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="743"/>
+        <location filename="../src/libsync/syncengine.cpp" line="745"/>
         <source>Only %1 are available, need at least %2 to start</source>
         <comment>Placeholders are postfixed with file sizes using Utility::octetsToString()</comment>
         <translation>Sadece %1 mevcut, Çalıştırmak için en az %2 gerekmektedir</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1216"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1218"/>
         <source>Not allowed because you don&apos;t have permission to add parent folder</source>
         <translation>Üst dizin ekleme yetkiniz olmadığından izin verilmedi</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1223"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1225"/>
         <source>Not allowed because you don&apos;t have permission to add files in that folder</source>
         <translation>Bu klasöre dosya ekleme yetkiniz olmadığından izin verilmedi</translation>
     </message>
@@ -3062,124 +3062,124 @@ Kullanmanız önerilmez.</translation>
         <translation>Bu öge, önceki hatalardan dolayı eşitlenemiyor: %1</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="448"/>
+        <location filename="../src/libsync/syncengine.cpp" line="450"/>
         <source>Symbolic links are not supported in syncing.</source>
         <translation>Sembolik bağlantılar eşitlemede desteklenmiyor.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="451"/>
+        <location filename="../src/libsync/syncengine.cpp" line="453"/>
         <source>File is listed on the ignore list.</source>
         <translation>Dosya yoksayma listesinde.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="455"/>
+        <location filename="../src/libsync/syncengine.cpp" line="457"/>
         <source>File names ending with a period are not supported on this file system.</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="465"/>
+        <location filename="../src/libsync/syncengine.cpp" line="467"/>
         <source>File names containing the character &apos;%1&apos; are not supported on this file system.</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="468"/>
+        <location filename="../src/libsync/syncengine.cpp" line="470"/>
         <source>The file name is a reserved name on this file system.</source>
-        <translation type="unfinished"/>
+        <translation>Dosya adı bu dosya sisteminde ayrılmış bir addır.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="473"/>
+        <location filename="../src/libsync/syncengine.cpp" line="475"/>
         <source>Filename contains trailing spaces.</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="476"/>
+        <location filename="../src/libsync/syncengine.cpp" line="478"/>
         <source>Filename is too long.</source>
         <translation>Dosya adı çok uzun.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="485"/>
+        <location filename="../src/libsync/syncengine.cpp" line="487"/>
         <source>Stat failed.</source>
         <translation>Durum alma başarısız.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="512"/>
+        <location filename="../src/libsync/syncengine.cpp" line="514"/>
         <source>Filename encoding is not valid</source>
         <translation>Dosya adı kodlaması geçerli değil</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="680"/>
+        <location filename="../src/libsync/syncengine.cpp" line="682"/>
         <source>Invalid characters, please rename &quot;%1&quot;</source>
         <translation>Geçersiz karakterler, lütfen &quot;%1&quot; yerine yeni bir isim girin</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="779"/>
+        <location filename="../src/libsync/syncengine.cpp" line="781"/>
         <source>Unable to initialize a sync journal.</source>
         <translation>Bir eşitleme günlüğü başlatılamadı.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="798"/>
+        <location filename="../src/libsync/syncengine.cpp" line="800"/>
         <source>Unable to read the blacklist from the local database</source>
         <translation>Yerel veritabanından kara liste okunamadı</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="835"/>
+        <location filename="../src/libsync/syncengine.cpp" line="837"/>
         <source>Unable to read from the sync journal.</source>
         <translation>Eşitleme günlüğünden okunamadı.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="880"/>
+        <location filename="../src/libsync/syncengine.cpp" line="882"/>
         <source>Cannot open the sync journal</source>
         <translation>Eşitleme günlüğü açılamıyor</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="939"/>
+        <location filename="../src/libsync/syncengine.cpp" line="941"/>
         <source>File name contains at least one invalid character</source>
         <translation>Dosya adı en az bir geçersiz karakter içeriyor</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1175"/>
-        <location filename="../src/libsync/syncengine.cpp" line="1182"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1177"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1184"/>
         <source>Ignored because of the &quot;choose what to sync&quot; blacklist</source>
         <translation>&quot;Eşitlenecekleri seçin&quot; kara listesinde olduğundan yoksayıldı.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1201"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1203"/>
         <source>Not allowed because you don&apos;t have permission to add subfolders to that folder</source>
         <translation>Bu dizine alt dizin ekleme yetkiniz olmadığından izin verilmedi</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1242"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1244"/>
         <source>Not allowed to upload this file because it is read-only on the server, restoring</source>
         <translation>Sunucuda salt okunur olduğundan, bu dosya yüklenemedi, geri alınıyor</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1258"/>
-        <location filename="../src/libsync/syncengine.cpp" line="1277"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1260"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1279"/>
         <source>Not allowed to remove, restoring</source>
         <translation>Kaldırmaya izin verilmedi, geri alınıyor</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1290"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1292"/>
         <source>Local files and share folder removed.</source>
         <translation>Yerel dosyalar ve paylaşım klasörü kaldırıldı.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1346"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1348"/>
         <source>Move not allowed, item restored</source>
         <translation>Taşımaya izin verilmedi, öge geri alındı</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1357"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1359"/>
         <source>Move not allowed because %1 is read-only</source>
         <translation>%1 salt okunur olduğundan taşımaya izin verilmedi</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1358"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1360"/>
         <source>the destination</source>
         <translation>hedef</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1358"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1360"/>
         <source>the source</source>
         <translation>kaynak</translation>
     </message>
@@ -3421,7 +3421,7 @@ Kullanmanız önerilmez.</translation>
     <message>
         <location filename="../src/gui/owncloudgui.cpp" line="807"/>
         <source>Syncing %1 of %2</source>
-        <translation type="unfinished"/>
+        <translation>%2 nin %1 i eşitleniyor</translation>
     </message>
     <message>
         <location filename="../src/gui/owncloudgui.cpp" line="815"/>
@@ -3448,7 +3448,7 @@ Kullanmanız önerilmez.</translation>
     <name>OCC::ownCloudTheme</name>
     <message>
         <location filename="../src/libsync/owncloudtheme.cpp" line="48"/>
-        <source>&lt;p&gt;Version %2. For more information visit &lt;a href=&quot;%3&quot;&gt;https://%4&lt;/a&gt;&lt;/p&gt;&lt;p&gt;For known issues and help, please visit: &lt;a href=&quot;https://central.owncloud.org/c/help/desktop-file-sync&quot;&gt;https://central.owncloud.org&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;small&gt;By Klaas Freitag, Daniel Molkentin, Olivier Goffart, Markus Götz,  Jan-Christoph Borchardt, and others.&lt;/small&gt;&lt;/p&gt;&lt;p&gt;Copyright ownCloud GmbH&lt;/p&gt;&lt;p&gt;Licensed under the GNU General Public License (GPL) Version 2.0&lt;br/&gt;ownCloud and the ownCloud Logo are registered trademarks of ownCloud GmbH in the United States, other countries, or both.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Version %2. For more information visit &lt;a href=&quot;%3&quot;&gt;https://%4&lt;/a&gt;&lt;/p&gt;&lt;p&gt;For known issues and help, please visit: &lt;a href=&quot;https://central.owncloud.org/c/desktop-client&quot;&gt;https://central.owncloud.org&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;small&gt;By Klaas Freitag, Daniel Molkentin, Olivier Goffart, Markus Götz,  Jan-Christoph Borchardt, and others.&lt;/small&gt;&lt;/p&gt;&lt;p&gt;Copyright ownCloud GmbH&lt;/p&gt;&lt;p&gt;Licensed under the GNU General Public License (GPL) Version 2.0&lt;br/&gt;ownCloud and the ownCloud Logo are registered trademarks of ownCloud GmbH in the United States, other countries, or both.&lt;/p&gt;</source>
         <translation type="unfinished"/>
     </message>
 </context>

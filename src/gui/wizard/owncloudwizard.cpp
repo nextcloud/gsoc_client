@@ -16,11 +16,18 @@
 #include "account.h"
 #include "configfile.h"
 #include "theme.h"
+#include "config.h"
 
 #include "wizard/owncloudwizard.h"
 #include "wizard/owncloudsetuppage.h"
 #include "wizard/owncloudhttpcredspage.h"
 #include "wizard/owncloudoauthcredspage.h"
+#ifdef APPLICATION_PROVIDERS
+#include "wizard/owncloudproviderlistpage.h"
+#include "wizard/owncloudproviderregistrationpage.h"
+#include "wizard/owncloudregistrationfinishedpage.h"
+
+#endif
 #ifndef NO_SHIBBOLETH
 #include "wizard/owncloudshibbolethcredspage.h"
 #endif
@@ -42,6 +49,11 @@ OwncloudWizard::OwncloudWizard(QWidget *parent)
     : QWizard(parent)
     , _account(0)
     , _setupPage(new OwncloudSetupPage(this))
+#ifdef APPLICATION_PROVIDERS
+    , _providerList(new OwncloudProviderListPage(this))
+    , _providerRegistration(new OwncloudProviderRegistrationPage(this))
+    , _providerRegistrationFinished(new OwncloudRegistrationFinishedPage(this))
+#endif
     , _httpCredsPage(new OwncloudHttpCredsPage(this))
     , _browserCredsPage(new OwncloudOAuthCredsPage)
 #ifndef NO_SHIBBOLETH
@@ -54,6 +66,11 @@ OwncloudWizard::OwncloudWizard(QWidget *parent)
 {
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     setPage(WizardCommon::Page_ServerSetup, _setupPage);
+#ifdef APPLICATION_PROVIDERS
+    setPage(WizardCommon::Page_ProviderList, _providerList);
+    setPage(WizardCommon::Page_ProviderRegistration, _providerRegistration);
+    setPage(WizardCommon::Page_ProviderRegistrationFinished, _providerRegistrationFinished);
+#endif
     setPage(WizardCommon::Page_HttpCreds, _httpCredsPage);
     setPage(WizardCommon::Page_OAuthCreds, _browserCredsPage);
 #ifndef NO_SHIBBOLETH

@@ -235,6 +235,11 @@ static CSYNC_EXCLUDE_TYPE _csync_excluded_common(c_strlist_t *excludes, const ch
         match = CSYNC_FILE_SILENTLY_EXCLUDED;
         goto out;
     }
+    rc = csync_fnmatch(".sync_*.db*", bname, 0);
+    if (rc == 0) {
+        match = CSYNC_FILE_SILENTLY_EXCLUDED;
+        goto out;
+    }
     rc = csync_fnmatch(".csync_journal.db*", bname, 0);
     if (rc == 0) {
         match = CSYNC_FILE_SILENTLY_EXCLUDED;
@@ -297,7 +302,7 @@ static CSYNC_EXCLUDE_TYPE _csync_excluded_common(c_strlist_t *excludes, const ch
     /* Always ignore conflict files, not only via the exclude list */
     rc = csync_fnmatch("*_conflict-*", bname, 0);
     if (rc == 0) {
-        match = CSYNC_FILE_SILENTLY_EXCLUDED;
+        match = CSYNC_FILE_EXCLUDE_CONFLICT;
         goto out;
     }
 
@@ -308,7 +313,7 @@ static CSYNC_EXCLUDE_TYPE _csync_excluded_common(c_strlist_t *excludes, const ch
         }
         rc = csync_fnmatch(conflict, path, 0);
         if (rc == 0) {
-            match = CSYNC_FILE_SILENTLY_EXCLUDED;
+            match = CSYNC_FILE_EXCLUDE_CONFLICT;
             SAFE_FREE(conflict);
             goto out;
         }

@@ -15,6 +15,7 @@
  */
 
 #include <iostream>
+#include <random>
 #include <qcoreapplication.h>
 #include <QStringList>
 #include <QUrl>
@@ -188,6 +189,7 @@ void help()
     std::cout << "  --downlimit [n]        Limit the download speed of files to n KB/s" << std::endl;
     std::cout << "  -h                     Sync hidden files,do not ignore them" << std::endl;
     std::cout << "  --version, -v          Display version and exit" << std::endl;
+    std::cout << "  --debug                More verbose logging" << std::endl;
     std::cout << "" << std::endl;
     exit(0);
 }
@@ -310,7 +312,7 @@ int main(int argc, char **argv)
     qputenv("OPENSSL_CONF", opensslConf.toLocal8Bit());
 #endif
 
-    qsrand(QTime::currentTime().msec() * QCoreApplication::applicationPid());
+    qsrand(std::random_device()());
 
     CmdOptions options;
     options.silent = false;
@@ -424,7 +426,6 @@ int main(int argc, char **argv)
     account->setCredentials(cred);
     account->setSslErrorHandler(sslErrorHandler);
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     //obtain capabilities using event loop
     QEventLoop loop;
 
@@ -439,7 +440,11 @@ int main(int argc, char **argv)
     job->start();
 
     loop.exec();
-#endif
+
+    if (job->reply()->error() != QNetworkReply::NoError){
+        std::cout<<"Error connecting to server\n";
+        return EXIT_FAILURE;
+    }
 
     // much lower age than the default since this utility is usually made to be run right after a change in the tests
     SyncEngine::minimumFileAgeForUpload = 0;
@@ -495,7 +500,7 @@ restart_sync:
     }
 
     Cmd cmd;
-    QString dbPath = options.source_dir + SyncJournalDb::makeDbName(credentialFreeUrl, folder, user);
+    QString dbPath = options.source_dir + SyncJournalDb::makeDbName(options.source_dir, credentialFreeUrl, folder, user);
     SyncJournalDb db(dbPath);
 
     if (!selectiveSyncList.empty()) {

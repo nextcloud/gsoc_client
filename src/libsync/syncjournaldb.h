@@ -22,10 +22,10 @@
 
 #include "utility.h"
 #include "ownsql.h"
+#include "syncjournalfilerecord.h"
 
 namespace OCC {
 class SyncJournalFileRecord;
-class SyncJournalErrorBlacklistRecord;
 
 /**
  * @brief Class that handles the sync database
@@ -41,7 +41,8 @@ public:
     virtual ~SyncJournalDb();
 
     /// Create a journal path for a specific configuration
-    static QString makeDbName(const QUrl &remoteUrl,
+    static QString makeDbName(const QString &localPath,
+        const QUrl &remoteUrl,
         const QString &remotePath,
         const QString &user);
 
@@ -70,8 +71,9 @@ public:
 
     static qint64 getPHash(const QString &);
 
-    void updateErrorBlacklistEntry(const SyncJournalErrorBlacklistRecord &item);
+    void setErrorBlacklistEntry(const SyncJournalErrorBlacklistRecord &item);
     void wipeErrorBlacklistEntry(const QString &file);
+    void wipeErrorBlacklistCategory(SyncJournalErrorBlacklistRecord::Category category);
     int wipeErrorBlacklist();
     int errorBlackListEntryCount();
 

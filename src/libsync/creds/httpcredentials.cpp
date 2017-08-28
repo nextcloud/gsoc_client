@@ -58,7 +58,7 @@ protected:
     QNetworkReply *createRequest(Operation op, const QNetworkRequest &request, QIODevice *outgoingData) Q_DECL_OVERRIDE
     {
         QNetworkRequest req(request);
-        if (!_cred->password().isEmpty()) {
+        if (_cred && !_cred->password().isEmpty()) {
             if (_cred->isUsingOAuth()) {
                 req.setRawHeader("Authorization", "Bearer " + _cred->password().toUtf8());
             } else {
@@ -72,7 +72,7 @@ protected:
             req.setRawHeader("Authorization", "Basic " + credHash);
         }
 
-        if (!_cred->_clientSslKey.isNull() && !_cred->_clientSslCertificate.isNull()) {
+        if (_cred && !_cred->_clientSslKey.isNull() && !_cred->_clientSslCertificate.isNull()) {
             // SSL configuration
             QSslConfiguration sslConfiguration = req.sslConfiguration();
             sslConfiguration.setLocalCertificate(_cred->_clientSslCertificate);
@@ -85,7 +85,9 @@ protected:
     }
 
 private:
-    const HttpCredentials *_cred;
+    // The credentials object dies along with the account, while the QNAM might
+    // outlive both.
+    QPointer<const HttpCredentials> _cred;
 };
 
 
@@ -135,7 +137,7 @@ void HttpCredentials::setAccount(Account *account)
     }
 }
 
-QNetworkAccessManager *HttpCredentials::getQNAM() const
+QNetworkAccessManager *HttpCredentials::createQNAM() const
 {
     AccessManager *qnam = new HttpCredentialsAccessManager(this);
 
@@ -181,7 +183,6 @@ void HttpCredentials::fetchFromKeychain()
         addSettingsToJob(_account, job);
         job->setInsecureFallback(false);
         job->setKey(kck);
-        qCDebug(lcHttpCredentials) << "-------- ----->" << _clientSslCertificate << _clientSslKey;
 
         connect(job, SIGNAL(finished(QKeychain::Job *)), SLOT(slotReadClientCertPEMJobDone(QKeychain::Job *)));
         job->start();
@@ -291,8 +292,11 @@ void HttpCredentials::slotReadJobDone(QKeychain::Job *incomingJob)
     }
 }
 
-void HttpCredentials::refreshAccessToken()
+bool HttpCredentials::refreshAccessToken()
 {
+    if (_refreshToken.isEmpty())
+        return false;
+
     QUrl requestToken(_account->url().toString()
         + QLatin1String("/index.php/apps/oauth2/api/v1/token?grant_type=refresh_token&refresh_token=")
         + _refreshToken);
@@ -310,10 +314,10 @@ void HttpCredentials::refreshAccessToken()
         QString accessToken = json["access_token"].toString();
         if (reply->error() != QNetworkReply::NoError || jsonParseError.error != QJsonParseError::NoError || json.isEmpty()) {
             // Network error maybe?
-            qDebug() << "Error while refreshing the token" << reply->errorString() << jsonData << jsonParseError.errorString();
+            qCWarning(lcHttpCredentials) << "Error while refreshing the token" << reply->errorString() << jsonData << jsonParseError.errorString();
         } else if (accessToken.isEmpty()) {
             // The token is no longer valid.
-            qDebug() << "Expired refresh token. Logging out";
+            qCDebug(lcHttpCredentials) << "Expired refresh token. Logging out";
             _refreshToken.clear();
         } else {
             _ready = true;
@@ -323,6 +327,7 @@ void HttpCredentials::refreshAccessToken()
         }
         emit fetched();
     });
+    return true;
 }
 
 
@@ -342,6 +347,9 @@ void HttpCredentials::invalidateToken()
         qCWarning(lcHttpCredentials) << "InvalidateToken: User is empty, bailing out!";
         return;
     }
+
+    // clear the session cookie.
+    _account->clearCookieJar();
 
     if (!_refreshToken.isEmpty()) {
         // Only invalidate the access_token (_password) but keep the _refreshToken in the keychain
@@ -363,24 +371,12 @@ void HttpCredentials::invalidateToken()
     job2->setKey(kck);
     job2->start();
 
-    // clear the session cookie.
-    _account->clearCookieJar();
-
     // let QNAM forget about the password
     // This needs to be done later in the event loop because we might be called (directly or
     // indirectly) from QNetworkAccessManagerPrivate::authenticationRequired, which itself
     // is a called from a BlockingQueuedConnection from the Qt HTTP thread. And clearing the
     // cache needs to synchronize again with the HTTP thread.
-    QTimer::singleShot(0, this, SLOT(clearQNAMCache()));
-}
-
-void HttpCredentials::clearQNAMCache()
-{
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-    _account->networkAccessManager()->clearAccessCache();
-#else
-    _account->resetNetworkAccessManager();
-#endif
+    QTimer::singleShot(0, _account, SLOT(clearQNAMCache()));
 }
 
 void HttpCredentials::forgetSensitiveData()
@@ -401,6 +397,7 @@ void HttpCredentials::persist()
 
     _account->setCredentialSetting(QLatin1String(userC), _user);
     _account->setCredentialSetting(QLatin1String(isOAuthC), isUsingOAuth());
+    _account->wantsAccountSaved(_account);
 
     // write cert
     WritePasswordJob *job = new WritePasswordJob(Theme::instance()->appName());

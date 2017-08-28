@@ -810,112 +810,112 @@ Continuar a sincronização como normal fará com que todos os seus arquivos sej
 <context>
     <name>OCC::FolderMan</name>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="295"/>
+        <location filename="../src/gui/folderman.cpp" line="306"/>
         <source>Could not reset folder state</source>
         <translation>Não foi possível redefinir o estado da pasta</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="296"/>
+        <location filename="../src/gui/folderman.cpp" line="307"/>
         <source>An old sync journal &apos;%1&apos; was found, but could not be removed. Please make sure that no application is currently using it.</source>
         <translation>Uma velha revista de sincronização &apos;%1&apos; foi encontrada, mas não pôde ser removida. Por favor, certifique-se de que nenhuma aplicação está a usá-la.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1032"/>
+        <location filename="../src/gui/folderman.cpp" line="1043"/>
         <source> (backup)</source>
         <translation> (backup)</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1037"/>
+        <location filename="../src/gui/folderman.cpp" line="1048"/>
         <source> (backup %1)</source>
         <translation> (backup %1)</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1244"/>
+        <location filename="../src/gui/folderman.cpp" line="1255"/>
         <source>Undefined State.</source>
         <translation>Estado indefinido.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1247"/>
+        <location filename="../src/gui/folderman.cpp" line="1258"/>
         <source>Waiting to start syncing.</source>
         <translation>À espera do início da sincronização.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1250"/>
+        <location filename="../src/gui/folderman.cpp" line="1261"/>
         <source>Preparing for sync.</source>
         <translation>Preparando para sincronização.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1253"/>
+        <location filename="../src/gui/folderman.cpp" line="1264"/>
         <source>Sync is running.</source>
         <translation>A sincronização está ocorrendo.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1256"/>
+        <location filename="../src/gui/folderman.cpp" line="1267"/>
         <source>Last Sync was successful.</source>
         <translation>A última sincronização foi feita com sucesso.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1261"/>
+        <location filename="../src/gui/folderman.cpp" line="1272"/>
         <source>Last Sync was successful, but with warnings on individual files.</source>
         <translation>A última sincronização foi executada com sucesso, mas com advertências em arquivos individuais.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1264"/>
+        <location filename="../src/gui/folderman.cpp" line="1275"/>
         <source>Setup Error.</source>
         <translation>Erro de Configuração.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1267"/>
+        <location filename="../src/gui/folderman.cpp" line="1278"/>
         <source>User Abort.</source>
         <translation>Usuário Abortou.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1270"/>
+        <location filename="../src/gui/folderman.cpp" line="1281"/>
         <source>Sync is paused.</source>
         <translation>Sincronização pausada.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1276"/>
+        <location filename="../src/gui/folderman.cpp" line="1287"/>
         <source>%1 (Sync is paused)</source>
         <translation>%1 (Pausa na Sincronização) </translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1284"/>
+        <location filename="../src/gui/folderman.cpp" line="1295"/>
         <source>No valid folder selected!</source>
         <translation>Nenhuma pasta válida selecionada!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1294"/>
+        <location filename="../src/gui/folderman.cpp" line="1305"/>
         <source>The selected path is not a folder!</source>
         <translation>O caminho selecionado não é uma pasta!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1298"/>
+        <location filename="../src/gui/folderman.cpp" line="1309"/>
         <source>You have no permission to write to the selected folder!</source>
         <translation>Voce não tem permissão para escrita na pasta selecionada!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1349"/>
+        <location filename="../src/gui/folderman.cpp" line="1360"/>
         <source>The local folder %1 contains a symbolic link. The link target contains an already synced folder Please pick another one!</source>
         <translation>A pasta local %1 contém um link simbólico. O destino do link contém uma pasta já sincronizados. Por favor, escolha uma outra!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1364"/>
+        <location filename="../src/gui/folderman.cpp" line="1375"/>
         <source>There is already a sync from the server to this local folder. Please pick another local folder!</source>
         <translation>Já existe uma sincronização do servidor para esta pasta local. Por favor, escolha uma outra pasta local!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1322"/>
+        <location filename="../src/gui/folderman.cpp" line="1333"/>
         <source>The local folder %1 already contains a folder used in a folder sync connection. Please pick another one!</source>
         <translation>A pasta local %1 já contém uma pasta utilizada numa ligação de sincronização de pasta. Por favor, escolha outra!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1332"/>
+        <location filename="../src/gui/folderman.cpp" line="1343"/>
         <source>The local folder %1 is already contained in a folder used in a folder sync connection. Please pick another one!</source>
         <translation>A pasta local %1 já está contida em uma pasta usada em uma conexão de sincronização de pastas. Por favor, escolha outra!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1341"/>
+        <location filename="../src/gui/folderman.cpp" line="1352"/>
         <source>The local folder %1 is a symbolic link. The link target is already contained in a folder used in a folder sync connection. Please pick another one!</source>
         <translation>A pasta local %1 é um link simbólico. O destino do link já está contido em uma pasta usada em uma conexão de sincronização de pastas. Por favor, escolha outra!</translation>
     </message>
@@ -1091,7 +1091,7 @@ Continuar a sincronização como normal fará com que todos os seus arquivos sej
     <message>
         <location filename="../src/gui/folderwizard.cpp" line="66"/>
         <source>Click to select a local folder to sync.</source>
-        <translation>Click para selecionar uma pasta local para sincronização.</translation>
+        <translation>Clique para selecionar uma pasta local para sincronização.</translation>
     </message>
     <message>
         <location filename="../src/gui/folderwizard.cpp" line="70"/>
@@ -1294,7 +1294,7 @@ Continuar a sincronização como normal fará com que todos os seus arquivos sej
     <message>
         <location filename="../src/gui/creds/httpcredentialsgui.cpp" line="86"/>
         <source>&lt;a href=&quot;%1&quot;&gt;Click here&lt;/a&gt; to request an app password from the web interface.</source>
-        <translation>&lt;a href=&quot;%1&quot;&gt;Click aqui&lt;/a&gt; para solicitar uma senha de aplicativo na interface da web.</translation>
+        <translation>&lt;a href=&quot;%1&quot;&gt;Clique aqui&lt;/a&gt; para solicitar uma senha de aplicativo na interface da web.</translation>
     </message>
 </context>
 <context>
@@ -1349,22 +1349,22 @@ Items where deletion is allowed will be deleted if they prevent a directory from
 Itens onde a eliminação é permitida serão excluídos se eles evitarem que um diretório seja removido. Isso é útil para metadados.</translation>
     </message>
     <message>
-        <location filename="../src/gui/ignorelisteditor.cpp" line="112"/>
+        <location filename="../src/gui/ignorelisteditor.cpp" line="115"/>
         <source>Could not open file</source>
         <translation>Não foi possível abrir o arquivo</translation>
     </message>
     <message>
-        <location filename="../src/gui/ignorelisteditor.cpp" line="113"/>
+        <location filename="../src/gui/ignorelisteditor.cpp" line="116"/>
         <source>Cannot write changes to &apos;%1&apos;.</source>
         <translation>Não é possível gravar as alterações em &apos;%1&apos;.</translation>
     </message>
     <message>
-        <location filename="../src/gui/ignorelisteditor.cpp" line="140"/>
+        <location filename="../src/gui/ignorelisteditor.cpp" line="143"/>
         <source>Add Ignore Pattern</source>
         <translation>Adicionar Ignorar Padrão</translation>
     </message>
     <message>
-        <location filename="../src/gui/ignorelisteditor.cpp" line="141"/>
+        <location filename="../src/gui/ignorelisteditor.cpp" line="144"/>
         <source>Add a new ignore pattern:</source>
         <translation>Adicionar um novo padrão ignorar:</translation>
     </message>
@@ -1468,7 +1468,7 @@ Itens onde a eliminação é permitida serão excluídos se eles evitarem que um
     <message>
         <location filename="../src/gui/updater/ocupdater.cpp" line="355"/>
         <source>Skip this time</source>
-        <translation>Pular desta vêz</translation>
+        <translation>Pular desta vez</translation>
     </message>
     <message>
         <location filename="../src/gui/updater/ocupdater.cpp" line="356"/>
@@ -2993,23 +2993,23 @@ It is not advisable to use it.</source>
         <translation>Erro ao ler pasta.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="479"/>
+        <location filename="../src/libsync/syncengine.cpp" line="481"/>
         <source>File/Folder is ignored because it&apos;s hidden.</source>
         <translation>Arquivo/pasta ignorado porque porque está escondido.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="743"/>
+        <location filename="../src/libsync/syncengine.cpp" line="745"/>
         <source>Only %1 are available, need at least %2 to start</source>
         <comment>Placeholders are postfixed with file sizes using Utility::octetsToString()</comment>
         <translation>Apenas %1 estão disponíveis, precisamos de pelo menos %2 para começar</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1216"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1218"/>
         <source>Not allowed because you don&apos;t have permission to add parent folder</source>
         <translation>Não permitido porque você não tem permissão para adicionar pasta mãe</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1223"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1225"/>
         <source>Not allowed because you don&apos;t have permission to add files in that folder</source>
         <translation>Não permitido porque você não tem permissão para adicionar arquivos na pasta</translation>
     </message>
@@ -3069,124 +3069,124 @@ It is not advisable to use it.</source>
         <translation>O item não está sincronizado devido a erros anteriores: %1</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="448"/>
+        <location filename="../src/libsync/syncengine.cpp" line="450"/>
         <source>Symbolic links are not supported in syncing.</source>
         <translation>Linques simbólicos não são suportados em sincronização.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="451"/>
+        <location filename="../src/libsync/syncengine.cpp" line="453"/>
         <source>File is listed on the ignore list.</source>
         <translation>O arquivo está listado na lista de ignorados.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="455"/>
+        <location filename="../src/libsync/syncengine.cpp" line="457"/>
         <source>File names ending with a period are not supported on this file system.</source>
         <translation>Os nomes de arquivos que terminam com um ponto não são suportados neste sistema de arquivos.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="465"/>
+        <location filename="../src/libsync/syncengine.cpp" line="467"/>
         <source>File names containing the character &apos;%1&apos; are not supported on this file system.</source>
         <translation>Os nomes de arquivos que contêm o caractere &apos;%1&apos; não são suportados neste sistema de arquivos.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="468"/>
+        <location filename="../src/libsync/syncengine.cpp" line="470"/>
         <source>The file name is a reserved name on this file system.</source>
         <translation>O nome do arquivo é um nome reservado neste sistema de arquivos.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="473"/>
+        <location filename="../src/libsync/syncengine.cpp" line="475"/>
         <source>Filename contains trailing spaces.</source>
         <translation>O nome do arquivo contém espaços deixados para trás.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="476"/>
+        <location filename="../src/libsync/syncengine.cpp" line="478"/>
         <source>Filename is too long.</source>
         <translation>O nome do arquivo é muito longo.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="485"/>
+        <location filename="../src/libsync/syncengine.cpp" line="487"/>
         <source>Stat failed.</source>
         <translation>Stat falhou.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="512"/>
+        <location filename="../src/libsync/syncengine.cpp" line="514"/>
         <source>Filename encoding is not valid</source>
         <translation>A codificação do nome do arquivo não é válida</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="680"/>
+        <location filename="../src/libsync/syncengine.cpp" line="682"/>
         <source>Invalid characters, please rename &quot;%1&quot;</source>
         <translation>Caracteres inválidos, por favor renomear &quot;%1&quot;</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="779"/>
+        <location filename="../src/libsync/syncengine.cpp" line="781"/>
         <source>Unable to initialize a sync journal.</source>
         <translation>Impossibilitado de iniciar a sincronização.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="798"/>
+        <location filename="../src/libsync/syncengine.cpp" line="800"/>
         <source>Unable to read the blacklist from the local database</source>
         <translation>Não é possível ler a lista negra a partir do banco de dados local</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="835"/>
+        <location filename="../src/libsync/syncengine.cpp" line="837"/>
         <source>Unable to read from the sync journal.</source>
         <translation>Não é possível ler a partir do relatório de sincronização.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="880"/>
+        <location filename="../src/libsync/syncengine.cpp" line="882"/>
         <source>Cannot open the sync journal</source>
         <translation>Não é possível abrir o arquivo de sincronização</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="939"/>
+        <location filename="../src/libsync/syncengine.cpp" line="941"/>
         <source>File name contains at least one invalid character</source>
         <translation>O nome do arquivo contem pelo menos um caractere inválido  </translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1175"/>
-        <location filename="../src/libsync/syncengine.cpp" line="1182"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1177"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1184"/>
         <source>Ignored because of the &quot;choose what to sync&quot; blacklist</source>
         <translation>Ignorado por causa da lista negra &quot;escolher o que sincronizar&quot;</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1201"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1203"/>
         <source>Not allowed because you don&apos;t have permission to add subfolders to that folder</source>
         <translation>Não permitido porque você não tem permissão para adicionar subpastas para essa pasta</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1242"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1244"/>
         <source>Not allowed to upload this file because it is read-only on the server, restoring</source>
         <translation>Não é permitido fazer o upload deste arquivo porque ele é somente leitura no servidor, restaurando</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1258"/>
-        <location filename="../src/libsync/syncengine.cpp" line="1277"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1260"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1279"/>
         <source>Not allowed to remove, restoring</source>
         <translation>Não é permitido remover, restaurando</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1290"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1292"/>
         <source>Local files and share folder removed.</source>
         <translation>Arquivos locais e pasta compartilhada removida.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1346"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1348"/>
         <source>Move not allowed, item restored</source>
         <translation>Não é permitido mover, item restaurado</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1357"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1359"/>
         <source>Move not allowed because %1 is read-only</source>
         <translation>Não é permitido mover porque %1 é somente para leitura</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1358"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1360"/>
         <source>the destination</source>
         <translation>o destino</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1358"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1360"/>
         <source>the source</source>
         <translation>a fonte</translation>
     </message>
@@ -3455,9 +3455,8 @@ It is not advisable to use it.</source>
     <name>OCC::ownCloudTheme</name>
     <message>
         <location filename="../src/libsync/owncloudtheme.cpp" line="48"/>
-        <source>&lt;p&gt;Version %2. For more information visit &lt;a href=&quot;%3&quot;&gt;https://%4&lt;/a&gt;&lt;/p&gt;&lt;p&gt;For known issues and help, please visit: &lt;a href=&quot;https://central.owncloud.org/c/help/desktop-file-sync&quot;&gt;https://central.owncloud.org&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;small&gt;By Klaas Freitag, Daniel Molkentin, Olivier Goffart, Markus Götz,  Jan-Christoph Borchardt, and others.&lt;/small&gt;&lt;/p&gt;&lt;p&gt;Copyright ownCloud GmbH&lt;/p&gt;&lt;p&gt;Licensed under the GNU General Public License (GPL) Version 2.0&lt;br/&gt;ownCloud and the ownCloud Logo are registered trademarks of ownCloud GmbH in the United States, other countries, or both.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Versão %2. Para mais informações visite &lt;a href=&quot;%3&quot;&gt;https://%4&lt;/a&gt;&lt;/p&gt;&lt;p&gt;
-Para problemas conhecidos e ajuda, visite: &lt;a href=&quot;https://central.owncloud.org/c/help/desktop-file-sync&quot;&gt;https://central.owncloud.org&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;small&gt;Por Klaas Freitag, Daniel Molkentin, Olivier Goffart, Markus Götz,  Jan-Christoph Borchardt, e outros.&lt;/small&gt;&lt;/p&gt;&lt;p&gt;Copyright ownCloud GmbH&lt;/p&gt;&lt;p&gt;Licenciado sob o GNU General Public License (GPL) Versão 2.0&lt;br/&gt;ownCloud e o ownCloud Logo são marcas registradas da ownCloud GmbH nos United States, outros países, ou ambos.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Version %2. For more information visit &lt;a href=&quot;%3&quot;&gt;https://%4&lt;/a&gt;&lt;/p&gt;&lt;p&gt;For known issues and help, please visit: &lt;a href=&quot;https://central.owncloud.org/c/desktop-client&quot;&gt;https://central.owncloud.org&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;small&gt;By Klaas Freitag, Daniel Molkentin, Olivier Goffart, Markus Götz,  Jan-Christoph Borchardt, and others.&lt;/small&gt;&lt;/p&gt;&lt;p&gt;Copyright ownCloud GmbH&lt;/p&gt;&lt;p&gt;Licensed under the GNU General Public License (GPL) Version 2.0&lt;br/&gt;ownCloud and the ownCloud Logo are registered trademarks of ownCloud GmbH in the United States, other countries, or both.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Versão %2. Para mais informações visite &lt;a href=&quot;%3&quot;&gt;https://%4&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Para saber sobre problemas e ajuda, por favor visite: &lt;a href=&quot;https://central.owncloud.org/c/desktop-client&quot;&gt;https://central.owncloud.org&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;small&gt;Por Klaas Freitag, Daniel Molkentin, Olivier Goffart, Markus Götz,  Jan-Christoph Borchardt, e outros.&lt;/small&gt;&lt;/p&gt;&lt;p&gt;Direitos Autorais ownCloud GmbH&lt;/p&gt;&lt;p&gt;Licenciado sob a GNU General Public License (GPL) Versão 2.0&lt;br/&gt;ownCloud e o Logo ownCloud  são marcas registradas da ownCloud GmbH nos United States, e outros países, ou ambos.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>

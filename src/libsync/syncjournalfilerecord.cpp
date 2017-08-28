@@ -47,8 +47,7 @@ SyncJournalFileRecord::SyncJournalFileRecord(const SyncFileItem &item, const QSt
     , _fileSize(item._size)
     , _remotePerm(item._remotePerm)
     , _serverHasIgnoredFiles(item._serverHasIgnoredFiles)
-    , _contentChecksum(item._contentChecksum)
-    , _contentChecksumType(item._contentChecksumType)
+    , _checksumHeader(item._checksumHeader)
 {
     // use the "old" inode coming with the item for the case where the
     // filesystem stat fails. That can happen if the the file was removed
@@ -106,9 +105,33 @@ SyncFileItem SyncJournalFileRecord::toSyncFileItem()
     item._size = _fileSize;
     item._remotePerm = _remotePerm;
     item._serverHasIgnoredFiles = _serverHasIgnoredFiles;
-    item._contentChecksum = _contentChecksum;
-    item._contentChecksumType = _contentChecksumType;
+    item._checksumHeader = _checksumHeader;
     return item;
+}
+
+QByteArray SyncJournalFileRecord::numericFileId() const
+{
+    // Use the id up until the first non-numeric character
+    for (int i = 0; i < _fileId.size(); ++i) {
+        if (_fileId[i] < '0' || _fileId[i] > '9') {
+            return _fileId.left(i);
+        }
+    }
+    return _fileId;
+}
+
+SyncJournalErrorBlacklistRecord SyncJournalErrorBlacklistRecord::fromSyncFileItem(
+    const SyncFileItem &item)
+{
+    SyncJournalErrorBlacklistRecord record;
+    record._file = item._file;
+    record._errorString = item._errorString;
+    record._lastTryModtime = item._modtime;
+    record._lastTryEtag = item._etag;
+    record._lastTryTime = Utility::qDateTimeToTime_t(QDateTime::currentDateTime());
+    record._renameTarget = item._renameTarget;
+    record._retryCount = 1;
+    return record;
 }
 
 bool SyncJournalErrorBlacklistRecord::isValid() const
@@ -130,7 +153,6 @@ bool operator==(const SyncJournalFileRecord &lhs,
         && lhs._fileSize == rhs._fileSize
         && lhs._remotePerm == rhs._remotePerm
         && lhs._serverHasIgnoredFiles == rhs._serverHasIgnoredFiles
-        && lhs._contentChecksum == rhs._contentChecksum
-        && lhs._contentChecksumType == rhs._contentChecksumType;
+        && lhs._checksumHeader == rhs._checksumHeader;
 }
 }

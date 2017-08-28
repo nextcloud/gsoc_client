@@ -163,12 +163,12 @@
     <message>
         <location filename="../src/gui/accountsettings.cpp" line="235"/>
         <source>Force sync now</source>
-        <translation type="unfinished"/>
+        <translation>Tvinga synkning</translation>
     </message>
     <message>
         <location filename="../src/gui/accountsettings.cpp" line="237"/>
         <source>Restart sync</source>
-        <translation type="unfinished"/>
+        <translation>Starta om synkning</translation>
     </message>
     <message>
         <location filename="../src/gui/accountsettings.cpp" line="246"/>
@@ -508,7 +508,7 @@
     <message>
         <location filename="../src/gui/addcertificatedialog.ui" line="35"/>
         <source>Certificate &amp; Key (pkcs12) :</source>
-        <translation type="unfinished"/>
+        <translation>Certifikat och nyckel (pkcs12) :</translation>
     </message>
     <message>
         <location filename="../src/gui/addcertificatedialog.ui" line="51"/>
@@ -536,7 +536,7 @@
     <message>
         <location filename="../src/gui/application.cpp" line="171"/>
         <source>Error accessing the configuration file</source>
-        <translation type="unfinished"/>
+        <translation>Kunde inte komma åt konfigurationsfilen</translation>
     </message>
     <message>
         <location filename="../src/gui/application.cpp" line="172"/>
@@ -546,7 +546,7 @@
     <message>
         <location filename="../src/gui/application.cpp" line="174"/>
         <source>Quit ownCloud</source>
-        <translation type="unfinished"/>
+        <translation>Avsluta ownCloud</translation>
     </message>
 </context>
 <context>
@@ -805,112 +805,112 @@ Om du fortsätter synkningen kommer alla dina filer återställas med en äldre 
 <context>
     <name>OCC::FolderMan</name>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="295"/>
+        <location filename="../src/gui/folderman.cpp" line="306"/>
         <source>Could not reset folder state</source>
         <translation>Kunde inte återställa mappens skick</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="296"/>
+        <location filename="../src/gui/folderman.cpp" line="307"/>
         <source>An old sync journal &apos;%1&apos; was found, but could not be removed. Please make sure that no application is currently using it.</source>
         <translation>En gammal synkroniseringsjournal &apos;%1&apos; hittades, men kunde inte raderas. Vänligen se till att inga program för tillfället använder den.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1032"/>
+        <location filename="../src/gui/folderman.cpp" line="1043"/>
         <source> (backup)</source>
         <translation>(säkerhetskopia)</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1037"/>
+        <location filename="../src/gui/folderman.cpp" line="1048"/>
         <source> (backup %1)</source>
         <translation>(säkerhetkopia %1)</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1244"/>
+        <location filename="../src/gui/folderman.cpp" line="1255"/>
         <source>Undefined State.</source>
         <translation>Okänt tillstånd.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1247"/>
+        <location filename="../src/gui/folderman.cpp" line="1258"/>
         <source>Waiting to start syncing.</source>
         <translation>Väntar på att starta synkronisering.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1250"/>
+        <location filename="../src/gui/folderman.cpp" line="1261"/>
         <source>Preparing for sync.</source>
         <translation>Förbereder synkronisering</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1253"/>
+        <location filename="../src/gui/folderman.cpp" line="1264"/>
         <source>Sync is running.</source>
         <translation>Synkronisering pågår.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1256"/>
+        <location filename="../src/gui/folderman.cpp" line="1267"/>
         <source>Last Sync was successful.</source>
         <translation>Senaste synkronisering lyckades.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1261"/>
+        <location filename="../src/gui/folderman.cpp" line="1272"/>
         <source>Last Sync was successful, but with warnings on individual files.</source>
         <translation>Senaste synkning lyckades, men det finns varningar för vissa filer!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1264"/>
+        <location filename="../src/gui/folderman.cpp" line="1275"/>
         <source>Setup Error.</source>
         <translation>Inställningsfel.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1267"/>
+        <location filename="../src/gui/folderman.cpp" line="1278"/>
         <source>User Abort.</source>
         <translation>Användare Avbryt</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1270"/>
+        <location filename="../src/gui/folderman.cpp" line="1281"/>
         <source>Sync is paused.</source>
         <translation>Synkronisering är pausad.</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1276"/>
+        <location filename="../src/gui/folderman.cpp" line="1287"/>
         <source>%1 (Sync is paused)</source>
         <translation>%1 (Synk är stoppad)</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1284"/>
+        <location filename="../src/gui/folderman.cpp" line="1295"/>
         <source>No valid folder selected!</source>
         <translation>Ingen giltig mapp markerad!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1294"/>
+        <location filename="../src/gui/folderman.cpp" line="1305"/>
         <source>The selected path is not a folder!</source>
         <translation>Den markerade sökvägen är inte en mapp!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1298"/>
+        <location filename="../src/gui/folderman.cpp" line="1309"/>
         <source>You have no permission to write to the selected folder!</source>
         <translation>Du har inga skrivrättigheter till den valda mappen!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1349"/>
+        <location filename="../src/gui/folderman.cpp" line="1360"/>
         <source>The local folder %1 contains a symbolic link. The link target contains an already synced folder Please pick another one!</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1364"/>
+        <location filename="../src/gui/folderman.cpp" line="1375"/>
         <source>There is already a sync from the server to this local folder. Please pick another local folder!</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1322"/>
+        <location filename="../src/gui/folderman.cpp" line="1333"/>
         <source>The local folder %1 already contains a folder used in a folder sync connection. Please pick another one!</source>
         <translation>Den lokala mappen %1 innehåller redan en mapp som synkas. Var god välj en annan!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1332"/>
+        <location filename="../src/gui/folderman.cpp" line="1343"/>
         <source>The local folder %1 is already contained in a folder used in a folder sync connection. Please pick another one!</source>
         <translation>Den lokala mappen %1 finns redan inuti en mapp som synkas. Var god välj en annan!</translation>
     </message>
     <message>
-        <location filename="../src/gui/folderman.cpp" line="1341"/>
+        <location filename="../src/gui/folderman.cpp" line="1352"/>
         <source>The local folder %1 is a symbolic link. The link target is already contained in a folder used in a folder sync connection. Please pick another one!</source>
         <translation>Den lokala mappen %1 är en symbolisk länk. Länkmålet finns redan inuti en mapp som synkas. Var god välj en annan!</translation>
     </message>
@@ -1343,22 +1343,22 @@ Items where deletion is allowed will be deleted if they prevent a directory from
 Objekt som tillåter radering kommer tas bort om de förhindrar en mapp att tas bort. Det är användbart för meta-data.</translation>
     </message>
     <message>
-        <location filename="../src/gui/ignorelisteditor.cpp" line="112"/>
+        <location filename="../src/gui/ignorelisteditor.cpp" line="115"/>
         <source>Could not open file</source>
         <translation>Kunde inte öppna fil</translation>
     </message>
     <message>
-        <location filename="../src/gui/ignorelisteditor.cpp" line="113"/>
+        <location filename="../src/gui/ignorelisteditor.cpp" line="116"/>
         <source>Cannot write changes to &apos;%1&apos;.</source>
         <translation>Kan inte skriva förändringar till &apos;%1&apos;.</translation>
     </message>
     <message>
-        <location filename="../src/gui/ignorelisteditor.cpp" line="140"/>
+        <location filename="../src/gui/ignorelisteditor.cpp" line="143"/>
         <source>Add Ignore Pattern</source>
         <translation>Lägg till synk-filter</translation>
     </message>
     <message>
-        <location filename="../src/gui/ignorelisteditor.cpp" line="141"/>
+        <location filename="../src/gui/ignorelisteditor.cpp" line="144"/>
         <source>Add a new ignore pattern:</source>
         <translation>Lägg till ett nytt synk-filter:</translation>
     </message>
@@ -1833,7 +1833,7 @@ Det är inte lämpligt använda den.</translation>
     <message>
         <location filename="../src/gui/owncloudsetupwizard.cpp" line="225"/>
         <source>Invalid URL</source>
-        <translation type="unfinished"/>
+        <translation>Ogiltig URL</translation>
     </message>
     <message>
         <location filename="../src/gui/owncloudsetupwizard.cpp" line="388"/>
@@ -2222,12 +2222,12 @@ Det är inte lämpligt använda den.</translation>
     <message>
         <location filename="../src/libsync/propagateuploadng.cpp" line="472"/>
         <source>Missing File ID from server</source>
-        <translation type="unfinished"/>
+        <translation>Saknar Fil-ID från servern</translation>
     </message>
     <message>
         <location filename="../src/libsync/propagateuploadng.cpp" line="485"/>
         <source>Missing ETag from server</source>
-        <translation type="unfinished"/>
+        <translation>Saknar ETag från servern</translation>
     </message>
 </context>
 <context>
@@ -2550,7 +2550,7 @@ Det är inte lämpligt använda den.</translation>
     <message>
         <location filename="../src/gui/sharelinkwidget.ui" line="267"/>
         <source>Anyone with the link has access to the file/folder</source>
-        <translation type="unfinished"/>
+        <translation>Vem som helst med länken kan komma åt filen eller mappen</translation>
     </message>
     <message>
         <location filename="../src/gui/sharelinkwidget.cpp" line="95"/>
@@ -2989,23 +2989,23 @@ Det är inte lämpligt använda den.</translation>
         <translation>Fel vid mappinläsning.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="479"/>
+        <location filename="../src/libsync/syncengine.cpp" line="481"/>
         <source>File/Folder is ignored because it&apos;s hidden.</source>
         <translation>Filen/Mappen är ignorerad för att den är dold.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="743"/>
+        <location filename="../src/libsync/syncengine.cpp" line="745"/>
         <source>Only %1 are available, need at least %2 to start</source>
         <comment>Placeholders are postfixed with file sizes using Utility::octetsToString()</comment>
         <translation>Endast %1 tillgängligt, behöver minst %2 för att starta</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1216"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1218"/>
         <source>Not allowed because you don&apos;t have permission to add parent folder</source>
         <translation>Otillåtet eftersom du inte har rättigheter att lägga till övermappar</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1223"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1225"/>
         <source>Not allowed because you don&apos;t have permission to add files in that folder</source>
         <translation>Otillåtet eftersom du inte har rättigheter att lägga till filer i den mappen.</translation>
     </message>
@@ -3065,124 +3065,124 @@ Det är inte lämpligt använda den.</translation>
         <translation>Objektet kunde inte synkas på grund av tidigare fel: %1</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="448"/>
+        <location filename="../src/libsync/syncengine.cpp" line="450"/>
         <source>Symbolic links are not supported in syncing.</source>
         <translation>Symboliska länkar stöds ej i synkningen.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="451"/>
+        <location filename="../src/libsync/syncengine.cpp" line="453"/>
         <source>File is listed on the ignore list.</source>
         <translation>Filen är listad i ignorerings listan.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="455"/>
+        <location filename="../src/libsync/syncengine.cpp" line="457"/>
         <source>File names ending with a period are not supported on this file system.</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="465"/>
+        <location filename="../src/libsync/syncengine.cpp" line="467"/>
         <source>File names containing the character &apos;%1&apos; are not supported on this file system.</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="468"/>
+        <location filename="../src/libsync/syncengine.cpp" line="470"/>
         <source>The file name is a reserved name on this file system.</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="473"/>
+        <location filename="../src/libsync/syncengine.cpp" line="475"/>
         <source>Filename contains trailing spaces.</source>
         <translation>Filnamn innehåller mellanslag i slutet.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="476"/>
+        <location filename="../src/libsync/syncengine.cpp" line="478"/>
         <source>Filename is too long.</source>
         <translation>Filnamnet är för långt.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="485"/>
+        <location filename="../src/libsync/syncengine.cpp" line="487"/>
         <source>Stat failed.</source>
         <translation>Stat misslyckades.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="512"/>
+        <location filename="../src/libsync/syncengine.cpp" line="514"/>
         <source>Filename encoding is not valid</source>
         <translation>Filnamnskodning är inte giltig</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="680"/>
+        <location filename="../src/libsync/syncengine.cpp" line="682"/>
         <source>Invalid characters, please rename &quot;%1&quot;</source>
         <translation>Otillåtna tecken, var vänlig byt namn på &quot;%1&quot;</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="779"/>
+        <location filename="../src/libsync/syncengine.cpp" line="781"/>
         <source>Unable to initialize a sync journal.</source>
         <translation>Kan inte initialisera en synk journal. </translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="798"/>
+        <location filename="../src/libsync/syncengine.cpp" line="800"/>
         <source>Unable to read the blacklist from the local database</source>
         <translation>Kunde inte läsa svartlistan från den lokala databasen</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="835"/>
+        <location filename="../src/libsync/syncengine.cpp" line="837"/>
         <source>Unable to read from the sync journal.</source>
         <translation>Kunde inte läsa från synk-journalen.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="880"/>
+        <location filename="../src/libsync/syncengine.cpp" line="882"/>
         <source>Cannot open the sync journal</source>
         <translation>Kunde inte öppna synk journalen</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="939"/>
+        <location filename="../src/libsync/syncengine.cpp" line="941"/>
         <source>File name contains at least one invalid character</source>
         <translation>Filnamnet innehåller minst ett ogiltigt tecken</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1175"/>
-        <location filename="../src/libsync/syncengine.cpp" line="1182"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1177"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1184"/>
         <source>Ignored because of the &quot;choose what to sync&quot; blacklist</source>
         <translation>Ignorerad eftersom den är svartlistad i &quot;välj vad som ska synkas&quot; </translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1201"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1203"/>
         <source>Not allowed because you don&apos;t have permission to add subfolders to that folder</source>
         <translation>Otillåtet eftersom du inte har rättigheter att lägga till undermappar i den mappen.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1242"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1244"/>
         <source>Not allowed to upload this file because it is read-only on the server, restoring</source>
         <translation>Inte behörig att ladda upp denna fil då den är skrivskyddad på servern, återställer </translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1258"/>
-        <location filename="../src/libsync/syncengine.cpp" line="1277"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1260"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1279"/>
         <source>Not allowed to remove, restoring</source>
         <translation>Inte behörig att radera, återställer</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1290"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1292"/>
         <source>Local files and share folder removed.</source>
         <translation>Lokala filer och mappar som är delade är borttagna.</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1346"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1348"/>
         <source>Move not allowed, item restored</source>
         <translation>Det gick inte att genomföra flytten, objektet återställs</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1357"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1359"/>
         <source>Move not allowed because %1 is read-only</source>
         <translation>Det gick inte att genomföra flytten då %1 är skrivskyddad</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1358"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1360"/>
         <source>the destination</source>
         <translation>destinationen</translation>
     </message>
     <message>
-        <location filename="../src/libsync/syncengine.cpp" line="1358"/>
+        <location filename="../src/libsync/syncengine.cpp" line="1360"/>
         <source>the source</source>
         <translation>källan</translation>
     </message>
@@ -3403,7 +3403,7 @@ Det är inte lämpligt använda den.</translation>
     <message>
         <location filename="../src/gui/owncloudgui.cpp" line="739"/>
         <source>New account...</source>
-        <translation type="unfinished"/>
+        <translation>Nytt konto...</translation>
     </message>
     <message>
         <location filename="../src/gui/owncloudgui.cpp" line="757"/>
@@ -3451,7 +3451,7 @@ Det är inte lämpligt använda den.</translation>
     <name>OCC::ownCloudTheme</name>
     <message>
         <location filename="../src/libsync/owncloudtheme.cpp" line="48"/>
-        <source>&lt;p&gt;Version %2. For more information visit &lt;a href=&quot;%3&quot;&gt;https://%4&lt;/a&gt;&lt;/p&gt;&lt;p&gt;For known issues and help, please visit: &lt;a href=&quot;https://central.owncloud.org/c/help/desktop-file-sync&quot;&gt;https://central.owncloud.org&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;small&gt;By Klaas Freitag, Daniel Molkentin, Olivier Goffart, Markus Götz,  Jan-Christoph Borchardt, and others.&lt;/small&gt;&lt;/p&gt;&lt;p&gt;Copyright ownCloud GmbH&lt;/p&gt;&lt;p&gt;Licensed under the GNU General Public License (GPL) Version 2.0&lt;br/&gt;ownCloud and the ownCloud Logo are registered trademarks of ownCloud GmbH in the United States, other countries, or both.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Version %2. For more information visit &lt;a href=&quot;%3&quot;&gt;https://%4&lt;/a&gt;&lt;/p&gt;&lt;p&gt;For known issues and help, please visit: &lt;a href=&quot;https://central.owncloud.org/c/desktop-client&quot;&gt;https://central.owncloud.org&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;small&gt;By Klaas Freitag, Daniel Molkentin, Olivier Goffart, Markus Götz,  Jan-Christoph Borchardt, and others.&lt;/small&gt;&lt;/p&gt;&lt;p&gt;Copyright ownCloud GmbH&lt;/p&gt;&lt;p&gt;Licensed under the GNU General Public License (GPL) Version 2.0&lt;br/&gt;ownCloud and the ownCloud Logo are registered trademarks of ownCloud GmbH in the United States, other countries, or both.&lt;/p&gt;</source>
         <translation type="unfinished"/>
     </message>
 </context>
@@ -3628,7 +3628,7 @@ Det är inte lämpligt använda den.</translation>
     <message>
         <location filename="../src/gui/wizard/owncloudsetupnocredspage.ui" line="86"/>
         <source>Ser&amp;ver Address</source>
-        <translation type="unfinished"/>
+        <translation>Ser&amp;veradress</translation>
     </message>
     <message>
         <location filename="../src/gui/wizard/owncloudsetupnocredspage.ui" line="102"/>
@@ -3798,7 +3798,7 @@ Det är inte lämpligt använda den.</translation>
     <message>
         <location filename="../src/libsync/theme.cpp" line="305"/>
         <source>built with %1</source>
-        <translation type="unfinished"/>
+        <translation>byggt med %1</translation>
     </message>
 </context>
 <context>

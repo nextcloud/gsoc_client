@@ -153,8 +153,6 @@ if(APPLE)
   set( SOCKETAPI_TEAM_IDENTIFIER_PREFIX "" CACHE STRING "SocketApi prefix (including a following dot) that must match the codesign key's TeamIdentifier/Organizational Unit" )
 endif()
 
-find_package(OpenSSL 1.0.0 REQUIRED)
-
 if(APPLE)
   find_package(Sparkle)
 endif(APPLE)
@@ -184,8 +182,6 @@ endif()
 
 configure_file(config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
-configure_file(test/test_journal.db "${CMAKE_BINARY_DIR}/test/test_journal.db" COPYONLY)
-
 include(OwnCloudCPack.cmake)
 
 add_definitions(-DUNICODE)
@@ -194,6 +190,19 @@ if( WIN32 )
 add_definitions( -D__USE_MINGW_ANSI_STDIO=1 )
 add_definitions( -DNOMINMAX )
 endif( WIN32 )
+
+include(QtVersionAbstraction)
+setup_qt()
+if (${Qt5Core_VERSION_MAJOR} EQUAL "5")
+    if (${Qt5Core_VERSION_MINOR} EQUAL "6" OR ${Qt5Core_VERSION_MINOR} GREATER 6)
+    else()
+      message(STATUS "If possible compile me with Qt 5.6 or higher.")
+    endif()
+endif()
+
+if (APPLE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+endif()
 
 # Handle Translations, pick all client_* files from trans directory.
 file( GLOB TRANS_FILES ${CMAKE_SOURCE_DIR}/translations/client_*.ts)

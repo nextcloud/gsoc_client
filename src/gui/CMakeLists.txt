@@ -21,6 +21,7 @@ set(client_UI
     ignorelisteditor.ui
     networksettings.ui
     protocolwidget.ui
+    issueswidget.ui
     activitywidget.ui
     synclogdialog.ui
     settingsdialog.ui
@@ -33,12 +34,20 @@ set(client_UI
     proxyauthdialog.ui
     notificationwidget.ui
     wizard/owncloudadvancedsetuppage.ui
+    wizard/owncloudproviderregistrationpage.ui
+    wizard/owncloudregistrationfinishedpage.ui
     wizard/owncloudconnectionmethoddialog.ui
     wizard/owncloudhttpcredspage.ui
     wizard/owncloudoauthcredspage.ui
     wizard/owncloudsetupnocredspage.ui
     wizard/owncloudwizardresultpage.ui
 )
+if(APPLICATION_PROVIDERS)
+    list(APPEND client_UI
+        wizard/owncloudproviderlistpage.ui
+        wizard/providerwidget.ui
+    )
+endif()
 
 qt_wrap_ui(client_UI_SRCS ${client_UI})
 
@@ -60,10 +69,12 @@ set(client_SRCS
     ocsjob.cpp
     ocssharejob.cpp
     ocsshareejob.cpp
+    ocsregistrationjob.cpp
     openfilemanager.cpp
     owncloudgui.cpp
     owncloudsetupwizard.cpp
     protocolwidget.cpp
+    issueswidget.cpp
     activitydata.cpp
     activitylistmodel.cpp
     activitywidget.cpp
@@ -92,12 +103,16 @@ set(client_SRCS
     notificationwidget.cpp
     notificationconfirmjob.cpp
     servernotificationhandler.cpp
+    guiutility.cpp
+    elidedlabel.cpp
     creds/credentialsfactory.cpp
     creds/httpcredentialsgui.cpp
     creds/oauth.cpp
     wizard/postfixlineedit.cpp
     wizard/abstractcredswizardpage.cpp
     wizard/owncloudadvancedsetuppage.cpp
+    wizard/owncloudproviderregistrationpage.cpp
+    wizard/owncloudregistrationfinishedpage.cpp
     wizard/owncloudconnectionmethoddialog.cpp
     wizard/owncloudhttpcredspage.cpp
     wizard/owncloudoauthcredspage.cpp
@@ -105,6 +120,7 @@ set(client_SRCS
     wizard/owncloudwizardcommon.cpp
     wizard/owncloudwizard.cpp
     wizard/owncloudwizardresultpage.cpp
+    wizard/owncloudprovidermodel.cpp
 )
 
 IF(NOT NO_SHIBBOLETH)
@@ -114,6 +130,13 @@ IF(NOT NO_SHIBBOLETH)
         creds/shibboleth/shibbolethuserjob.cpp
         wizard/owncloudshibbolethcredspage.cpp
     )
+endif()
+
+if(APPLICATION_PROVIDERS)
+    list(APPEND client_SRCS
+            wizard/owncloudproviderlistpage.cpp
+            wizard/providerwidget.cpp
+        )
 endif()
 
 set(updater_SRCS
@@ -127,7 +150,6 @@ IF( APPLE )
     list(APPEND client_SRCS settingsdialogmac.cpp)
     list(APPEND client_SRCS socketapisocket_mac.mm)
     list(APPEND client_SRCS systray.mm)
-    list(APPEND client_SRCS clipboard.mm)
 
     if(SPARKLE_FOUND)
        # Define this, we need to check in updater.cpp
@@ -176,7 +198,6 @@ set(3rdparty_INC
     )
 
 include_directories(${3rdparty_INC})
-include_directories(${OPENSSL_INCLUDE_DIR})
 
 # csync is required.
 include_directories(${CMAKE_SOURCE_DIR}/csync/src
@@ -230,7 +251,7 @@ if (NOT DEFINED APPLICATION_ICON_NAME)
     set(APPLICATION_ICON_NAME ${APPLICATION_SHORTNAME})
 endif()
 
-kde4_add_app_icon( ownCloud "${theme_dir}/colored/${APPLICATION_ICON_NAME}-icon*.png")
+kde4_add_app_icon( ownCloud "${theme_dir}/colored/${APPLICATION_ICON_NAME}-*.png")
 list(APPEND final_src ${ownCloud})
 set(ownCloud ${ownCloud_old})
 

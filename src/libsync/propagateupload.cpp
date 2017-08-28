@@ -35,12 +35,6 @@
 #include <cmath>
 #include <cstring>
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 4, 2)
-namespace {
-const char owncloudShouldSoftCancelPropertyName[] = "owncloud-should-soft-cancel";
-}
-#endif
-
 namespace OCC {
 
 Q_LOGGING_CATEGORY(lcPutJob, "sync.networkjob.put", QtInfoMsg)
@@ -79,6 +73,8 @@ void PUTFileJob::start()
         req.setRawHeader(it.key(), it.value());
     }
 
+    req.setPriority(QNetworkRequest::LowPriority); // Long uploads must not block non-propagation jobs.
+
     if (_url.isValid()) {
         sendRequest("PUT", _url, req, _device);
     } else {
@@ -91,26 +87,9 @@ void PUTFileJob::start()
 
     connect(reply(), SIGNAL(uploadProgress(qint64, qint64)), this, SIGNAL(uploadProgress(qint64, qint64)));
     connect(this, SIGNAL(networkActivity()), account().data(), SIGNAL(propagatorNetworkActivity()));
-
-// For Qt versions not including https://codereview.qt-project.org/110150
-// Also do the runtime check if compiled with an old Qt but running with fixed one.
-// (workaround disabled on windows and mac because the binaries we ship have patched qt)
-#if QT_VERSION < QT_VERSION_CHECK(5, 4, 2) && !defined Q_OS_WIN && !defined Q_OS_MAC
-    if (QLatin1String(qVersion()) < QLatin1String("5.4.2"))
-        connect(_device, SIGNAL(wasReset()), this, SLOT(slotSoftAbort()));
-#endif
-
     _requestTimer.start();
     AbstractNetworkJob::start();
 }
-
-#if QT_VERSION < QT_VERSION_CHECK(5, 4, 2)
-void PUTFileJob::slotSoftAbort()
-{
-    reply()->setProperty(owncloudShouldSoftCancelPropertyName, true);
-    reply()->abort();
-}
-#endif
 
 void PollJob::start()
 {
@@ -231,9 +210,10 @@ void PropagateUploadFileCommon::slotComputeContentChecksum()
     QByteArray checksumType = contentChecksumType();
 
     // Maybe the discovery already computed the checksum?
-    if (_item->_contentChecksumType == checksumType
-        && !_item->_contentChecksum.isEmpty()) {
-        slotComputeTransmissionChecksum(checksumType, _item->_contentChecksum);
+    QByteArray existingChecksumType, existingChecksum;
+    parseChecksumHeader(_item->_checksumHeader, &existingChecksumType, &existingChecksum);
+    if (existingChecksumType == checksumType) {
+        slotComputeTransmissionChecksum(checksumType, existingChecksum);
         return;
     }
 
@@ -250,8 +230,7 @@ void PropagateUploadFileCommon::slotComputeContentChecksum()
 
 void PropagateUploadFileCommon::slotComputeTransmissionChecksum(const QByteArray &contentChecksumType, const QByteArray &contentChecksum)
 {
-    _item->_contentChecksum = contentChecksum;
-    _item->_contentChecksumType = contentChecksumType;
+    _item->_checksumHeader = makeChecksumHeader(contentChecksumType, contentChecksum);
 
 #ifdef WITH_TESTING
     _stopWatch.addLapTime(QLatin1String("ContentChecksum"));
@@ -288,13 +267,11 @@ void PropagateUploadFileCommon::slotStartUpload(const QByteArray &transmissionCh
     // When we start chunks, we will add it again, once for every chunks.
     propagator()->_activeJobList.removeOne(this);
 
-    _transmissionChecksum = transmissionChecksum;
-    _transmissionChecksumType = transmissionChecksumType;
+    _transmissionChecksumHeader = makeChecksumHeader(transmissionChecksumType, transmissionChecksum);
 
-    if (_item->_contentChecksum.isEmpty() && _item->_contentChecksumType.isEmpty()) {
-        // If the _contentChecksum was not set, reuse the transmission checksum as the content checksum.
-        _item->_contentChecksum = transmissionChecksum;
-        _item->_contentChecksumType = transmissionChecksumType;
+    // If no checksum header was not set, reuse the transmission checksum as the content checksum.
+    if (_item->_checksumHeader.isEmpty()) {
+        _item->_checksumHeader = _transmissionChecksumHeader;
     }
 
     const QString fullFilePath = propagator()->getFilePath(_item->_file);
@@ -522,6 +499,38 @@ void PropagateUploadFileCommon::checkResettingErrors()
         propagator()->_journal->setUploadInfo(_item->_file, uploadInfo);
         propagator()->_journal->commit("Upload info");
     }
+}
+
+void PropagateUploadFileCommon::commonErrorHandling(AbstractNetworkJob *job)
+{
+    QByteArray replyContent;
+    QString errorString = job->errorStringParsingBody(&replyContent);
+    qCDebug(lcPropagateUpload) << replyContent; // display the XML error in the debug
+
+    if (_item->_httpErrorCode == 412) {
+        // Precondition Failed: Either an etag or a checksum mismatch.
+
+        // Maybe the bad etag is in the database, we need to clear the
+        // parent folder etag so we won't read from DB next sync.
+        propagator()->_journal->avoidReadFromDbOnNextSync(_item->_file);
+        propagator()->_anotherSyncNeeded = true;
+    }
+
+    // Ensure errors that should eventually reset the chunked upload are tracked.
+    checkResettingErrors();
+
+    SyncFileItem::Status status = classifyError(job->reply()->error(), _item->_httpErrorCode,
+        &propagator()->_anotherSyncNeeded);
+
+    if (_item->_httpErrorCode == 507) {
+        // Insufficient remote storage.
+        _item->_errorMayBeBlacklisted = true;
+        status = SyncFileItem::BlacklistedError;
+        errorString = tr("Upload of %1 exceeds the quota for the folder").arg(Utility::octetsToString(_item->_size));
+        emit propagator()->insufficientRemoteStorage();
+    }
+
+    abortWithError(status, errorString);
 }
 
 void PropagateUploadFileCommon::slotJobDestroyed(QObject *job)

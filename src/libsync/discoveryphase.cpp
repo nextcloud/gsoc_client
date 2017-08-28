@@ -272,9 +272,14 @@ void DiscoverySingleDirectoryJob::start()
           << "http://owncloud.org/ns:id"
           << "http://owncloud.org/ns:downloadURL"
           << "http://owncloud.org/ns:dDC"
-          << "http://owncloud.org/ns:permissions";
+          << "http://owncloud.org/ns:permissions"
+          << "http://owncloud.org/ns:checksums";
     if (_isRootPath)
         props << "http://owncloud.org/ns:data-fingerprint";
+    if (_account->serverVersionInt() >= Account::makeServerVersion(10, 0, 0)) {
+        // Server older than 10.0 have performances issue if we ask for the share-types on every PROPFIND
+        props << "http://owncloud.org/ns:share-types";
+    }
 
     lsColJob->setProperties(props);
 
@@ -292,6 +297,28 @@ void DiscoverySingleDirectoryJob::abort()
     if (_lsColJob && _lsColJob->reply()) {
         _lsColJob->reply()->abort();
     }
+}
+
+/**
+ * Returns the highest-quality checksum in a 'checksums'
+ * property retrieved from the server.
+ *
+ * Example: "ADLER32:1231 SHA1:ab124124 MD5:2131affa21"
+ *       -> "SHA1:ab124124"
+ */
+static QByteArray findBestChecksum(const QByteArray &checksums)
+{
+    int i = 0;
+    // The order of the searches here defines the preference ordering.
+    if (-1 != (i = checksums.indexOf("SHA1:"))
+        || -1 != (i = checksums.indexOf("MD5:"))
+        || -1 != (i = checksums.indexOf("Adler32:"))) {
+        // Now i is the start of the best checksum
+        // Grab it until the next space or end of string.
+        auto checksum = checksums.mid(i);
+        return checksum.mid(0, checksum.indexOf(" "));
+    }
+    return QByteArray();
 }
 
 static csync_vio_file_stat_t *propertyMapToFileStat(const QMap<QString, QString> &map)
@@ -343,9 +370,30 @@ static csync_vio_file_stat_t *propertyMapToFileStat(const QMap<QString, QString>
             } else {
                 qCWarning(lcDiscovery) << "permissions too large" << v;
             }
+        } else if (property == "checksums") {
+            QByteArray checksum = findBestChecksum(value.toUtf8());
+            if (!checksum.isEmpty()) {
+                file_stat->checksumHeader = strdup(checksum.constData());
+            }
+        } else if (property == "share-types" && !value.isEmpty()) {
+            // Since QMap is sorted, "share-types" is always "permissions".
+            if (file_stat->remotePerm[0] == '\0' || !(file_stat->fields & CSYNC_VIO_FILE_STAT_FIELDS_PERM)) {
+                qWarning() << "Server returned a share type, but no permissions?";
+            } else {
+                // S means shared with me.
+                // But for our purpose, we want to know if the file is shared. It does not matter
+                // if we are the owner or not.
+                // Piggy back on the persmission field 'S'
+                if (!std::strchr(file_stat->remotePerm, 'S')) {
+                    if (std::strlen(file_stat->remotePerm) < sizeof(file_stat->remotePerm) - 1) {
+                        std::strcat(file_stat->remotePerm, "S");
+                    } else {
+                        qWarning() << "permissions too large" << file_stat->remotePerm;
+                    }
+                }
+            }
         }
     }
-
     return file_stat;
 }
 

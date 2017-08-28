@@ -321,6 +321,150 @@ private slots:
         }
     }
 
+    void testFakeConflict()
+    {
+        FakeFolder fakeFolder{ FileInfo::A12_B12_C12_S12() };
+
+        int nGET = 0;
+        fakeFolder.setServerOverride([&](QNetworkAccessManager::Operation op, const QNetworkRequest &) {
+            if (op == QNetworkAccessManager::GetOperation)
+                ++nGET;
+            return nullptr;
+        });
+
+        // For directly editing the remote checksum
+        FileInfo &remoteInfo = dynamic_cast<FileInfo &>(fakeFolder.remoteModifier());
+
+        // Base mtime with no ms content (filesystem is seconds only)
+        auto mtime = QDateTime::currentDateTime().addDays(-4);
+        mtime.setMSecsSinceEpoch(mtime.toMSecsSinceEpoch() / 1000 * 1000);
+
+        // Conflict: Same content, mtime, but no server checksum
+        //           -> ignored in reconcile
+        fakeFolder.localModifier().setContents("A/a1", 'C');
+        fakeFolder.localModifier().setModTime("A/a1", mtime);
+        fakeFolder.remoteModifier().setContents("A/a1", 'C');
+        fakeFolder.remoteModifier().setModTime("A/a1", mtime);
+        QVERIFY(fakeFolder.syncOnce());
+        QCOMPARE(nGET, 0);
+
+        // Conflict: Same content, mtime, but weak server checksum
+        //           -> ignored in reconcile
+        mtime = mtime.addDays(1);
+        fakeFolder.localModifier().setContents("A/a1", 'D');
+        fakeFolder.localModifier().setModTime("A/a1", mtime);
+        fakeFolder.remoteModifier().setContents("A/a1", 'D');
+        fakeFolder.remoteModifier().setModTime("A/a1", mtime);
+        remoteInfo.find("A/a1")->checksums = "Adler32:bad";
+        QVERIFY(fakeFolder.syncOnce());
+        QCOMPARE(nGET, 0);
+
+        // Conflict: Same content, mtime, but server checksum differs
+        //           -> downloaded
+        mtime = mtime.addDays(1);
+        fakeFolder.localModifier().setContents("A/a1", 'W');
+        fakeFolder.localModifier().setModTime("A/a1", mtime);
+        fakeFolder.remoteModifier().setContents("A/a1", 'W');
+        fakeFolder.remoteModifier().setModTime("A/a1", mtime);
+        remoteInfo.find("A/a1")->checksums = "SHA1:bad";
+        QVERIFY(fakeFolder.syncOnce());
+        QCOMPARE(nGET, 1);
+
+        // Conflict: Same content, mtime, matching checksums
+        //           -> PropagateDownload, but it skips the download
+        mtime = mtime.addDays(1);
+        fakeFolder.localModifier().setContents("A/a1", 'C');
+        fakeFolder.localModifier().setModTime("A/a1", mtime);
+        fakeFolder.remoteModifier().setContents("A/a1", 'C');
+        fakeFolder.remoteModifier().setModTime("A/a1", mtime);
+        remoteInfo.find("A/a1")->checksums = "SHA1:56900fb1d337cf7237ff766276b9c1e8ce507427";
+        QVERIFY(fakeFolder.syncOnce());
+        QCOMPARE(nGET, 1);
+
+        // Extra sync reads from db, no difference
+        QVERIFY(fakeFolder.syncOnce());
+        QCOMPARE(nGET, 1);
+    }
+
+    /**
+     * Checks whether SyncFileItems have the expected properties before start
+     * of propagation.
+     */
+    void testSyncFileItemProperties()
+    {
+        auto initialMtime = QDateTime::currentDateTime().addDays(-7);
+        auto changedMtime = QDateTime::currentDateTime().addDays(-4);
+        auto changedMtime2 = QDateTime::currentDateTime().addDays(-3);
+
+        // Base mtime with no ms content (filesystem is seconds only)
+        initialMtime.setMSecsSinceEpoch(initialMtime.toMSecsSinceEpoch() / 1000 * 1000);
+        changedMtime.setMSecsSinceEpoch(changedMtime.toMSecsSinceEpoch() / 1000 * 1000);
+        changedMtime2.setMSecsSinceEpoch(changedMtime2.toMSecsSinceEpoch() / 1000 * 1000);
+
+        // Ensure the initial mtimes are as expected
+        auto initialFileInfo = FileInfo::A12_B12_C12_S12();
+        initialFileInfo.setModTime("A/a1", initialMtime);
+        initialFileInfo.setModTime("B/b1", initialMtime);
+        initialFileInfo.setModTime("C/c1", initialMtime);
+
+        FakeFolder fakeFolder{ initialFileInfo };
+
+
+        // upload a
+        fakeFolder.localModifier().appendByte("A/a1");
+        fakeFolder.localModifier().setModTime("A/a1", changedMtime);
+        // download b
+        fakeFolder.remoteModifier().appendByte("B/b1");
+        fakeFolder.remoteModifier().setModTime("B/b1", changedMtime);
+        // conflict c
+        fakeFolder.localModifier().appendByte("C/c1");
+        fakeFolder.localModifier().appendByte("C/c1");
+        fakeFolder.localModifier().setModTime("C/c1", changedMtime);
+        fakeFolder.remoteModifier().appendByte("C/c1");
+        fakeFolder.remoteModifier().setModTime("C/c1", changedMtime2);
+
+        connect(&fakeFolder.syncEngine(), &SyncEngine::aboutToPropagate, [&](SyncFileItemVector &items) {
+            SyncFileItemPtr a1, b1, c1;
+            for (auto &item : items) {
+                if (item->_file == "A/a1")
+                    a1 = item;
+                if (item->_file == "B/b1")
+                    b1 = item;
+                if (item->_file == "C/c1")
+                    c1 = item;
+            }
+
+            // a1: should have local size and modtime
+            QVERIFY(a1);
+            QCOMPARE(a1->_instruction, CSYNC_INSTRUCTION_SYNC);
+            QCOMPARE(a1->_direction, SyncFileItem::Up);
+            QCOMPARE(a1->_size, quint64(5));
+
+            QCOMPARE(Utility::qDateTimeFromTime_t(a1->_modtime), changedMtime);
+            QCOMPARE(a1->log._other_size, quint64(4));
+            QCOMPARE(Utility::qDateTimeFromTime_t(a1->log._other_modtime), initialMtime);
+
+            // b2: should have remote size and modtime
+            QVERIFY(b1);
+            QCOMPARE(b1->_instruction, CSYNC_INSTRUCTION_SYNC);
+            QCOMPARE(b1->_direction, SyncFileItem::Down);
+            QCOMPARE(b1->_size, quint64(17));
+            QCOMPARE(Utility::qDateTimeFromTime_t(b1->_modtime), changedMtime);
+            QCOMPARE(b1->log._other_size, quint64(16));
+            QCOMPARE(Utility::qDateTimeFromTime_t(b1->log._other_modtime), initialMtime);
+
+            // c1: conflicts are downloads, so remote size and modtime
+            QVERIFY(c1);
+            QCOMPARE(c1->_instruction, CSYNC_INSTRUCTION_CONFLICT);
+            QCOMPARE(c1->_direction, SyncFileItem::None);
+            QCOMPARE(c1->_size, quint64(25));
+            QCOMPARE(Utility::qDateTimeFromTime_t(c1->_modtime), changedMtime2);
+            QCOMPARE(c1->log._other_size, quint64(26));
+            QCOMPARE(Utility::qDateTimeFromTime_t(c1->log._other_modtime), changedMtime);
+        });
+
+        QVERIFY(fakeFolder.syncOnce());
+    }
 };
 
 QTEST_GUILESS_MAIN(TestSyncEngine)
