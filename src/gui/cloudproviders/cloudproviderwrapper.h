@@ -4,11 +4,11 @@
 #include <QObject>
 #include "folderman.h"
 
-// Forward declaration required since gio header files interfere with QObject headers
-struct _CloudProvider;
-typedef _CloudProvider CloudProvider;
-struct _CloudProviderAccount1;
-typedef _CloudProviderAccount1 CloudProviderAccount1;
+/* Forward declaration required since gio header files interfere with QObject headers */
+struct _CloudProviderExporter;
+typedef _CloudProviderExporter CloudProviderExporter;
+struct _CloudProviderAccountExporter;
+typedef _CloudProviderAccountExporter CloudProviderAccountExporter;
 struct _GMenuModel;
 typedef _GMenuModel GMenuModel;
 struct _GMenu;
@@ -25,15 +25,16 @@ class CloudProviderWrapper : public QObject
 {
     Q_OBJECT
 public:
-    explicit CloudProviderWrapper(QObject *parent = nullptr, OCC::Folder *folder = nullptr, CloudProvider* cloudprovider = nullptr);
+    explicit CloudProviderWrapper(QObject *parent = nullptr, Folder *folder = nullptr, CloudProviderExporter* cloudprovider = nullptr);
     ~CloudProviderWrapper();
     gchar* accountName();
-    OCC::Folder* folder();
+    CloudProviderAccountExporter* accountExporter();
+    Folder* folder();
     GMenuModel* getMenuModel();
     GActionGroup* getActionGroup();
-    gpointer name;
+    gchar* name;
     uint status;
-    gpointer path;
+    gchar* path;
     gpointer icon;
     gchar* statusText();
 signals:
@@ -48,10 +49,10 @@ public slots:
     void slotSyncPausedChanged(Folder*, bool);
 
 private:
-    OCC::Folder *_folder;
-    CloudProvider *_cloudProvider;
+    Folder *_folder;
+    CloudProviderExporter *_cloudProvider;
     gchar *_accountName;
-    CloudProviderAccount1 *_cloudProviderAccount1;
+    CloudProviderAccountExporter *_cloudProviderAccount1;
     uint _syncStatus;
     QList<QPair<QString, QString>> *_recentlyChanged;
     QString _statusText;

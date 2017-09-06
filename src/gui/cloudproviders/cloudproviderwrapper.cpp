@@ -1,7 +1,8 @@
 extern "C" {
 #include <glib.h>
 #include <gio.h>
-#include <cloudprovider.h>
+#include <cloudproviderexporter.h>
+#include <cloudprovideraccountexporter.h>
 }
 
 #include "cloudproviderwrapper.h"
@@ -22,70 +23,70 @@ gchar* qstring_to_gchar(QString string)
     return ba.data();
 }
 
-static void
-on_get_name (CloudProviderAccount1 *cloud_provider, GDBusMethodInvocation *invocation, gpointer user_data)
+static gchar*
+on_get_name (CloudProviderAccountExporter *cloud_provider, gpointer user_data)
 {
-    (void)(cloud_provider);
+    Q_UNUSED(cloud_provider);
     CloudProviderWrapper *self = static_cast<CloudProviderWrapper*>(user_data);
-    g_dbus_method_invocation_return_value (invocation, g_variant_new ("(s)", self->name));
+    return (gchar*)(self->name);
 }
 
-static void
-on_get_icon (CloudProviderAccount1 *cloud_provider, GDBusMethodInvocation *invocation, gpointer user_data)
+static GIcon*
+on_get_icon (CloudProviderAccountExporter *cloud_provider, gpointer user_data)
 {
-    (void)(cloud_provider);
+    Q_UNUSED(cloud_provider);
     CloudProviderWrapper *self = static_cast<CloudProviderWrapper*>(user_data);
-    g_dbus_method_invocation_return_value (invocation, g_variant_new ("(v)", g_icon_serialize(G_ICON(self->icon))));
+    return G_ICON(self->icon);
 }
 
-static void
-on_get_path (CloudProviderAccount1 *cloud_provider, GDBusMethodInvocation *invocation, gpointer user_data)
+static gchar*
+on_get_path (CloudProviderAccountExporter *cloud_provider, gpointer user_data)
 {
-    (void)(cloud_provider);
+    Q_UNUSED(cloud_provider);
     CloudProviderWrapper *self = static_cast<CloudProviderWrapper*>(user_data);
-    g_dbus_method_invocation_return_value (invocation, g_variant_new ("(s)", self->path));
+    return self->path;
 }
 
-static void
-on_get_status (CloudProviderAccount1 *cloud_provider, GDBusMethodInvocation *invocation, gpointer user_data)
+static gint
+on_get_status (CloudProviderAccountExporter *cloud_provider, gpointer user_data)
 {
-    (void)(cloud_provider);
+    Q_UNUSED(cloud_provider);
     CloudProviderWrapper *self = static_cast<CloudProviderWrapper*>(user_data);
-    g_dbus_method_invocation_return_value (invocation, g_variant_new ("(i)", self->status));
+    return self->status;
 }
 
-static void
-on_get_status_details (CloudProviderAccount1 *cloud_provider, GDBusMethodInvocation *invocation, gpointer user_data)
+static gchar*
+on_get_status_details (CloudProviderAccountExporter *cloud_provider, gpointer user_data)
 {
-    (void)(cloud_provider);
+    Q_UNUSED(cloud_provider);
     CloudProviderWrapper *self = static_cast<CloudProviderWrapper*>(user_data);
-    g_dbus_method_invocation_return_value (invocation, g_variant_new ("(s)", self->statusText()));
+    return self->statusText();
 }
 
-CloudProviderWrapper::CloudProviderWrapper(QObject *parent, Folder *folder, CloudProvider* cloudprovider) : QObject(parent)
+CloudProviderWrapper::CloudProviderWrapper(QObject *parent, Folder *folder, CloudProviderExporter* cloudprovider) : QObject(parent)
   , _folder(folder)
 {
     _recentlyChanged = new QList<QPair<QString, QString>>();
     _statusText = QString("");
     this->path = g_strdup(qstring_to_gchar(folder->cleanPath()));
     this->icon = g_icon_new_for_string("Nextcloud", NULL);
-    this->status = 1;
+    this->status = CLOUD_PROVIDER_STATUS_IDLE;
     this->name = g_strdup(qstring_to_gchar(folder->shortGuiLocalPath()));
     gchar *folderAlias = folder->alias().toUtf8().data();
     gchar *accountId = folder->accountState()->account()->id().toUtf8().data();
     _accountName = g_strdup_printf ("Account%sFolder%s", accountId, folderAlias);
 
-    _cloudProvider= CLOUD_PROVIDER(cloudprovider);
-    _cloudProviderAccount1 = cloud_provider_account1_skeleton_new();
+    _cloudProvider= CLOUD_PROVIDER_EXPORTER(cloudprovider);
+    _cloudProviderAccount1 = cloud_provider_account_exporter_new(_accountName);
     g_signal_connect(_cloudProviderAccount1, "handle_get_name", G_CALLBACK (on_get_name), this);
     g_signal_connect(_cloudProviderAccount1, "handle_get_icon", G_CALLBACK (on_get_icon), this);
     g_signal_connect(_cloudProviderAccount1, "handle_get_path", G_CALLBACK (on_get_path), this);
     g_signal_connect(_cloudProviderAccount1, "handle_get_status", G_CALLBACK (on_get_status), this);
     g_signal_connect(_cloudProviderAccount1, "handle_get_status_details", G_CALLBACK (on_get_status_details), this);
 
-    cloud_provider_export_account(_cloudProvider, _accountName, _cloudProviderAccount1);
-    cloud_provider_export_menu (_cloudProvider, _accountName, getMenuModel());
-    cloud_provider_export_action_group (_cloudProvider, _accountName, getActionGroup());
+    cloud_provider_account_exporter_add_menu_model (_cloudProviderAccount1, getMenuModel());
+    cloud_provider_account_exporter_add_action_group (_cloudProviderAccount1, getActionGroup());
+    cloud_provider_exporter_add_account(_cloudProvider, _cloudProviderAccount1);
 
     ProgressDispatcher *pd = ProgressDispatcher::instance();
     connect(pd, SIGNAL(progressInfo(QString, ProgressInfo)), this, SLOT(slotUpdateProgress(QString, ProgressInfo)));
@@ -108,6 +109,11 @@ CloudProviderWrapper::~CloudProviderWrapper()
 gchar* CloudProviderWrapper::accountName()
 {
     return _accountName;
+}
+
+CloudProviderAccountExporter* CloudProviderWrapper::accountExporter()
+{
+    return _cloudProviderAccount1;
 }
 
 static bool shouldShowInRecentsMenu(const SyncFileItem &item)
@@ -187,11 +193,11 @@ void CloudProviderWrapper::slotUpdateProgress(const QString &folder, const Progr
     if (!progress._lastCompletedItem.isEmpty()
             && shouldShowInRecentsMenu(progress._lastCompletedItem)) {
         GMenuItem* item;
-        gchar *file;
         g_menu_remove_all (G_MENU(recentMenu));
         if(!_recentlyChanged->isEmpty()) {
             QList<QPair<QString, QString>>::iterator i;
             for (i = _recentlyChanged->begin(); i != _recentlyChanged->end(); i++) {
+                gchar *file;
                 QString label = i->first;
                 QString fullPath = i->second;
                 file = g_strdup(qstring_to_gchar(label));
@@ -232,7 +238,7 @@ Folder* CloudProviderWrapper::folder()
 
 void CloudProviderWrapper::slotCloudProviderChanged()
 {
-    cloud_provider_account1_emit_cloud_provider_changed(_cloudProviderAccount1);
+    cloud_provider_exporter_emit_account_changed (_cloudProvider, _cloudProviderAccount1);
 }
 
 
@@ -260,7 +266,6 @@ GMenuModel* CloudProviderWrapper::getMenuModel() {
 
     GMenu* section;
     GMenuItem* item;
-    gchar *file;
 
     mainMenu = g_menu_new();
 
@@ -277,7 +282,6 @@ GMenuModel* CloudProviderWrapper::getMenuModel() {
     g_menu_append_item(section, item);
     g_menu_append_section(mainMenu, NULL, G_MENU_MODEL(section));
 
-    // Additional items
     section = g_menu_new();
     item = g_menu_item_new("Pause synchronization", "cloudprovider.pause");
     g_menu_append_item(section, item);
@@ -300,7 +304,7 @@ GMenuModel* CloudProviderWrapper::getMenuModel() {
 static void
 activate_action_open (GSimpleAction *action, GVariant *parameter, gpointer user_data)
 {
-    (void)(parameter);
+    Q_UNUSED(parameter);
     const gchar *name = g_action_get_name(G_ACTION(action));
     CloudProviderWrapper *self = static_cast<CloudProviderWrapper*>(user_data);
     ownCloudGui *gui = qobject_cast<ownCloudGui*>(self->parent()->parent());
@@ -340,8 +344,8 @@ activate_action_open (GSimpleAction *action, GVariant *parameter, gpointer user_
 static void
 activate_action_openrecentfile (GSimpleAction *action, GVariant *parameter, gpointer user_data)
 {
-    (void)(action);
-    (void)(parameter);
+    Q_UNUSED(action);
+    Q_UNUSED(parameter);
     CloudProviderWrapper *self = static_cast<CloudProviderWrapper*>(user_data);
     QDesktopServices::openUrl(self->folder()->accountState()->account()->url());
 }
@@ -351,7 +355,7 @@ activate_action_pause (GSimpleAction *action,
                        GVariant      *parameter,
                        gpointer       user_data)
 {
-    (void)parameter;
+    Q_UNUSED(parameter);
     CloudProviderWrapper *self = static_cast<CloudProviderWrapper*>(user_data);
     GVariant *old_state, *new_state;
 
@@ -390,6 +394,7 @@ GActionGroup* CloudProviderWrapper::getActionGroup()
 
 void CloudProviderWrapper::slotSyncPausedChanged(Folder *folder, bool state)
 {
+    Q_UNUSED(folder);
     paused = state;
     GAction *pause = g_action_map_lookup_action(G_ACTION_MAP(actionGroup), "pause");
     g_simple_action_set_state (G_SIMPLE_ACTION(pause), g_variant_new_boolean(state));

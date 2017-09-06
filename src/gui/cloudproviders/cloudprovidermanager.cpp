@@ -1,7 +1,7 @@
 extern "C" {
     #include <glib.h>
     #include <gio.h>
-    #include <cloudprovider.h>
+    #include <cloudproviderexporter.h>
 }
 #include "cloudproviderwrapper.h"
 #include "cloudprovidermanager.h"
@@ -10,35 +10,35 @@ extern "C" {
 #include "accountstate.h"
 #include "account.h"
 
-CloudProvider *_cloudProvider;
+CloudProviderExporter *_cloudProvider;
 GDBusConnection *_connection;
 
 void on_bus_acquired (GDBusConnection *connection, const gchar *name, gpointer user_data)
 {
-    (void)(name);
+    Q_UNUSED(name);
     QString orgName = QString(APPLICATION_VENDOR).replace(" ", "").toLower();
     QString appName = QString(APPLICATION_SHORTNAME).replace(" ", "").toLower();
     QString busName = "org." + orgName + "." + appName;
     QString objectName = "/org/" + orgName + "/" + appName;
 
     CloudProviderManager *self = static_cast<CloudProviderManager*>(user_data);
-    _cloudProvider = cloud_provider_new(connection, busName.toAscii().data(), objectName.toAscii().data());
+    _cloudProvider = cloud_provider_exporter_new(connection, busName.toAscii().data(), objectName.toAscii().data());
     _connection = connection;
     self->registerSignals();
 }
 
 static void on_name_acquired (GDBusConnection *connection, const gchar *name, gpointer user_data)
 {
-    (void)(connection);
-    (void)(name);
-    (void)(user_data);
+    Q_UNUSED(connection);
+    Q_UNUSED(name);
+    Q_UNUSED(user_data);
 }
 
 static void on_name_lost (GDBusConnection *connection, const gchar *name, gpointer user_data)
 {
-    (void)connection;
-    (void)name;
-    (void)user_data;
+    Q_UNUSED(connection);
+    Q_UNUSED(name);
+    Q_UNUSED(user_data);
     g_object_unref(_cloudProvider);
 }
 
@@ -68,8 +68,7 @@ void CloudProviderManager::slotFolderListChanged(const Folder::Map &folderMap)
     while (i.hasNext()) {
         i.next();
         if (!folderMap.contains(i.key())) {
-            gchar *accountName = i.value()->accountName();
-            cloud_provider_unexport_account(_cloudProvider, accountName);
+            cloud_provider_exporter_remove_account (_cloudProvider, i.value()->accountExporter());
             _map->remove(i.key());
         }
     }
@@ -82,5 +81,5 @@ void CloudProviderManager::slotFolderListChanged(const Folder::Map &folderMap)
             _map->insert(j.key(), cpo);
         }
     }
-    cloud_provider_export_objects (_cloudProvider);
+    cloud_provider_exporter_export_objects (_cloudProvider);
 }
