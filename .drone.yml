@@ -80,6 +80,8 @@ pipeline:
     qt-5.9:
         image: nextcloudci/client-5.9:latest
         commands:
+            - apt-get install -y python3 python3-pip ninja-build
+            - /usr/bin/pip3 install meson
             # Install QtKeyChain
             - /bin/bash -c "
               source /opt/qt59/bin/qt59-env.sh &&
@@ -92,6 +94,16 @@ pipeline:
               cmake ../ &&
               make &&
               make install"
+            # Install libcloudproviders
+            - /bin/bash -c "
+              source /opt/qt59/bin/qt59-env.sh &&
+              cd /tmp &&
+              git clone https://github.com/juliushaertl/libcloudproviders.git &&
+              cd libcloudproviders &&
+              meson build &&
+              cd build &&
+              ninja &&
+              ninja install"
             # Build client
             - /bin/bash -c "
               source /opt/qt59/bin/qt59-env.sh &&

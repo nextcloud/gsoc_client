@@ -26,6 +26,7 @@
 #include <QSignalMapper>
 #include <QSize>
 #include <QTimer>
+#include <QDBusConnection>
 
 namespace OCC {
 
@@ -53,6 +54,10 @@ public:
     static void raiseDialog(QWidget *raiseWidget);
     static QSize settingsDialogSize() { return QSize(800, 500); }
     void setupOverlayIcons();
+#ifdef WITH_LIBCLOUDPROVIDERS
+    void setupCloudProviders();
+    bool cloudProviderApiAvailable();
+#endif
 
     /// Whether the tray menu is visible
     bool contextMenuVisible() const;
@@ -124,6 +129,8 @@ private:
     // Manually tracking whether the context menu is visible, but only works
     // on OSX because aboutToHide is not reliable everywhere.
     bool _contextMenuVisibleOsx;
+
+    QDBusConnection _bus;
 
     QMenu *_recentActionsMenu;
     QVector<QMenu *> _accountMenus;

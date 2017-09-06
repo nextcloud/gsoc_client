@@ -175,6 +175,9 @@ if (USE_OUR_OWN_SQLITE3)
 endif()
 
 find_package(ZLIB)
+find_package(Glib)
+find_package(Gio)
+find_package(Libcloudproviders)
 
 if (NOT DEFINED APPLICATION_ICON_NAME)
     set(APPLICATION_ICON_NAME ${APPLICATION_SHORTNAME})

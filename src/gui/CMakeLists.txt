@@ -180,6 +180,19 @@ set(3rdparty_INC
 
 include_directories(${3rdparty_INC})
 
+IF( NOT WIN32 AND NOT APPLE AND WITH_DBUS AND LIBCLOUDPROVIDERS_FOUND)
+    add_definitions(-DWITH_LIBCLOUDPROVIDERS)
+    set(client_SRCS ${client_SRCS} cloudproviders/cloudprovidermanager.cpp)
+    set(client_SRCS ${client_SRCS} cloudproviders/cloudproviderwrapper.cpp)
+
+    include_directories(${GLIB_INCLUDE_DIRS})
+    include_directories(${GIO_INCLUDE_DIRS})
+    include_directories(${LIBCLOUDPROVIDERS_INCLUDE_DIRS})
+ENDIF()
+
+
+
+
 # csync is required.
 include_directories(${CMAKE_SOURCE_DIR}/csync/src
                     ${CMAKE_BINARY_DIR}/csync
@@ -299,6 +312,11 @@ target_link_libraries( ${APPLICATION_EXECUTABLE} ${QT_LIBRARIES} )
 target_link_libraries( ${APPLICATION_EXECUTABLE} ${synclib_NAME} )
 target_link_libraries( ${APPLICATION_EXECUTABLE} updater )
 target_link_libraries( ${APPLICATION_EXECUTABLE} ${OS_SPECIFIC_LINK_LIBRARIES} )
+IF( NOT WIN32 AND NOT APPLE AND LIBCLOUDPROVIDERS_FOUND)
+    target_link_libraries( ${APPLICATION_EXECUTABLE} ${GLIB_LDFLAGS} ${GIO_LDFLAGS} )
+    target_link_libraries( ${APPLICATION_EXECUTABLE} ${LIBCLOUDPROVIDERS_LIBRARIES} )
+ENDIF()
+
 
 if(WITH_CRASHREPORTER)
     target_link_libraries( ${APPLICATION_EXECUTABLE} crashreporter-handler)

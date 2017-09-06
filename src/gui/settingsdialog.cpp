@@ -102,6 +102,15 @@ SettingsDialog::SettingsDialog(ownCloudGui *gui, QWidget *parent)
     _actionGroup = new QActionGroup(this);
     _actionGroup->setExclusive(true);
 
+
+    addAccountAction = createColorAwareAction(QLatin1String(":/client/resources/account.png"), tr("Add account"));
+    _toolBar->addAction(addAccountAction);
+    addAccountAction->setCheckable(false);
+    if (!Theme::instance()->multiAccount()) {
+        addAccountAction->setVisible(false);
+    }
+    connect(addAccountAction, SIGNAL(triggered(bool)), _gui, SLOT(slotNewAccountWizard()));
+
     // Note: all the actions have a '\n' because the account name is in two lines and
     // all buttons must have the same size in order to keep a good layout
     _activityAction = createColorAwareAction(QLatin1String(":/client/resources/activity.png"), tr("Activity"));
@@ -200,7 +209,7 @@ void SettingsDialog::showFirstPage()
 {
     QList<QAction *> actions = _toolBar->actions();
     if (!actions.empty()) {
-        actions.first()->trigger();
+        actions.at(1)->trigger();
     }
 }
 
@@ -246,6 +255,8 @@ void SettingsDialog::accountAdded(AccountState *s)
     _actionGroup->addAction(accountAction);
     _actionGroupWidgets.insert(accountAction, accountSettings);
     _actionForAccount.insert(s->account().data(), accountAction);
+
+    addAccountAction->setVisible(false);
 
     connect(accountSettings, SIGNAL(folderChanged()), _gui, SLOT(slotFoldersChanged()));
     connect(accountSettings, SIGNAL(openFolderAlias(const QString &)),
@@ -301,6 +312,9 @@ void SettingsDialog::accountRemoved(AccountState *s)
     // configured.
     if (AccountManager::instance()->accounts().isEmpty()) {
         hide();
+        if (!Theme::instance()->multiAccount()) {
+            addAccountAction->setVisible(true);
+        }
     }
 }
 

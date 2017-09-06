@@ -83,6 +83,7 @@ private:
     // Maps the actions from the action group to the corresponding widgets
     QHash<QAction *, QWidget *> _actionGroupWidgets;
 
+    QAction *addAccountAction;
     // Maps the action in the dialog to their according account. Needed in
     // case the account avatar changes
     QHash<Account *, QAction *> _actionForAccount;
